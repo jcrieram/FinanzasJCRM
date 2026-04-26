@@ -1,0 +1,9 @@
+{
+  "name": "finanzasjcrm",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Asistente Financiero (raíz) + Asistente de Consulta clínica (/consulta)",
+  "engines": {
+    "node": ">=20"
+  }
+}
