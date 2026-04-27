@@ -2,7 +2,7 @@
 
 export const config = { maxDuration: 15 };
 
-const TO_EMAIL = 'Jcrieram@gmail.com';
+const TO_EMAIL = 'jcrieram@gmail.com';
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
