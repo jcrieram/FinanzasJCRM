@@ -1,4 +1,5 @@
-const recordBtn = document.getElementById('recordBtn');
+const primaryBtn = document.getElementById('primaryBtn');
+const finishBtn = document.getElementById('finishBtn');
 const timerEl = document.getElementById('timer');
 const statusEl = document.getElementById('status');
 const processingPanel = document.getElementById('processingPanel');
@@ -14,18 +15,17 @@ const errorPanel = document.getElementById('errorPanel');
 let mediaRecorder = null;
 let chunks = [];
 let stream = null;
-let startTime = 0;
+let state = 'idle'; // 'idle' | 'recording' | 'paused' | 'processing'
+let elapsedMs = 0;
+let segmentStart = 0;
 let timerInterval = null;
-let isRecording = false;
 let wakeLock = null;
 
 function showError(msg) {
     errorPanel.textContent = msg;
     errorPanel.classList.remove('hidden');
 }
-function hideError() {
-    errorPanel.classList.add('hidden');
-}
+function hideError() { errorPanel.classList.add('hidden'); }
 function setStatus(msg) { statusEl.textContent = msg; }
 function fmtTime(ms) {
     const s = Math.floor(ms / 1000);
@@ -33,13 +33,15 @@ function fmtTime(ms) {
     const ss = String(s % 60).padStart(2, '0');
     return `${mm}:${ss}`;
 }
+function currentMs() {
+    return state === 'recording' ? elapsedMs + (Date.now() - segmentStart) : elapsedMs;
+}
+function refreshTimer() { timerEl.textContent = fmtTime(currentMs()); }
 
 async function requestWakeLock() {
     try {
-        if ('wakeLock' in navigator) {
-            wakeLock = await navigator.wakeLock.request('screen');
-        }
-    } catch (e) { /* ignore */ }
+        if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
+    } catch (e) {}
 }
 function releaseWakeLock() {
     if (wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; }
@@ -53,10 +55,37 @@ function pickMimeType() {
         'audio/webm',
         'audio/ogg;codecs=opus'
     ];
-    for (const t of candidates) {
-        if (MediaRecorder.isTypeSupported(t)) return t;
-    }
+    for (const t of candidates) if (MediaRecorder.isTypeSupported(t)) return t;
     return '';
+}
+
+function setUI(newState) {
+    state = newState;
+    primaryBtn.classList.remove('pulse-rec', 'bg-red-600', 'hover:bg-red-700', 'bg-red-700', 'bg-amber-500', 'hover:bg-amber-600', 'bg-emerald-600', 'hover:bg-emerald-700');
+    if (newState === 'idle') {
+        primaryBtn.textContent = 'Grabar';
+        primaryBtn.classList.add('bg-red-600', 'hover:bg-red-700');
+        primaryBtn.disabled = false;
+        finishBtn.classList.add('hidden');
+        setStatus('Listo para grabar');
+    } else if (newState === 'recording') {
+        primaryBtn.textContent = 'Pausar';
+        primaryBtn.classList.add('bg-amber-500', 'hover:bg-amber-600', 'pulse-rec');
+        primaryBtn.disabled = false;
+        finishBtn.classList.remove('hidden');
+        setStatus('Grabando…');
+    } else if (newState === 'paused') {
+        primaryBtn.textContent = 'Reanudar';
+        primaryBtn.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
+        primaryBtn.disabled = false;
+        finishBtn.classList.remove('hidden');
+        setStatus('En pausa');
+    } else if (newState === 'processing') {
+        primaryBtn.textContent = 'Grabar';
+        primaryBtn.classList.add('bg-red-600');
+        primaryBtn.disabled = true;
+        finishBtn.classList.add('hidden');
+    }
 }
 
 async function startRecording() {
@@ -82,35 +111,43 @@ async function startRecording() {
         mediaRecorder = new MediaRecorder(stream);
     }
     chunks = [];
+    elapsedMs = 0;
     mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
     mediaRecorder.onstop = handleStop;
     mediaRecorder.start();
 
-    isRecording = true;
-    startTime = Date.now();
+    segmentStart = Date.now();
     timerEl.textContent = '00:00';
-    timerInterval = setInterval(() => {
-        timerEl.textContent = fmtTime(Date.now() - startTime);
-    }, 500);
-
-    recordBtn.textContent = 'Detener';
-    recordBtn.classList.add('pulse-rec');
-    recordBtn.classList.remove('bg-red-600', 'hover:bg-red-700');
-    recordBtn.classList.add('bg-red-700');
-    setStatus('Grabando…');
+    timerInterval = setInterval(refreshTimer, 500);
+    setUI('recording');
     requestWakeLock();
 }
 
-function stopRecording() {
+function pauseRecording() {
+    if (!mediaRecorder || mediaRecorder.state !== 'recording') return;
+    mediaRecorder.pause();
+    elapsedMs += Date.now() - segmentStart;
+    refreshTimer();
+    setUI('paused');
+    releaseWakeLock();
+}
+
+function resumeRecording() {
+    if (!mediaRecorder || mediaRecorder.state !== 'paused') return;
+    mediaRecorder.resume();
+    segmentStart = Date.now();
+    setUI('recording');
+    requestWakeLock();
+}
+
+function finishRecording() {
     if (!mediaRecorder || mediaRecorder.state === 'inactive') return;
+    if (mediaRecorder.state === 'recording') elapsedMs += Date.now() - segmentStart;
     mediaRecorder.stop();
     if (stream) stream.getTracks().forEach(t => t.stop());
     clearInterval(timerInterval);
-    isRecording = false;
-    recordBtn.textContent = 'Grabar';
-    recordBtn.classList.remove('pulse-rec', 'bg-red-700');
-    recordBtn.classList.add('bg-red-600', 'hover:bg-red-700');
-    recordBtn.disabled = true;
+    refreshTimer();
+    setUI('processing');
     setStatus('Procesando audio…');
     releaseWakeLock();
 }
@@ -122,9 +159,8 @@ async function handleStop() {
 
     const sizeMB = (blob.size / 1024 / 1024).toFixed(2);
     if (blob.size > 24 * 1024 * 1024) {
-        showError(`Audio muy largo (${sizeMB} MB). El límite es 25 MB. Intenta sesiones más cortas.`);
-        recordBtn.disabled = false;
-        setStatus('Listo para grabar');
+        showError(`Audio muy largo (${sizeMB} MB). El límite es 25 MB.`);
+        setUI('idle');
         return;
     }
 
@@ -139,13 +175,11 @@ async function handleStop() {
         rawTranscript.textContent = transcript;
         noteText.value = note;
         resultPanel.classList.remove('hidden');
-        setStatus('Listo');
-        recordBtn.disabled = false;
+        setUI('idle');
     } catch (e) {
         processingPanel.classList.add('hidden');
         showError('Error: ' + (e.message || e));
-        recordBtn.disabled = false;
-        setStatus('Listo para grabar');
+        setUI('idle');
     }
 }
 
@@ -176,10 +210,13 @@ async function extract(transcript) {
     return data.note;
 }
 
-recordBtn.addEventListener('click', () => {
-    if (isRecording) stopRecording();
-    else startRecording();
+primaryBtn.addEventListener('click', () => {
+    if (state === 'idle') startRecording();
+    else if (state === 'recording') pauseRecording();
+    else if (state === 'paused') resumeRecording();
 });
+
+finishBtn.addEventListener('click', finishRecording);
 
 copyBtn.addEventListener('click', async () => {
     try {
@@ -218,7 +255,8 @@ newBtn.addEventListener('click', () => {
     noteText.value = '';
     rawTranscript.textContent = '';
     timerEl.textContent = '00:00';
-    setStatus('Listo para grabar');
+    elapsedMs = 0;
+    setUI('idle');
     hideError();
 });
 
