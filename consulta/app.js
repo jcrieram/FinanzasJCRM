@@ -1,3 +1,69 @@
+const PIN_KEY = 'consultavoz_pin';
+const pinOverlay = document.getElementById('pinOverlay');
+const pinInput = document.getElementById('pinInput');
+const pinSubmit = document.getElementById('pinSubmit');
+const pinError = document.getElementById('pinError');
+
+function getPin() { return localStorage.getItem(PIN_KEY) || ''; }
+function savePin(p) { localStorage.setItem(PIN_KEY, p); }
+function clearPin() { localStorage.removeItem(PIN_KEY); }
+
+function showPinModal() {
+    pinError.textContent = '';
+    pinInput.value = '';
+    pinOverlay.classList.remove('hidden');
+    setTimeout(() => pinInput.focus(), 50);
+}
+function hidePinModal() { pinOverlay.classList.add('hidden'); }
+
+async function ensurePin() {
+    if (!getPin()) {
+        showPinModal();
+        return new Promise((resolve) => {
+            const onSubmit = async () => {
+                const candidate = pinInput.value.trim();
+                if (!candidate) { pinError.textContent = 'Ingresa el PIN'; return; }
+                pinError.textContent = '';
+                pinSubmit.disabled = true;
+                pinSubmit.textContent = 'Verificando…';
+                const ok = await verifyPin(candidate);
+                pinSubmit.disabled = false;
+                pinSubmit.textContent = 'Entrar';
+                if (ok) {
+                    savePin(candidate);
+                    hidePinModal();
+                    pinSubmit.removeEventListener('click', onSubmit);
+                    pinInput.removeEventListener('keydown', onKey);
+                    resolve();
+                } else {
+                    pinError.textContent = 'PIN incorrecto';
+                    pinInput.value = '';
+                    pinInput.focus();
+                }
+            };
+            const onKey = (e) => { if (e.key === 'Enter') onSubmit(); };
+            pinSubmit.addEventListener('click', onSubmit);
+            pinInput.addEventListener('keydown', onKey);
+        });
+    }
+}
+
+async function verifyPin(pin) {
+    try {
+        const res = await fetch('/api/verify-pin', {
+            method: 'POST',
+            headers: { 'X-Consulta-Pin': pin }
+        });
+        return res.ok;
+    } catch (e) {
+        return false;
+    }
+}
+
+function withPinHeaders(extra = {}) {
+    return { ...extra, 'X-Consulta-Pin': getPin() };
+}
+
 const primaryBtn = document.getElementById('primaryBtn');
 const finishBtn = document.getElementById('finishBtn');
 const timerEl = document.getElementById('timer');
@@ -183,7 +249,8 @@ async function transcribe(blob, mime) {
     const ext = mime.includes('mp4') ? 'm4a' : mime.includes('webm') ? 'webm' : mime.includes('ogg') ? 'ogg' : 'audio';
     const fd = new FormData();
     fd.append('file', blob, `consulta.${ext}`);
-    const res = await fetch('/api/transcribe', { method: 'POST', body: fd });
+    const res = await fetch('/api/transcribe', { method: 'POST', headers: withPinHeaders(), body: fd });
+    if (res.status === 401) { clearPin(); throw new Error('Sesión expirada. Vuelve a abrir la app.'); }
     if (!res.ok) {
         const txt = await res.text();
         throw new Error(`Transcripción falló (${res.status}): ${txt}`);
@@ -195,9 +262,10 @@ async function transcribe(blob, mime) {
 async function extract(transcript) {
     const res = await fetch('/api/extract', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: withPinHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ transcript })
     });
+    if (res.status === 401) { clearPin(); throw new Error('Sesión expirada. Vuelve a abrir la app.'); }
     if (!res.ok) {
         const txt = await res.text();
         throw new Error(`Extracción falló (${res.status}): ${txt}`);
@@ -233,9 +301,10 @@ emailBtn.addEventListener('click', async () => {
     try {
         const res = await fetch('/api/send-email', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: withPinHeaders({ 'Content-Type': 'application/json' }),
             body: JSON.stringify({ note: noteText.value })
         });
+        if (res.status === 401) { clearPin(); throw new Error('Sesión expirada. Vuelve a abrir la app.'); }
         if (!res.ok) throw new Error(await res.text());
         emailBtn.textContent = '¡Enviado!';
         setTimeout(() => { emailBtn.textContent = original; emailBtn.disabled = false; }, 2000);
@@ -261,3 +330,5 @@ if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('sw.js').catch(() => {});
     });
 }
+
+ensurePin();

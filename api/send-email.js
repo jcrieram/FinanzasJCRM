@@ -12,6 +12,11 @@ export default async function handler(req, res) {
     if (!apiKey) {
         return res.status(500).json({ error: 'RESEND_API_KEY no configurada' });
     }
+
+    const requiredPin = process.env.CONSULTA_PIN;
+    if (requiredPin && req.headers['x-consulta-pin'] !== requiredPin) {
+        return res.status(401).json({ error: 'PIN inválido' });
+    }
     const fromAddr = process.env.RESEND_FROM || 'Consulta <onboarding@resend.dev>';
 
     let body;
