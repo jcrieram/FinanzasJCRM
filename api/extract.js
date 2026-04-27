@@ -97,6 +97,11 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'OPENAI_API_KEY no configurada' });
     }
 
+    const requiredPin = process.env.CONSULTA_PIN;
+    if (requiredPin && req.headers['x-consulta-pin'] !== requiredPin) {
+        return res.status(401).json({ error: 'PIN inválido' });
+    }
+
     let body;
     try { body = req.body && typeof req.body === 'object' ? req.body : JSON.parse(req.body || '{}'); }
     catch { return res.status(400).json({ error: 'JSON inválido' }); }

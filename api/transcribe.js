@@ -15,6 +15,11 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'OPENAI_API_KEY no configurada' });
     }
 
+    const requiredPin = process.env.CONSULTA_PIN;
+    if (requiredPin && req.headers['x-consulta-pin'] !== requiredPin) {
+        return res.status(401).json({ error: 'PIN inválido' });
+    }
+
     const contentType = req.headers['content-type'];
     if (!contentType || !contentType.includes('multipart/form-data')) {
         return res.status(400).json({ error: 'Se esperaba multipart/form-data' });
