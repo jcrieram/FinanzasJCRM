@@ -188,16 +188,13 @@
             font-weight: 900;
             letter-spacing: -0.045em;
             line-height: 0.95;
-            background: linear-gradient(135deg, #ffffff 0%, #BFDBFE 30%, #64B5F6 60%, #34c759 100%);
+            background: linear-gradient(135deg, #ffffff 0%, #ffffff 35%, #64B5F6 65%, #34c759 100%);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
             margin-bottom: 20px;
             animation: fadeInUp 1s ease-out 0.1s both;
-        }
-        .brand-suffix {
-            font-weight: 300;
-            opacity: 0.6;
+            text-shadow: 0 0 60px rgba(100, 181, 246, 0.15);
         }
 
         .tagline {
@@ -546,6 +543,172 @@
             .card h3 { font-size: 22px; }
         }
 
+        /* ════════════════════════════════════════ NEWS FAB + MODAL ═══ */
+        .news-fab {
+            position: fixed;
+            bottom: max(24px, env(safe-area-inset-bottom, 24px));
+            right: 24px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 22px 14px 18px;
+            border: 1px solid rgba(100, 181, 246, 0.35);
+            border-radius: 100px;
+            background: linear-gradient(135deg, rgba(0, 113, 227, 0.85), rgba(52, 199, 89, 0.78));
+            color: #fff;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow:
+                0 1px 0 rgba(255,255,255,0.25) inset,
+                0 12px 36px rgba(0, 113, 227, 0.45),
+                0 4px 12px rgba(0, 0, 0, 0.35);
+            z-index: 80;
+            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
+            animation: fadeInUp 1s ease-out 1s both;
+        }
+        .news-fab:hover {
+            transform: translateY(-3px) scale(1.03);
+            box-shadow:
+                0 1px 0 rgba(255,255,255,0.3) inset,
+                0 18px 50px rgba(0, 113, 227, 0.55),
+                0 6px 16px rgba(0, 0, 0, 0.4);
+        }
+        .news-fab:active { transform: translateY(-1px) scale(0.99); }
+        .news-fab svg { width: 18px; height: 18px; }
+        .news-fab .label-short { display: none; }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 8, 23, 0.7);
+            backdrop-filter: blur(16px) saturate(140%);
+            -webkit-backdrop-filter: blur(16px) saturate(140%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            z-index: 200;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .modal-overlay.open {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal-card {
+            background: linear-gradient(155deg, rgba(13, 31, 60, 0.95), rgba(7, 22, 45, 0.95));
+            border: 1px solid rgba(100, 181, 246, 0.25);
+            border-radius: 28px;
+            padding: 32px 28px 28px;
+            max-width: 480px;
+            width: 100%;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6), 0 0 60px rgba(0, 113, 227, 0.25);
+            transform: translateY(20px) scale(0.96);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+        }
+        .modal-overlay.open .modal-card { transform: translateY(0) scale(1); }
+
+        .modal-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #6EE08A;
+            background: rgba(52, 199, 89, 0.12);
+            border: 1px solid rgba(52, 199, 89, 0.3);
+            padding: 6px 12px;
+            border-radius: 100px;
+            margin-bottom: 16px;
+        }
+        .modal-eyebrow .pulse {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: #6EE08A;
+            box-shadow: 0 0 8px rgba(52, 199, 89, 0.7);
+            animation: pulse-dot 1.6s infinite;
+        }
+
+        .modal-title {
+            font-size: 22px;
+            font-weight: 800;
+            margin-bottom: 4px;
+            color: #fff;
+            letter-spacing: -0.01em;
+        }
+        .modal-sub {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+        }
+
+        .modal-body {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 18px 18px;
+            min-height: 120px;
+            color: var(--text-secondary);
+            font-size: 15px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: flex-start;
+        }
+        .modal-body.loading {
+            justify-content: center;
+            align-items: center;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+        .modal-spinner {
+            width: 22px; height: 22px;
+            border-radius: 50%;
+            border: 3px solid rgba(100, 181, 246, 0.2);
+            border-top-color: var(--accent);
+            animation: spin 0.9s linear infinite;
+            margin-right: 12px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        .modal-btn {
+            border: none;
+            border-radius: 12px;
+            padding: 10px 18px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s ease, transform 0.15s ease;
+        }
+        .modal-btn:active { transform: scale(0.97); }
+        .modal-btn.primary {
+            background: linear-gradient(135deg, #0071E3, #0058B3);
+            color: #fff;
+        }
+        .modal-btn.secondary {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-secondary);
+        }
+
+        @media (max-width: 640px) {
+            .news-fab { bottom: 18px; right: 18px; padding: 12px 18px 12px 14px; font-size: 13px; }
+        }
+
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after {
                 animation-duration: 0.01ms !important;
@@ -587,7 +750,7 @@
             </svg>
         </div>
 
-        <h1 class="brand">Uro<span class="brand-suffix">Work</span>Net</h1>
+        <h1 class="brand">UroWorkNet</h1>
         <p class="tagline">Sistema integral de gestión urológica.<br>Tres herramientas, una sola plataforma.</p>
         <div class="doctor-pill">
             <span class="badge-dot"></span>
@@ -675,6 +838,75 @@
             </div>
         </div>
     </main>
+
+    <button class="news-fab" id="newsFab" aria-label="Aprende algo en un minuto">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+        </svg>
+        <span class="label-full">Aprende algo en un minuto</span>
+        <span class="label-short">Aprende</span>
+    </button>
+
+    <div class="modal-overlay" id="newsModal" role="dialog" aria-modal="true">
+        <div class="modal-card">
+            <div class="modal-eyebrow"><span class="pulse"></span>Última semana</div>
+            <h3 class="modal-title">Una pizca de urología</h3>
+            <p class="modal-sub">Resumen rápido de una novedad relevante.</p>
+            <div class="modal-body loading" id="newsBody">
+                <span class="modal-spinner"></span>Buscando lo más reciente…
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn secondary" id="newsRefresh">Otra</button>
+                <button class="modal-btn primary" id="newsClose">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const fab = document.getElementById('newsFab');
+        const modal = document.getElementById('newsModal');
+        const body = document.getElementById('newsBody');
+        const closeBtn = document.getElementById('newsClose');
+        const refreshBtn = document.getElementById('newsRefresh');
+
+        function showLoading() {
+            body.classList.add('loading');
+            body.innerHTML = '<span class="modal-spinner"></span>Buscando lo más reciente…';
+        }
+        function showError(msg) {
+            body.classList.remove('loading');
+            body.textContent = msg;
+        }
+        function showNews(text) {
+            body.classList.remove('loading');
+            body.textContent = text;
+        }
+
+        async function fetchNews(force = false) {
+            showLoading();
+            try {
+                const url = '/api/news' + (force ? '?force=' + Date.now() : '');
+                const res = await fetch(url);
+                if (!res.ok) throw new Error('Servicio no disponible');
+                const data = await res.json();
+                showNews(data.news || 'Sin resultados.');
+            } catch (e) {
+                showError('No se pudo cargar la novedad. Intenta de nuevo en un momento.');
+            }
+        }
+
+        function openModal() {
+            modal.classList.add('open');
+            fetchNews();
+        }
+        function closeModal() { modal.classList.remove('open'); }
+
+        fab.addEventListener('click', openModal);
+        closeBtn.addEventListener('click', closeModal);
+        refreshBtn.addEventListener('click', () => fetchNews(true));
+        modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+    </script>
 
     <footer>
         <p class="credit">Hecho con <span class="heart">♥</span> por <strong>Dr. Juan Carlos Riera M.</strong></p>
