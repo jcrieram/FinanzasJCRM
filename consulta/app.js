@@ -15,7 +15,7 @@ const errorPanel = document.getElementById('errorPanel');
 let mediaRecorder = null;
 let chunks = [];
 let stream = null;
-let state = 'idle'; // 'idle' | 'recording' | 'paused' | 'processing'
+let state = 'idle';
 let elapsedMs = 0;
 let segmentStart = 0;
 let timerInterval = null;
@@ -61,28 +61,24 @@ function pickMimeType() {
 
 function setUI(newState) {
     state = newState;
-    primaryBtn.classList.remove('pulse-rec', 'bg-red-600', 'hover:bg-red-700', 'bg-red-700', 'bg-amber-500', 'hover:bg-amber-600', 'bg-emerald-600', 'hover:bg-emerald-700');
+    primaryBtn.dataset.state = newState === 'processing' ? 'idle' : newState;
     if (newState === 'idle') {
         primaryBtn.textContent = 'Grabar';
-        primaryBtn.classList.add('bg-red-600', 'hover:bg-red-700');
         primaryBtn.disabled = false;
         finishBtn.classList.add('hidden');
         setStatus('Listo para grabar');
     } else if (newState === 'recording') {
         primaryBtn.textContent = 'Pausar';
-        primaryBtn.classList.add('bg-amber-500', 'hover:bg-amber-600', 'pulse-rec');
         primaryBtn.disabled = false;
         finishBtn.classList.remove('hidden');
         setStatus('Grabando…');
     } else if (newState === 'paused') {
         primaryBtn.textContent = 'Reanudar';
-        primaryBtn.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
         primaryBtn.disabled = false;
         finishBtn.classList.remove('hidden');
         setStatus('En pausa');
     } else if (newState === 'processing') {
         primaryBtn.textContent = 'Grabar';
-        primaryBtn.classList.add('bg-red-600');
         primaryBtn.disabled = true;
         finishBtn.classList.add('hidden');
     }
