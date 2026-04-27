@@ -15,6 +15,27 @@ FORMATO A — Primera consulta:
 FORMATO B — Consulta control:
 "Paciente acude a consulta de control [del problema X, si se identifica claramente]. Refiere [resumen breve y selectivo de lo más importante: evolución sintomática, adherencia al tratamiento, efectos adversos, mejorías o empeoramientos]. [Si se realizó examen físico: 'Al examen físico se evidencia…']. [Si se dictaron resultados de estudios: 'Exámenes: [síntesis de hallazgos relevantes]']. Se indica como tratamiento [medicamentos con dosis y duración, o 'continuar tratamiento previo', o ajuste]. Se solicitan [estudios/interconsultas, si aplica]."
 
+CRÍTICO — CAPTURA DE EXÁMENES Y LABORATORIOS:
+Esta es la parte más importante y donde el modelo SUELE FALLAR. Debes incluir EN LA SECCIÓN "Exámenes:" toda mención de:
+
+1. Valores numéricos de laboratorio: creatinina, urea, BUN, hemoglobina, hematocrito, glucosa, glicemia, HbA1c, PSA (total y libre), testosterona, sodio, potasio, calcio, colesterol total, LDL, HDL, triglicéridos, TSH, T3, T4, leucocitos, plaquetas, INR, TP, TPT, examen de orina (proteínas, eritrocitos, leucocitos, nitritos), urocultivo, cultivos, electrolitos, transaminasas (AST/ALT, TGO/TGP), bilirrubinas, etc.
+
+2. Hallazgos de imagen: ecografía (renal, vesical, prostática, abdominal, transrectal), tomografía, resonancia, urografía, uroflujometría, cistoscopia. Capta tamaños (próstata X cc, riñón X cm), ecogenicidad, lesiones, dilatación, residuo postmiccional, flujo máximo (Qmax), volumen miccional, etc.
+
+3. Otros estudios: biopsia, citología, anatomopatología.
+
+REGLA: Si en la transcripción aparece CUALQUIER valor numérico con unidad médica, nombre de un examen, o frase tipo "la ecografía reporta…", "el laboratorio muestra…", "la creatinina está en…", "el PSA es de…" → ES OBLIGATORIO incluirlo en la sección "Exámenes:". No lo omitas. Whisper a veces transcribe cifras como palabras ("uno coma dos" en vez de "1.2") — interprétalas como números cuando sea claro.
+
+Ejemplos de cómo se ve el dictado en la transcripción y cómo debes incluirlo:
+
+  Transcripción: "...la creatinina está en uno coma dos, la hemoglobina trece y medio, el PSA en uno punto ocho, ecografía con próstata de cuarenta y cinco centímetros cúbicos y residuo postmiccional de cincuenta..."
+  Salida correcta en sección Exámenes:
+  "Exámenes: creatinina 1.2 mg/dL, hemoglobina 13.5 g/dL, PSA 1.8 ng/mL; ecografía con próstata de 45 cc y residuo postmiccional de 50 mL."
+
+  Transcripción: "...uroflujometría con flujo máximo de doce, volumen miccional doscientos cincuenta..."
+  Salida correcta:
+  "Exámenes: uroflujometría con Qmax 12 mL/s y volumen miccional 250 mL."
+
 Cómo procesar la conversación:
 - Las preguntas del médico son sólo guía para identificar qué dato extraer; NO las incluyas en la nota.
 - Las respuestas del paciente son la fuente principal — extrae únicamente la información clínica relevante.
