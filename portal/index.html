@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="UroWorkNet">
+    <meta name="theme-color" content="#07162D">
+    <meta name="description" content="UroWorkNet — Sistema integral de gestión urológica. Reportes, ConsultaVoz, UroAtlas.">
+    <title>UroWorkNet · Sistema de Gestión Urológica</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+        :root {
+            --navy-deep: #04102A;
+            --navy: #07162D;
+            --navy-light: #0D1F3C;
+            --accent: #64B5F6;
+            --accent-bright: #0071E3;
+            --green: #34c759;
+            --amber: #ff9500;
+            --text-primary: #ffffff;
+            --text-secondary: rgba(232, 244, 253, 0.78);
+            --text-muted: rgba(200, 223, 245, 0.55);
+        }
+
+        html, body {
+            min-height: 100%;
+            background: var(--navy-deep);
+            color: var(--text-primary);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow-x: hidden;
+        }
+
+        body {
+            min-height: 100vh;
+            min-height: 100dvh;
+            position: relative;
+        }
+
+        /* ════════════════════════════════════════ FONDO ANIMADO ═══ */
+        .bg-base {
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 15% -10%, rgba(0, 113, 227, 0.45), transparent 55%),
+                radial-gradient(ellipse at 85% 110%, rgba(52, 199, 89, 0.30), transparent 55%),
+                radial-gradient(ellipse at 50% 50%, rgba(100, 181, 246, 0.10), transparent 70%),
+                linear-gradient(180deg, #07162D 0%, #04102A 60%, #020817 100%);
+            z-index: -2;
+        }
+
+        .bg-grid {
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(100, 181, 246, 0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(100, 181, 246, 0.04) 1px, transparent 1px);
+            background-size: 60px 60px;
+            mask-image: radial-gradient(ellipse at 50% 30%, #000 0%, transparent 70%);
+            -webkit-mask-image: radial-gradient(ellipse at 50% 30%, #000 0%, transparent 70%);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.55;
+            z-index: -1;
+            pointer-events: none;
+            animation: float 22s infinite ease-in-out;
+            will-change: transform;
+        }
+        .orb-1 {
+            width: 480px; height: 480px;
+            background: radial-gradient(circle, #0071E3 0%, transparent 70%);
+            top: -180px; left: -180px;
+        }
+        .orb-2 {
+            width: 540px; height: 540px;
+            background: radial-gradient(circle, #34c759 0%, transparent 70%);
+            bottom: -200px; right: -160px;
+            animation-duration: 28s;
+            animation-delay: -8s;
+        }
+        .orb-3 {
+            width: 360px; height: 360px;
+            background: radial-gradient(circle, #64B5F6 0%, transparent 70%);
+            top: 50%; left: 60%;
+            animation-duration: 25s;
+            animation-delay: -14s;
+            opacity: 0.35;
+        }
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33%      { transform: translate(60px, -90px) scale(1.12); }
+            66%      { transform: translate(-50px, 70px) scale(0.92); }
+        }
+
+        /* ════════════════════════════════════════ TOPBAR ═══ */
+        .topbar {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px max(20px, env(safe-area-inset-left, 20px));
+            padding-top: calc(16px + env(safe-area-inset-top, 0px));
+            z-index: 50;
+            background: linear-gradient(180deg, rgba(7, 22, 45, 0.6) 0%, transparent 100%);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        .topbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+            color: var(--text-primary);
+        }
+        .topbar-brand .dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 12px rgba(52, 199, 89, 0.7);
+            animation: pulse-dot 2.4s infinite;
+        }
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50%      { opacity: 0.4; }
+        }
+        .topbar-meta {
+            font-size: 11px;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        /* ════════════════════════════════════════ HERO ═══ */
+        .hero {
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 120px 24px 60px;
+            position: relative;
+        }
+
+        .logo-mark {
+            width: 100px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(145deg, rgba(0, 113, 227, 0.25), rgba(52, 199, 89, 0.20));
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 28px;
+            margin-bottom: 28px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow:
+                0 0 0 1px rgba(255, 255, 255, 0.06) inset,
+                0 20px 60px rgba(0, 113, 227, 0.4),
+                0 8px 24px rgba(52, 199, 89, 0.25);
+            animation: logoFloat 5s ease-in-out infinite, fadeInUp 1s ease-out;
+        }
+        @keyframes logoFloat {
+            0%, 100% { transform: translateY(0); }
+            50%      { transform: translateY(-8px); }
+        }
+        .logo-mark svg { width: 56px; height: 56px; display: block; }
+
+        .brand {
+            font-size: clamp(56px, 13vw, 132px);
+            font-weight: 900;
+            letter-spacing: -0.045em;
+            line-height: 0.95;
+            background: linear-gradient(135deg, #ffffff 0%, #BFDBFE 30%, #64B5F6 60%, #34c759 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 20px;
+            animation: fadeInUp 1s ease-out 0.1s both;
+        }
+        .brand-suffix {
+            font-weight: 300;
+            opacity: 0.6;
+        }
+
+        .tagline {
+            font-size: clamp(16px, 2.2vw, 22px);
+            color: var(--text-secondary);
+            font-weight: 400;
+            margin-bottom: 28px;
+            max-width: 600px;
+            line-height: 1.5;
+            animation: fadeInUp 1s ease-out 0.2s both;
+        }
+
+        .doctor-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            color: var(--accent);
+            background: rgba(100, 181, 246, 0.10);
+            border: 1px solid rgba(100, 181, 246, 0.28);
+            padding: 10px 22px;
+            border-radius: 100px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            animation: fadeInUp 1s ease-out 0.3s both;
+        }
+        .doctor-pill .badge-dot {
+            width: 6px; height: 6px;
+            background: var(--accent);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--accent);
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .scroll-hint {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-muted);
+            font-size: 11px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            animation: fadeInUp 1s ease-out 0.6s both;
+            pointer-events: none;
+        }
+        .scroll-hint::after {
+            content: '';
+            width: 1px;
+            height: 36px;
+            background: linear-gradient(to bottom, var(--accent), transparent);
+            animation: scrollLine 2s ease-in-out infinite;
+        }
+        @keyframes scrollLine {
+            0%   { transform: scaleY(0); transform-origin: top; }
+            50%  { transform: scaleY(1); transform-origin: top; }
+            51%  { transform: scaleY(1); transform-origin: bottom; }
+            100% { transform: scaleY(0); transform-origin: bottom; }
+        }
+
+        /* ════════════════════════════════════════ APPS SECTION ═══ */
+        .apps {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 80px 24px 60px;
+            position: relative;
+        }
+
+        .section-eyebrow {
+            display: block;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 16px;
+        }
+        .section-title {
+            font-size: clamp(32px, 5.5vw, 56px);
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 16px;
+            letter-spacing: -0.025em;
+            line-height: 1.05;
+        }
+        .section-subtitle {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: clamp(15px, 1.8vw, 17px);
+            max-width: 580px;
+            margin: 0 auto 56px;
+            line-height: 1.6;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+
+        .card {
+            position: relative;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+            border: 1px solid rgba(255, 255, 255, 0.10);
+            border-radius: 28px;
+            padding: 32px 28px 28px;
+            text-decoration: none;
+            color: inherit;
+            transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease, background 0.4s ease, border-color 0.4s ease;
+            backdrop-filter: blur(24px) saturate(160%);
+            -webkit-backdrop-filter: blur(24px) saturate(160%);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 320px;
+            opacity: 0;
+            animation: fadeInUp 0.9s ease-out forwards;
+        }
+        .card:nth-child(1) { animation-delay: 0.5s; }
+        .card:nth-child(2) { animation-delay: 0.65s; }
+        .card:nth-child(3) { animation-delay: 0.8s; }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: 28px;
+            padding: 1px;
+            background: linear-gradient(135deg,
+                rgba(0, 113, 227, 0.6) 0%,
+                rgba(100, 181, 246, 0.4) 50%,
+                rgba(52, 199, 89, 0.6) 100%);
+            -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            -webkit-mask-composite: xor;
+                    mask-composite: exclude;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            pointer-events: none;
+        }
+
+        .card::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 240px; height: 240px;
+            background: radial-gradient(circle, rgba(100, 181, 246, 0.25), transparent 60%);
+            transform: translate(-50%, -50%) scale(0);
+            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .card:not(.disabled):hover {
+            transform: translateY(-14px);
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.10), rgba(100, 181, 246, 0.05));
+            box-shadow:
+                0 30px 80px rgba(0, 0, 0, 0.5),
+                0 0 60px rgba(0, 113, 227, 0.25),
+                0 0 100px rgba(52, 199, 89, 0.15);
+        }
+        .card:not(.disabled):hover::before { opacity: 1; }
+        .card:not(.disabled):hover::after { transform: translate(-50%, -50%) scale(1); }
+
+        .card.disabled { cursor: not-allowed; }
+
+        .card-inner {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .card-icon {
+            width: 64px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(0, 113, 227, 0.25), rgba(52, 199, 89, 0.18));
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 18px;
+            margin-bottom: 22px;
+            transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 8px 24px rgba(0, 113, 227, 0.25);
+        }
+        .card:not(.disabled):hover .card-icon { transform: rotate(-6deg) scale(1.08); }
+        .card-icon svg { width: 32px; height: 32px; }
+
+        .card-status {
+            position: absolute;
+            top: 28px;
+            right: 28px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.4px;
+            padding: 6px 12px;
+            border-radius: 100px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        .card-status .dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+        }
+        .status-live {
+            background: rgba(52, 199, 89, 0.14);
+            color: #6EE08A;
+            border: 1px solid rgba(52, 199, 89, 0.35);
+        }
+        .status-live .dot {
+            background: #6EE08A;
+            box-shadow: 0 0 8px rgba(52, 199, 89, 0.7);
+            animation: pulse-dot 2s infinite;
+        }
+        .status-soon {
+            background: rgba(255, 149, 0, 0.14);
+            color: #FFB155;
+            border: 1px solid rgba(255, 149, 0, 0.35);
+        }
+        .status-soon .dot {
+            background: #FFB155;
+        }
+
+        .card h3 {
+            font-size: 26px;
+            font-weight: 800;
+            margin-bottom: 12px;
+            letter-spacing: -0.015em;
+            line-height: 1.15;
+        }
+        .card .desc {
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 24px;
+            flex-grow: 1;
+        }
+
+        .card-cta {
+            font-weight: 600;
+            color: var(--accent);
+            font-size: 15px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: gap 0.3s ease, color 0.3s ease;
+        }
+        .card-cta::after {
+            content: '→';
+            display: inline-block;
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .card:not(.disabled):hover .card-cta {
+            gap: 14px;
+            color: #fff;
+        }
+        .card:not(.disabled):hover .card-cta::after {
+            transform: translateX(4px);
+        }
+        .card.disabled .card-cta { color: var(--text-muted); }
+
+        /* ════════════════════════════════════════ FEATURES STRIP ═══ */
+        .features {
+            max-width: 1100px;
+            margin: 60px auto 0;
+            padding: 32px 24px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 24px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .feature {
+            text-align: center;
+            padding: 20px 16px;
+        }
+        .feature-num {
+            font-size: clamp(28px, 4vw, 36px);
+            font-weight: 900;
+            background: linear-gradient(135deg, #64B5F6, #34c759);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 6px;
+            letter-spacing: -0.02em;
+        }
+        .feature-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        /* ════════════════════════════════════════ FOOTER ═══ */
+        footer {
+            text-align: center;
+            padding: 60px 24px 40px;
+            margin-top: 60px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            color: var(--text-muted);
+            font-size: 13px;
+            line-height: 1.8;
+        }
+        footer .credit { color: var(--text-secondary); font-weight: 500; }
+        footer .credit strong { color: var(--text-primary); }
+        footer .small {
+            margin-top: 12px;
+            font-size: 11px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            opacity: 0.55;
+        }
+        footer .heart {
+            display: inline-block;
+            background: linear-gradient(135deg, #64B5F6, #34c759);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-weight: 700;
+        }
+
+        /* ════════════════════════════════════════ RESPONSIVE ═══ */
+        @media (max-width: 640px) {
+            .hero { padding: 100px 20px 40px; }
+            .topbar { padding: 14px 18px; }
+            .topbar-meta { display: none; }
+            .apps { padding: 40px 20px 40px; }
+            .card { padding: 28px 24px 24px; min-height: 280px; }
+            .card-status { top: 24px; right: 24px; }
+            .card h3 { font-size: 22px; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-base"></div>
+    <div class="bg-grid"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+
+    <header class="topbar">
+        <div class="topbar-brand">
+            <span class="dot"></span>
+            UroWorkNet
+        </div>
+        <div class="topbar-meta">v1 · 2026</div>
+    </header>
+
+    <section class="hero">
+        <div class="logo-mark">
+            <!-- Riñones estilizados con gradiente UroWorkNet -->
+            <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="kgrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#64B5F6"/>
+                        <stop offset="100%" stop-color="#34c759"/>
+                    </linearGradient>
+                </defs>
+                <path d="M22 12 C 14 12, 9 22, 11 33 C 13 44, 19 53, 26 51 C 30 50, 30 46, 27 41 C 24 36, 24 28, 27 22 C 29 17, 27 12, 22 12 Z"
+                      stroke="url(#kgrad)" stroke-width="3" stroke-linejoin="round" fill="none"/>
+                <path d="M42 12 C 50 12, 55 22, 53 33 C 51 44, 45 53, 38 51 C 34 50, 34 46, 37 41 C 40 36, 40 28, 37 22 C 35 17, 37 12, 42 12 Z"
+                      stroke="url(#kgrad)" stroke-width="3" stroke-linejoin="round" fill="none"/>
+                <circle cx="32" cy="32" r="2.5" fill="url(#kgrad)"/>
+            </svg>
+        </div>
+
+        <h1 class="brand">Uro<span class="brand-suffix">Work</span>Net</h1>
+        <p class="tagline">Sistema integral de gestión urológica.<br>Tres herramientas, una sola plataforma.</p>
+        <div class="doctor-pill">
+            <span class="badge-dot"></span>
+            Dr. Juan Carlos Riera M. · Urólogo
+        </div>
+
+        <div class="scroll-hint">Tus apps</div>
+    </section>
+
+    <main class="apps">
+        <span class="section-eyebrow">Plataforma</span>
+        <h2 class="section-title">Todo lo que necesitas<br>en un mismo lugar</h2>
+        <p class="section-subtitle">Tres herramientas integradas para automatizar y agilizar tu práctica urológica diaria.</p>
+
+        <div class="cards">
+
+            <a class="card" href="https://jcrieram-informes---uro-app-ofmtfr.streamlit.app/" target="_blank" rel="noopener">
+                <span class="card-status status-live"><span class="dot"></span>Disponible</span>
+                <div class="card-inner">
+                    <div class="card-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#64B5F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="9" y1="13" x2="15" y2="13"/>
+                            <line x1="9" y1="17" x2="15" y2="17"/>
+                            <line x1="9" y1="9" x2="11" y2="9"/>
+                        </svg>
+                    </div>
+                    <h3>Reportes Urológicos</h3>
+                    <p class="desc">Informes clínicos, solicitudes de cirugía y exámenes, derivaciones, alta médica, recetas. Documentos profesionales generados con IA en segundos.</p>
+                    <span class="card-cta">Abrir</span>
+                </div>
+            </a>
+
+            <a class="card" href="https://finanzas-jcrm.vercel.app/consulta/" target="_blank" rel="noopener">
+                <span class="card-status status-live"><span class="dot"></span>Disponible</span>
+                <div class="card-inner">
+                    <div class="card-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#64B5F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                            <line x1="12" y1="19" x2="12" y2="23"/>
+                            <line x1="8" y1="23" x2="16" y2="23"/>
+                        </svg>
+                    </div>
+                    <h3>ConsultaVoz</h3>
+                    <p class="desc">Graba la entrevista con el paciente y obtén la nota clínica lista para pegar en la ficha. Detecta primera consulta vs control y captura exámenes automáticamente.</p>
+                    <span class="card-cta">Abrir</span>
+                </div>
+            </a>
+
+            <div class="card disabled">
+                <span class="card-status status-soon"><span class="dot"></span>Próximamente</span>
+                <div class="card-inner">
+                    <div class="card-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#64B5F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                        </svg>
+                    </div>
+                    <h3>UroAtlas</h3>
+                    <p class="desc">IA experta con guidelines AUA y EAU. Discute casos clínicos complejos, analiza UroTAC y resonancias, y consulta literatura urológica con un toque.</p>
+                    <span class="card-cta">En desarrollo</span>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="features">
+            <div class="feature">
+                <div class="feature-num">3</div>
+                <div class="feature-label">Apps integradas</div>
+            </div>
+            <div class="feature">
+                <div class="feature-num">100%</div>
+                <div class="feature-label">Datos cifrados</div>
+            </div>
+            <div class="feature">
+                <div class="feature-num">24/7</div>
+                <div class="feature-label">Disponible</div>
+            </div>
+            <div class="feature">
+                <div class="feature-num">IA</div>
+                <div class="feature-label">En cada herramienta</div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p class="credit">Hecho con <span class="heart">♥</span> por <strong>Dr. Juan Carlos Riera M.</strong></p>
+        <p class="small">UroWorkNet · Sistema de Gestión Urológica · 2026</p>
+    </footer>
+</body>
+</html>
