@@ -3,6 +3,7 @@
     "api/transcribe.js": { "maxDuration": 60 },
     "api/extract.js": { "maxDuration": 30 },
     "api/send-email.js": { "maxDuration": 15 },
-    "api/verify-pin.js": { "maxDuration": 5 }
+    "api/verify-pin.js": { "maxDuration": 5 },
+    "api/news.js": { "maxDuration": 30 }
   }
 }
