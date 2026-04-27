@@ -49,16 +49,28 @@
             margin: 0 auto;
             min-height: 100vh;
             min-height: 100dvh;
-            padding: calc(var(--safe-top) + 16px) 20px calc(var(--safe-bottom) + 16px);
+            padding: calc(var(--safe-top) + 12px) 20px calc(var(--safe-bottom) + 16px);
             display: flex;
             flex-direction: column;
+        }
+
+        .top-credit {
+            text-align: center;
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: 0.2px;
+            color: #1e3a8a;
+            text-shadow:
+                0 1px 0 rgba(255,255,255,0.85),
+                0 2px 6px rgba(255,255,255,0.4);
+            margin-bottom: 6px;
         }
 
         /* Spacer empuja el contenido hacia el centro, dejando el logo de la imagen visible arriba */
         .hero-spacer {
             flex: 0 0 auto;
-            height: 42vh;
-            min-height: 280px;
+            height: 38vh;
+            min-height: 260px;
         }
 
         .card {
@@ -280,6 +292,7 @@
 </head>
 <body>
     <div class="container">
+        <div class="top-credit">Creado por Dr. Juan Carlos Riera M.</div>
         <div class="hero-spacer"></div>
 
         <div class="card record-card">
@@ -316,7 +329,6 @@
         </div>
 
         <footer>
-            <div class="credit">Creado por Dr. Juan Carlos Riera M.</div>
             <div class="privacy">Audio borrado del servidor tras procesar · Datos cifrados en tránsito</div>
         </footer>
     </div>
