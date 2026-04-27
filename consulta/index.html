@@ -2,98 +2,322 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Consulta">
-    <meta name="theme-color" content="#0d9488">
-    <title>Consulta - Asistente Clínico</title>
+    <meta name="apple-mobile-web-app-title" content="ConsultaVoz">
+    <meta name="theme-color" content="#1e40af">
+    <title>ConsultaVoz</title>
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .pulse-rec {
-            animation: pulse-rec 1.5s infinite;
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        :root {
+            --safe-top: env(safe-area-inset-top, 0px);
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+            --ios-blue: #007aff;
+            --ios-red: #ff3b30;
+            --ios-amber: #ff9500;
+            --ios-green: #34c759;
+            --ios-gray: #8e8e93;
+            --ink: #1c1c1e;
         }
-        @keyframes pulse-rec {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.6); }
-            50% { box-shadow: 0 0 0 18px rgba(220, 38, 38, 0); }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+            color: var(--ink);
+            background-color: #eef2f7;
+            background-image: url('bg.jpg');
+            background-size: cover;
+            background-position: center top;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            min-height: 100vh;
+            min-height: 100dvh;
+        }
+
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            min-height: 100vh;
+            min-height: 100dvh;
+            padding: calc(var(--safe-top) + 16px) 20px calc(var(--safe-bottom) + 16px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Spacer empuja el contenido hacia el centro, dejando el logo de la imagen visible arriba */
+        .hero-spacer {
+            flex: 0 0 auto;
+            height: 42vh;
+            min-height: 280px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.72);
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
+            border: 0.5px solid rgba(255, 255, 255, 0.6);
+            border-radius: 22px;
+            box-shadow:
+                0 1px 0 rgba(255,255,255,0.5) inset,
+                0 12px 40px rgba(15, 23, 42, 0.12),
+                0 2px 6px rgba(15, 23, 42, 0.06);
+            padding: 22px 20px;
+            margin-bottom: 14px;
+        }
+
+        .record-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .record-btn {
+            width: 132px;
+            height: 132px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(180deg, #ff5b52 0%, #ff3b30 100%);
+            color: #fff;
+            font-size: 19px;
+            font-weight: 600;
+            letter-spacing: 0.2px;
+            box-shadow:
+                0 1px 0 rgba(255,255,255,0.35) inset,
+                0 -2px 8px rgba(0,0,0,0.12) inset,
+                0 10px 28px rgba(255, 59, 48, 0.45),
+                0 4px 10px rgba(0,0,0,0.12);
+            transition: transform 0.12s ease, box-shadow 0.2s ease, background 0.2s ease;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .record-btn:active { transform: scale(0.96); }
+        .record-btn[data-state="recording"] {
+            background: linear-gradient(180deg, #ffb340 0%, #ff9500 100%);
+            box-shadow:
+                0 1px 0 rgba(255,255,255,0.35) inset,
+                0 -2px 8px rgba(0,0,0,0.12) inset,
+                0 10px 28px rgba(255, 149, 0, 0.5),
+                0 4px 10px rgba(0,0,0,0.12);
+            animation: pulse 1.6s infinite;
+        }
+        .record-btn[data-state="paused"] {
+            background: linear-gradient(180deg, #4cd964 0%, #34c759 100%);
+            box-shadow:
+                0 1px 0 rgba(255,255,255,0.35) inset,
+                0 -2px 8px rgba(0,0,0,0.12) inset,
+                0 10px 28px rgba(52, 199, 89, 0.45),
+                0 4px 10px rgba(0,0,0,0.12);
+        }
+        .record-btn:disabled {
+            opacity: 0.55;
+            transform: none;
+        }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 1px 0 rgba(255,255,255,0.35) inset, 0 -2px 8px rgba(0,0,0,0.12) inset, 0 10px 28px rgba(255,149,0,0.5), 0 4px 10px rgba(0,0,0,0.12), 0 0 0 0 rgba(255, 149, 0, 0.5); }
+            50%  { box-shadow: 0 1px 0 rgba(255,255,255,0.35) inset, 0 -2px 8px rgba(0,0,0,0.12) inset, 0 10px 28px rgba(255,149,0,0.5), 0 4px 10px rgba(0,0,0,0.12), 0 0 0 18px rgba(255, 149, 0, 0); }
+        }
+
+        .timer {
+            font-size: 38px;
+            font-weight: 300;
+            font-variant-numeric: tabular-nums;
+            color: var(--ink);
+            letter-spacing: -0.5px;
+            margin-top: 4px;
+        }
+
+        .status {
+            font-size: 14px;
+            color: var(--ios-gray);
+            min-height: 18px;
+            font-weight: 500;
+        }
+
+        .btn {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            border: none;
+            border-radius: 14px;
+            padding: 14px 22px;
+            font-size: 16px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: transform 0.1s ease, opacity 0.15s ease;
+            min-height: 50px;
+        }
+        .btn:active { transform: scale(0.97); }
+        .btn:disabled { opacity: 0.55; }
+
+        .btn-finish {
+            background: rgba(28, 28, 30, 0.92);
+            color: #fff;
+            padding-left: 28px;
+            padding-right: 28px;
+        }
+
+        .btn-primary {
+            background: var(--ios-blue);
+            color: #fff;
+        }
+        .btn-secondary {
+            background: rgba(120, 120, 128, 0.16);
+            color: var(--ios-blue);
+        }
+        .btn-row {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .processing-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
         }
         .spinner {
-            border: 3px solid rgba(255,255,255,0.3);
-            border-top-color: #fff;
+            width: 22px;
+            height: 22px;
             border-radius: 50%;
-            width: 18px;
-            height: 18px;
-            animation: spin 1s linear infinite;
-            display: inline-block;
-            vertical-align: middle;
+            border: 3px solid rgba(0, 122, 255, 0.2);
+            border-top-color: var(--ios-blue);
+            animation: spin 0.9s linear infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        .processing-text { font-size: 15px; font-weight: 600; color: var(--ink); }
+        .processing-sub { font-size: 12px; color: var(--ios-gray); margin-top: 2px; }
+
+        .result-title {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: var(--ios-gray);
+            margin: 0 0 10px 4px;
+        }
+        textarea#noteText {
+            width: 100%;
+            min-height: 240px;
+            border: none;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.85);
+            padding: 14px;
+            font: 15px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+            color: var(--ink);
+            resize: vertical;
+            outline: none;
+            box-shadow: 0 0 0 1px rgba(0,0,0,0.06) inset;
+        }
+        textarea#noteText:focus { box-shadow: 0 0 0 2px var(--ios-blue) inset; }
+
+        details.raw {
+            margin-top: 14px;
+        }
+        details.raw summary {
+            font-size: 12px;
+            color: var(--ios-gray);
+            cursor: pointer;
+            list-style: none;
+        }
+        details.raw summary::-webkit-details-marker { display: none; }
+        details.raw pre {
+            margin-top: 8px;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #444;
+            background: rgba(0,0,0,0.04);
+            padding: 10px;
+            border-radius: 10px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .error {
+            background: rgba(255, 59, 48, 0.12);
+            color: #b00020;
+            border: 1px solid rgba(255, 59, 48, 0.25);
+            border-radius: 14px;
+            padding: 12px 14px;
+            font-size: 14px;
+            margin-bottom: 14px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        footer {
+            margin-top: auto;
+            padding-top: 24px;
+            text-align: center;
+            font-size: 12px;
+            color: var(--ios-gray);
+            text-shadow: 0 1px 2px rgba(255,255,255,0.6);
+        }
+        footer .credit {
+            font-weight: 600;
+            color: #334155;
+        }
+        footer .privacy {
+            margin-top: 2px;
+            opacity: 0.85;
+        }
+
+        .hidden { display: none !important; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen">
-    <div class="max-w-2xl mx-auto p-4 sm:p-6">
-        <header class="text-center mb-6 pt-4">
-            <h1 class="text-2xl font-bold text-teal-700">Asistente de Consulta</h1>
-            <p class="text-sm text-slate-500">Graba la entrevista y obtén la nota lista para pegar</p>
-        </header>
+<body>
+    <div class="container">
+        <div class="hero-spacer"></div>
 
-        <!-- Recording panel -->
-        <div class="bg-white rounded-2xl shadow-md p-6 mb-4">
-            <div class="flex flex-col items-center">
-                <button id="primaryBtn" class="w-28 h-28 rounded-full bg-red-600 hover:bg-red-700 active:bg-red-800 text-white text-lg font-semibold shadow-lg transition flex items-center justify-center">
-                    Grabar
-                </button>
-                <div id="timer" class="mt-4 text-3xl font-mono text-slate-700">00:00</div>
-                <div id="status" class="mt-2 text-sm text-slate-500 min-h-[20px]">Listo para grabar</div>
-                <button id="finishBtn" class="hidden mt-4 px-6 py-3 rounded-lg bg-slate-800 hover:bg-slate-900 text-white font-medium transition">
-                    Finalizar
-                </button>
-            </div>
+        <div class="card record-card">
+            <button id="primaryBtn" class="record-btn" data-state="idle">Grabar</button>
+            <div id="timer" class="timer">00:00</div>
+            <div id="status" class="status">Listo para grabar</div>
+            <button id="finishBtn" class="btn btn-finish hidden">Finalizar</button>
         </div>
 
-        <!-- Processing panel -->
-        <div id="processingPanel" class="hidden bg-white rounded-2xl shadow-md p-5 mb-4">
-            <div class="flex items-center gap-3">
-                <div class="spinner !border-teal-600/30 !border-t-teal-600"></div>
+        <div id="errorPanel" class="error hidden"></div>
+
+        <div id="processingPanel" class="card hidden">
+            <div class="processing-row">
+                <div class="spinner"></div>
                 <div>
-                    <div id="processingText" class="font-medium text-slate-700">Procesando…</div>
-                    <div class="text-xs text-slate-500">Esto puede tardar unos segundos</div>
+                    <div id="processingText" class="processing-text">Procesando…</div>
+                    <div class="processing-sub">Esto puede tardar unos segundos</div>
                 </div>
             </div>
         </div>
 
-        <!-- Result panel -->
-        <div id="resultPanel" class="hidden bg-white rounded-2xl shadow-md p-5 mb-4">
-            <h2 class="font-semibold text-slate-700 mb-3">Nota clínica</h2>
-            <textarea id="noteText" class="w-full h-72 p-3 border border-slate-300 rounded-lg text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-teal-500" spellcheck="true"></textarea>
-            <div class="flex flex-col sm:flex-row gap-2 mt-3">
-                <button id="copyBtn" class="flex-1 bg-teal-600 hover:bg-teal-700 text-white font-medium py-3 rounded-lg transition">
-                    Copiar todo
-                </button>
-                <button id="emailBtn" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-3 rounded-lg transition">
-                    Enviar por email
-                </button>
-                <button id="newBtn" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-3 px-4 rounded-lg transition">
-                    Nueva consulta
-                </button>
+        <div id="resultPanel" class="card hidden">
+            <p class="result-title">Nota clínica</p>
+            <textarea id="noteText" spellcheck="true"></textarea>
+            <div class="btn-row">
+                <button id="copyBtn" class="btn btn-primary">Copiar todo</button>
+                <button id="emailBtn" class="btn btn-secondary">Enviar por email</button>
+                <button id="newBtn" class="btn btn-secondary">Nueva consulta</button>
             </div>
-            <details class="mt-4">
-                <summary class="text-xs text-slate-500 cursor-pointer">Ver transcripción cruda</summary>
-                <pre id="rawTranscript" class="mt-2 text-xs text-slate-600 bg-slate-50 p-3 rounded whitespace-pre-wrap"></pre>
+            <details class="raw">
+                <summary>Ver transcripción cruda</summary>
+                <pre id="rawTranscript"></pre>
             </details>
         </div>
 
-        <!-- Error panel -->
-        <div id="errorPanel" class="hidden bg-red-50 border border-red-200 text-red-700 rounded-2xl p-4 mb-4 text-sm"></div>
-
-        <footer class="text-center text-xs text-slate-400 mt-8 pb-8">
-            Audio borrado del servidor tras procesar · Datos cifrados en tránsito
+        <footer>
+            <div class="credit">Creado por Dr. Juan Carlos Riera M.</div>
+            <div class="privacy">Audio borrado del servidor tras procesar · Datos cifrados en tránsito</div>
         </footer>
     </div>
 

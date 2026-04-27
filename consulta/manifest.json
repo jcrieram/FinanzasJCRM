@@ -1,13 +1,13 @@
 {
-  "name": "Asistente de Consulta",
-  "short_name": "Consulta",
-  "description": "Graba entrevistas clínicas y genera la nota lista para pegar",
+  "name": "ConsultaVoz",
+  "short_name": "ConsultaVoz",
+  "description": "Graba la entrevista clínica y obtén la nota lista para pegar",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#f8fafc",
-  "theme_color": "#0d9488",
+  "background_color": "#eef2f7",
+  "theme_color": "#1e40af",
   "icons": [
     {
       "src": "icon-192.png",
