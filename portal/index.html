@@ -159,33 +159,10 @@
             position: relative;
         }
 
-        .logo-wrap {
-            margin-bottom: 28px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            animation: logoFloat 5s ease-in-out infinite, fadeInUp 1s ease-out;
-        }
-        .logo-img {
-            max-width: 360px;
-            width: min(78vw, 360px);
-            height: auto;
-            display: block;
-            border-radius: 28px;
-            background: #ffffff;
-            padding: 22px 26px;
-            box-shadow:
-                0 1px 0 rgba(255,255,255,0.5) inset,
-                0 24px 80px rgba(0, 113, 227, 0.45),
-                0 8px 24px rgba(0, 0, 0, 0.35);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-        }
-
-        /* Fallback (mientras no esté logo.png) */
         .logo-mark {
             width: 100px;
             height: 100px;
-            display: none;
+            display: flex;
             align-items: center;
             justify-content: center;
             background: linear-gradient(145deg, rgba(0, 113, 227, 0.25), rgba(52, 199, 89, 0.20));
@@ -200,7 +177,6 @@
                 0 8px 24px rgba(52, 199, 89, 0.25);
             animation: logoFloat 5s ease-in-out infinite, fadeInUp 1s ease-out;
         }
-        .logo-mark.fallback-active { display: flex; }
         @keyframes logoFloat {
             0%, 100% { transform: translateY(0); }
             50%      { transform: translateY(-8px); }
@@ -757,14 +733,7 @@
     </header>
 
     <section class="hero">
-        <div class="logo-wrap">
-            <img src="Logo.PNG"
-                 alt="UroWorkNet"
-                 class="logo-img"
-                 onerror="this.style.display='none'; document.getElementById('logoFallback').classList.add('fallback-active'); document.getElementById('brandFallback').style.display='block';">
-        </div>
-
-        <div class="logo-mark" id="logoFallback">
+        <div class="logo-mark">
             <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <defs>
                     <linearGradient id="kgrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -780,9 +749,9 @@
             </svg>
         </div>
 
-        <h1 class="brand" id="brandFallback" style="display:none">UroWorkNet</h1>
+        <h1 class="brand">UroWorkNet</h1>
 
-        <p class="tagline">Tres herramientas, una sola plataforma.</p>
+        <p class="tagline">Sistema integral de gestión urológica.<br>Tres herramientas, una sola plataforma.</p>
         <div class="doctor-pill">
             <span class="badge-dot"></span>
             Dr. Juan Carlos Riera M. · Urólogo
