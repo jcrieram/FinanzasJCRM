@@ -62,10 +62,8 @@ libros de urología. El médico le pasa un caso (texto + imágenes
 opcionales) y obtiene opinión basada en las fuentes.
 
 Decisiones acordadas:
-1. **Fuentes**: ~114 PDFs nativos del usuario (guidelines AUA y EAU +
-   libros de urología "biblia" + imagenología). Tamaño 10–25 MB,
-   90–1000 páginas, mezcla español/inglés. Están en Google Drive del
-   usuario (Mac).
+1. **Fuentes**: PDFs nativos del usuario (guidelines AUA y EAU + libros
+   de urología "biblia" + imagenología). En Google Drive del usuario.
 2. **Modelo**: a decidir — Claude Sonnet vs GPT-4. (Tarea de Claude
    recomendar.)
 3. **UI deseada**: 1 caja para caso clínico + 1 área para adjuntar
@@ -75,12 +73,23 @@ Decisiones acordadas:
    revisar luego.
 6. **Idioma**: ambos (es/en).
 
-Pendiente operativo (interrumpido a mitad):
-- El usuario estaba revisando la carpeta "AUA Non-Oncology" en Drive y
-  pidió que le diéramos los **números de los archivos a descartar**
-  para limpiar el set antes de ingestar. Esa lista quedó sin entregar
-  cuando se cortó la sesión. **Hay que retomar desde ahí**: pedirle
-  imágenes/listado actualizado y devolver sólo los números.
+#### Inventario de fuentes — CERRADO (28 abr 2026)
+| Carpeta | Antes | Después | Eliminados |
+|---|---|---|---|
+| EAU Pocket | 40 | 20 | 20 (hechos en sesión previa) |
+| AUA Non-Onc | 45 | 38 | 7 |
+| AUA Onc | 22 | 17 | 5 |
+| Libros uro | 8 | 7 | 1 (duplicado Ambulatory Urology) |
+| **Total** | **115** | **82** | **33** |
+
+Archivos borrados de AUA Non-Onc: Testosterone-Deficiency-JU,
+URETHRAL STRICTURE Amendment Summary, GUI-23-8333 SUI Ammendment,
+Microhematuria Amendment SUMMARY-Final, Kidney-Stones-Medica-
+Management-Guideline, ICBPS Guideline, ED-JU.
+
+Archivos borrados de AUA Onc: Renal-Mass-JU-Pt1, Renal-Mass-JU-Pt2,
+GUI-24-0075 MIBC Algorithm, EDPC Guideline 2026 Amendment Summary,
+APC Amendment Summary 041423.
 
 Pendiente técnico (sin empezar):
 - Estrategia de ingesta: probablemente RAG con vector store (chunking
@@ -139,8 +148,7 @@ sentadas)
 
 ## 4. Próximas acciones propuestas (cuando se retome)
 
-1. Cerrar el filtrado de PDFs de AUA Non-Onc (el usuario quería sólo
-   los números a borrar — pidió la lista varias veces).
+1. ~~Cerrar el filtrado de PDFs (Non-Onc, Onc, Libros).~~ **Hecho 28 abr.**
 2. Decidir arquitectura de UroAtlas (RAG + modelo + storage).
 3. Definir mecanismo de login único del portal.
 4. Decidir si Informes Urológicos se migra a Vercel o se enlaza desde
