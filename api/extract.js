@@ -127,12 +127,12 @@ Reglas estrictas:
 - Cada etiqueta de sección (Antecedentes médicos:, Alergias a medicamentos:, etc.) va al inicio de su propia línea.
 - Los hallazgos de "Exámenes:" van uno por línea, cada uno empezando con un guion y un espacio ("- ").
 - Usa español médico claro y conciso.
-- RECORDATORIO REGLA #0: NO inventes datos. Si un campo no se mencionó en la conversación, OMÍTELO de la nota (no escribas "no consigna" para tratamiento o exámenes si no aplica). Para los campos del Formato A (antecedentes, alergias, quirúrgicos, tabaquismo), sí escribe "niega" o "no refiere" si no se mencionaron.
+- RECORDATORIO REGLA #0: NO inventes datos. Si un campo no se mencionó en la conversación, OMÍTELO completamente de la nota. NUNCA escribas "no consigna", "no refiere", "no se especifica", "sin datos" ni frases similares de relleno. Para los campos de antecedentes del Formato A (médicos, alergias, quirúrgicos, tabaquismo), escribe "niega" SOLO si el paciente lo dijo explícitamente; si no se mencionó, omite el campo.
 - Si no se realizó examen físico, omite esa oración.
 - Si no se dictaron exámenes, omite la sección "Exámenes:" entera. NO la rellenes con valores "típicos" ni con los ejemplos del prompt.
 - Si no se indicó plan, omite la oración del plan. NO inventes tratamientos ni estudios solicitados.
 - Respeta nombres exactos de medicamentos, dosis, marcas, cifras y unidades tal cual se mencionaron en la transcripción real.
-- Si la transcripción es muy ruidosa o incompleta para un campo, escribe "no consigna" en ese campo y continúa.
+- Si la transcripción es muy ruidosa o incompleta para un campo, OMITE ese campo. Nunca uses "no consigna" como relleno.
 
 ═══════════════════════════════════════════════════════════════
 VERIFICACIÓN FINAL — Antes de devolver tu respuesta:
