@@ -232,16 +232,18 @@ El médico puede:
 
 ---
 
-## 9. Decisiones pendientes (para confirmar antes de empezar Fase 1)
+## 9. Decisiones tomadas (28 abr 2026)
 
-1. ¿El usuario está de acuerdo con Supabase como base de todo?
-   (Implica crear cuenta gratuita.)
-2. ¿Va con magic link como método de login, o prefiere
-   email + password tradicional?
-3. ¿La UI de UroAtlas debe seguir el estilo iOS de ConsultaVoz, o
-   queremos algo distinto (más tipo "consola clínica")?
-4. ¿Los 82 PDFs los subes tú a Supabase Storage manualmente, o
-   preferís que armemos un script que los baje desde Drive automáticamente?
+1. **Plataforma base**: Supabase. Confirmado.
+2. **Método de login**: email + contraseña tradicional (no magic link).
+3. **Estilo de UI**: médico profesional serio. Sin frosted glass ni
+   gradientes iOS. Pensar más en una consola clínica: fondo blanco
+   o gris muy claro, tipografía legible (Inter o similar), color
+   primario azul marino, densidad alta de información, tablas y
+   tarjetas con bordes definidos. Estética tipo Epic/Cerner pero
+   más moderna.
+4. **Carga de PDFs**: el Dr. los sube manualmente a Supabase
+   Storage. Ver instrucciones detalladas en `UROATLAS_SETUP.md`.
 
 ---
 
