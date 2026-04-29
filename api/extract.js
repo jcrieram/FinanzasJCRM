@@ -44,7 +44,7 @@ FORMATO A — Primera consulta. Estructura con saltos de línea (\n) entre secci
 [Si se mencionaron alergias o el paciente las negó: 'Alergias a medicamentos: [especificar o niega]'. Si no se mencionó: OMITIR.]
 [Si se mencionaron antecedentes quirúrgicos o el paciente los negó: 'Antecedentes quirúrgicos: [especificar o niega]'. Si no se mencionó: OMITIR.]
 [Si se mencionó tabaquismo o el paciente lo negó: 'Tabaquismo: [especificar cigarrillos/día y años, o niega]'. Si no se mencionó: OMITIR.]
-[Si hubo examen físico: 'Al examen físico se evidencia…' incluyendo tacto rectal/próstata o examen de genitales según se haya descrito.]
+[SOLO si el médico dictó hallazgos del examen físico textualmente en la transcripción: 'Al examen físico se evidencia [exactamente lo que se dictó].' Si NO se dictó ningún hallazgo de examen físico: OMITE esta oración completamente. NUNCA inventes tacto rectal, presión arterial, peso, frecuencia cardíaca, ni ningún hallazgo físico que no haya sido mencionado.]
 [Si se dictaron resultados de estudios:
 'Exámenes:
 - [hallazgo o valor 1]
@@ -58,7 +58,7 @@ CRÍTICO para FORMATO A — campos de antecedentes: NUNCA escribas "niega" si el
 FORMATO B — Consulta control. Estructura con saltos de línea:
 "Paciente acude a consulta de control [SOLO si el problema X se identifica explícitamente en la transcripción; si no, deja la oración como 'Paciente acude a consulta de control.'].
 [Si el paciente describió evolución, adherencia, efectos adversos, mejorías o empeoramientos: 'Refiere [solo lo que efectivamente dijo, sin inventar].' Si NO refirió nada concreto: OMITE esta oración por completo.]
-[Si hubo examen físico: 'Al examen físico se evidencia…']
+[SOLO si el médico dictó hallazgos del examen físico textualmente: 'Al examen físico se evidencia [exactamente lo que se dictó].' Si no se dictó: OMITE.]
 [Si se dictaron resultados:
 'Exámenes:
 - [hallazgo o valor 1]
