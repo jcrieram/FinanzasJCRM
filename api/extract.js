@@ -247,16 +247,26 @@ function sanitizeNote(note, transcript) {
 
     const lines = note.split('\n');
     const cleaned = [];
+    let firstLineDropped = false;
 
     for (let line of lines) {
         const lower = line.toLowerCase().trim();
 
-        // 1) Líneas que solo dicen "no consigna" / "edad no consigna" / placeholders.
-        if (/^se trata de paciente de (edad )?no\s+(consigna|especificad|refier|determinad)/i.test(line)) continue;
-        if (/^se indica como tratamiento\s+no\s+consigna/i.test(line)) continue;
-        if (/no se (consigna|especifica|refiere|determina|indica)\s*\.?$/i.test(lower)) continue;
+        // 1) CUALQUIER línea con "no consigna", "no especifica", "no refiere" como
+        //    relleno (no como negación clínica) -> eliminar la línea completa.
+        if (/\bno\s+consigna\b/i.test(lower)) {
+            if (/^se trata de paciente/i.test(lower)) firstLineDropped = true;
+            continue;
+        }
+        if (/^se trata de paciente de\s+(no\s+(especificad|determinad)|edad\s+no|sin\s+(edad|datos))/i.test(lower)) {
+            firstLineDropped = true;
+            continue;
+        }
 
-        // 2) Antecedentes "niega" sin que la transcripción mencione el tema correspondiente.
+        // 2) Aperturas vacías de Formato A sin edad ni motivo claro.
+        if (/^se trata de paciente de\s+\[/i.test(lower)) { firstLineDropped = true; continue; }
+
+        // 3) Antecedentes "niega" sin que la transcripción mencione el tema correspondiente.
         if (/^antecedentes m[eé]dicos?:\s*niega\.?$/i.test(line)) {
             if (!hasMedicalHistoryMention(tNorm)) continue;
         }
@@ -270,14 +280,25 @@ function sanitizeNote(note, transcript) {
             if (!hasSmokingMention(tNorm)) continue;
         }
 
-        // 3) "no consigna" embebido en una oración -> reescribir o eliminar la frase.
-        line = line.replace(/\bno\s+consigna\b/gi, '').replace(/\s{2,}/g, ' ').replace(/\s+\./g, '.');
+        // 4) Limpieza dentro de la oración (por si se filtran fragmentos).
+        line = line
+            .replace(/\s*,?\s*pero\s+no\s+consigna\b/gi, '')
+            .replace(/\bno\s+(consigna|especifica|refiere|determina)\b/gi, '')
+            .replace(/\s{2,}/g, ' ')
+            .replace(/\s+\./g, '.')
+            .replace(/\(\s*\)/g, '')
+            .trim();
 
-        cleaned.push(line);
+        if (line) cleaned.push(line);
     }
 
-    // 4) Colapsar líneas vacías repetidas.
-    return cleaned.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+    // 5) Si quitamos la apertura de Formato A, anteponer una apertura neutral.
+    let result = cleaned.join('\n');
+    if (firstLineDropped && cleaned.length && !/^paciente acude/i.test(cleaned[0])) {
+        result = 'Paciente acude a consulta de control.\n' + result;
+    }
+
+    return result.replace(/\n{3,}/g, '\n\n').trim();
 }
 
 function hasMedicalHistoryMention(t) {
