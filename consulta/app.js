@@ -86,6 +86,7 @@ let elapsedMs = 0;
 let segmentStart = 0;
 let timerInterval = null;
 let wakeLock = null;
+let pickedMime = '';
 
 function showError(msg) {
     errorPanel.textContent = msg;
@@ -172,11 +173,12 @@ async function startRecording() {
     } catch (e) {
         mediaRecorder = new MediaRecorder(stream);
     }
+    pickedMime = mimeType || mediaRecorder.mimeType || '';
     chunks = [];
     elapsedMs = 0;
     mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
     mediaRecorder.onstop = handleStop;
-    mediaRecorder.start();
+    mediaRecorder.start(1000);
 
     segmentStart = Date.now();
     timerEl.textContent = '00:00';
@@ -215,11 +217,16 @@ function finishRecording() {
 }
 
 async function handleStop() {
-    const mime = mediaRecorder.mimeType || 'audio/webm';
+    const mime = pickedMime || mediaRecorder.mimeType || 'audio/mp4';
     const blob = new Blob(chunks, { type: mime });
     chunks = [];
 
     const sizeMB = (blob.size / 1024 / 1024).toFixed(2);
+    if (blob.size === 0) {
+        showError('No se grabó audio. Intenta de nuevo (revisa permiso del micrófono).');
+        setUI('idle');
+        return;
+    }
     if (blob.size > 24 * 1024 * 1024) {
         showError(`Audio muy largo (${sizeMB} MB). El límite es 25 MB.`);
         setUI('idle');
@@ -246,14 +253,19 @@ async function handleStop() {
 }
 
 async function transcribe(blob, mime) {
-    const ext = mime.includes('mp4') ? 'm4a' : mime.includes('webm') ? 'webm' : mime.includes('ogg') ? 'ogg' : 'audio';
+    const ext = mime.includes('mp4') || mime.includes('aac') ? 'm4a'
+        : mime.includes('webm') ? 'webm'
+        : mime.includes('ogg') ? 'ogg'
+        : mime.includes('wav') ? 'wav'
+        : 'm4a';
     const fd = new FormData();
     fd.append('file', blob, `consulta.${ext}`);
+    const sizeKB = (blob.size / 1024).toFixed(0);
     const res = await fetch('/api/transcribe', { method: 'POST', headers: withPinHeaders(), body: fd });
     if (res.status === 401) { clearPin(); throw new Error('Sesión expirada. Vuelve a abrir la app.'); }
     if (!res.ok) {
         const txt = await res.text();
-        throw new Error(`Transcripción falló (${res.status}): ${txt}`);
+        throw new Error(`Transcripción falló (${res.status}) [mime=${mime}, ext=${ext}, ${sizeKB}KB]: ${txt}`);
     }
     const data = await res.json();
     return data.text;
