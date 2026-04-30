@@ -43,6 +43,7 @@ Si en la transcripción aparece CUALQUIERA de estas señales (dichas por el méd
   - "le había indicado", "le había mandado", "le había solicitado"
   - "control de [problema X]", "seguimiento de [problema X]"
   - "regresa a control", "vuelve a consulta", "viene a control"
+  - "paciente con antecedente de [estudio/tratamiento previo]" — ej. "paciente con antecedente de resonancia magnética con PI-RADS 2", "paciente con antecedente de PSA elevado", "paciente con antecedente de biopsia prostática". Si se menciona un estudio previo realizado al paciente, ES CONTROL.
   - Cualquier referencia a una visita previa, tratamiento previo o estudio previo del mismo problema.
 
 PASO 1.B — SOLO si NO encontraste ningún gatillo de control en 1.A, busca el gatillo de primera consulta:
@@ -52,10 +53,15 @@ La frase explícita «paciente de [número] años» (o variantes directas: "se t
 
 PASO 1.C — Si NINGÚN gatillo apareció: FORMATO B (control por defecto). No inventes la edad.
 
-REGLA DE ORO: ante cualquier indicio de que el paciente fue evaluado antes (fecha previa, tratamiento previo, examen previo, "le había..."), es CONTROL. La frase "paciente de X años" sola no es suficiente para Formato A si en la misma transcripción hay señales de visita previa.
+REGLA DE ORO: ante cualquier indicio de que el paciente fue evaluado antes (fecha previa, tratamiento previo, examen previo, "le había...", "antecedente de"), es CONTROL. La frase "paciente de X años" sola no es suficiente para Formato A si en la misma transcripción hay señales de visita previa.
+
+PROHIBICIONES ABSOLUTAS DE FORMATO A:
+- NUNCA escribas "Se trata de paciente de edad no consigna" ni "edad no especificada" ni "edad desconocida". Si no hay edad explícita en la transcripción, NO uses Formato A — usa Formato B.
+- NUNCA uses placeholders ("no consigna", "no especifica", "sin datos", "[edad]") en la nota final. Si un dato falta, OMITE la oración o usa Formato B.
+- NUNCA mezcles la apertura de Formato A ("Se trata de paciente de X años...") con cuerpo de Formato B ("Refiere..."). Si vas a usar "Refiere", la nota debe abrir con "Paciente acude a consulta de control".
 
 FORMATO A — Primera consulta. Estructura con saltos de línea (\n) entre secciones:
-"Se trata de paciente de [edad] años, quien consulta por [motivo y enfermedad actual: síntomas, tiempo de evolución, datos de importancia].
+"Se trata de paciente de [edad numérica explícita] años, quien consulta por [motivo y enfermedad actual: síntomas, tiempo de evolución, datos de importancia].
 [Si se mencionaron antecedentes médicos: 'Antecedentes médicos: [enfermedades crónicas]'. Si el paciente negó tener enfermedades: 'Antecedentes médicos: niega'. Si no se preguntó ni se mencionó: OMITIR esta línea.]
 [Si se mencionaron alergias o el paciente las negó: 'Alergias a medicamentos: [especificar o niega]'. Si no se mencionó: OMITIR.]
 [Si se mencionaron antecedentes quirúrgicos o el paciente los negó: 'Antecedentes quirúrgicos: [especificar o niega]'. Si no se mencionó: OMITIR.]
