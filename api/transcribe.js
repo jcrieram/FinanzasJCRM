@@ -55,6 +55,11 @@ async function streamToBuffer(req) {
     return injectFields(buf, req.headers['content-type']);
 }
 
+// Vocabulario urológico para sesgar el reconocimiento (laboratorios,
+// imágenes, mediciones, diagnósticos, síntomas, medicamentos y
+// procedimientos frecuentes en la consulta del Dr. Juan Carlos Riera).
+const VOCAB_PROMPT = 'Consulta urológica entre médico urólogo (Dr. Juan Carlos Riera) y paciente, en español. Términos frecuentes: PSA total, PSA libre, creatinina, BUN, urea, hemoglobina, hematocrito, glucosa, HbA1c, testosterona, sodio, potasio, calcio, colesterol, LDL, HDL, triglicéridos, TSH, transaminasas, bilirrubinas, leucocitos, plaquetas, examen de orina, urocultivo, ecografía renal, ecografía vesical, ecografía transrectal, ecografía prostática, tomografía, uroTAC, resonancia magnética, urografía, uroflujometría, Qmax, residuo postmiccional, volumen miccional, próstata, riñón, vejiga, uréter, hiperplasia prostática benigna, HPB, nicturia, disuria, polaquiuria, urgencia miccional, hematuria, calibre miccional, retención urinaria, incontinencia urinaria, infección urinaria, prostatitis, cistitis, pielonefritis, litiasis renal, urolitiasis, cáncer de próstata, biopsia prostática, tacto rectal, tamsulosina, finasteride, dutasteride, sildenafil, tadalafil, ciprofloxacino, nitrofurantoína, fosfomicina, doxazosina, oxibutinina, solifenacina, mirabegron, bicalutamida, enzalutamida, leuprolide, RTU prostática, prostatectomía, nefrectomía, ureterolitotomía, litotricia, mililitros, centímetros cúbicos.';
+
 function injectFields(buf, contentType) {
     const boundaryMatch = contentType.match(/boundary=(?:"([^"]+)"|([^;]+))/);
     if (!boundaryMatch) return buf;
@@ -65,13 +70,16 @@ function injectFields(buf, contentType) {
     const extra =
         `--${boundary}\r\n` +
         `Content-Disposition: form-data; name="model"\r\n\r\n` +
-        `whisper-1\r\n` +
+        `gpt-4o-transcribe\r\n` +
         `--${boundary}\r\n` +
         `Content-Disposition: form-data; name="language"\r\n\r\n` +
         `es\r\n` +
         `--${boundary}\r\n` +
         `Content-Disposition: form-data; name="response_format"\r\n\r\n` +
-        `json\r\n`;
+        `json\r\n` +
+        `--${boundary}\r\n` +
+        `Content-Disposition: form-data; name="prompt"\r\n\r\n` +
+        `${VOCAB_PROMPT}\r\n`;
 
     const closing = `--${boundary}--`;
     const idx = text.lastIndexOf(closing);
