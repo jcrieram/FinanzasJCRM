@@ -220,7 +220,7 @@ export default async function handler(req, res) {
             },
             body: JSON.stringify({
                 model: 'gpt-4o',
-                temperature: 0.1,
+                temperature: 0,
                 messages: [
                     { role: 'system', content: SYSTEM_PROMPT },
                     { role: 'user', content: `Transcripción de la entrevista:\n\n${transcript}` }
@@ -231,9 +231,64 @@ export default async function handler(req, res) {
         if (!upstream.ok) {
             return res.status(upstream.status).json({ error: data.error?.message || 'Error de OpenAI' });
         }
-        const note = data.choices?.[0]?.message?.content?.trim() || '';
+        const rawNote = data.choices?.[0]?.message?.content?.trim() || '';
+        const note = sanitizeNote(rawNote, transcript);
         return res.status(200).json({ note });
     } catch (e) {
         return res.status(500).json({ error: e.message });
     }
+}
+
+// Guardrail determinístico: limpia placeholders, antecedentes "niega" sin
+// soporte en la transcripción y oraciones de relleno tipo "no consigna".
+function sanitizeNote(note, transcript) {
+    if (!note) return note;
+    const tNorm = transcript.toLowerCase();
+
+    const lines = note.split('\n');
+    const cleaned = [];
+
+    for (let line of lines) {
+        const lower = line.toLowerCase().trim();
+
+        // 1) Líneas que solo dicen "no consigna" / "edad no consigna" / placeholders.
+        if (/^se trata de paciente de (edad )?no\s+(consigna|especificad|refier|determinad)/i.test(line)) continue;
+        if (/^se indica como tratamiento\s+no\s+consigna/i.test(line)) continue;
+        if (/no se (consigna|especifica|refiere|determina|indica)\s*\.?$/i.test(lower)) continue;
+
+        // 2) Antecedentes "niega" sin que la transcripción mencione el tema correspondiente.
+        if (/^antecedentes m[eé]dicos?:\s*niega\.?$/i.test(line)) {
+            if (!hasMedicalHistoryMention(tNorm)) continue;
+        }
+        if (/^alergias?( a medicamentos)?:\s*niega\.?$/i.test(line)) {
+            if (!hasAllergyMention(tNorm)) continue;
+        }
+        if (/^antecedentes quir[uú]rgicos?:\s*niega\.?$/i.test(line)) {
+            if (!hasSurgeryMention(tNorm)) continue;
+        }
+        if (/^tabaquismo:\s*niega\.?$/i.test(line)) {
+            if (!hasSmokingMention(tNorm)) continue;
+        }
+
+        // 3) "no consigna" embebido en una oración -> reescribir o eliminar la frase.
+        line = line.replace(/\bno\s+consigna\b/gi, '').replace(/\s{2,}/g, ' ').replace(/\s+\./g, '.');
+
+        cleaned.push(line);
+    }
+
+    // 4) Colapsar líneas vacías repetidas.
+    return cleaned.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+
+function hasMedicalHistoryMention(t) {
+    return /\b(diabetes|hipertensi|presi[oó]n alta|colesterol|tiroid|asma|epoc|cardiac|coraz[oó]n|c[aá]ncer|tumor|enfermedad|cr[oó]nic|antecedent|padec)/i.test(t);
+}
+function hasAllergyMention(t) {
+    return /\b(alergi|al[eé]rgic|alergic)/i.test(t);
+}
+function hasSurgeryMention(t) {
+    return /\b(operad|operaci[oó]n|cirug|quir[uú]rgic|interven|prostatect|nefrect|colecist|apendi|hernia|biopsia)/i.test(t);
+}
+function hasSmokingMention(t) {
+    return /\b(fum|tabaq|cigarr|nicotin|tabaco)/i.test(t);
 }
