@@ -536,7 +536,6 @@
         @media (max-width: 640px) {
             .hero { padding: 100px 20px 40px; }
             .topbar { padding: 14px 18px; }
-            .topbar-meta { display: none; }
             .apps { padding: 40px 20px 40px; }
             .card { padding: 28px 24px 24px; min-height: 280px; }
             .card-status { top: 24px; right: 24px; }
@@ -729,7 +728,9 @@
             <span class="dot"></span>
             UroWorkNet
         </div>
-        <div class="topbar-meta" id="authBox">v1 · 2026</div>
+        <div class="topbar-meta" id="authBox">
+            <a href="/portal/login.html" style="color:var(--accent);text-decoration:none;font-weight:600;font-size:13px;padding:8px 16px;border:1px solid rgba(100,181,246,0.4);border-radius:8px;background:rgba(100,181,246,0.1);">Iniciar sesión →</a>
+        </div>
     </header>
 
     <section class="hero">
@@ -909,24 +910,24 @@
     </script>
 
     <script type="module">
-        import { getCurrentUser, signOut } from '/lib/supabase-client.js';
-        const authBox = document.getElementById('authBox');
+        // Si hay sesión, reemplazamos el botón "Iniciar sesión" por email + Salir.
+        // Si no hay sesión o falla algo, queda el botón por defecto del HTML.
         try {
+            const { getCurrentUser, signOut } = await import('/lib/supabase-client.js');
             const user = await getCurrentUser();
             if (user) {
+                const authBox = document.getElementById('authBox');
                 authBox.innerHTML = `
-                    <span style="margin-right:12px;">${user.email}</span>
-                    <a href="#" id="logoutLink" style="color:inherit;text-decoration:underline;">Salir</a>
+                    <span style="margin-right:12px;font-size:13px;color:var(--text-secondary);">${user.email}</span>
+                    <a href="#" id="logoutLink" style="color:var(--accent);text-decoration:none;font-size:13px;padding:6px 14px;border:1px solid rgba(100,181,246,0.4);border-radius:8px;">Salir</a>
                 `;
                 document.getElementById('logoutLink').addEventListener('click', (e) => {
                     e.preventDefault();
                     signOut();
                 });
-            } else {
-                authBox.innerHTML = `<a href="/portal/login.html" style="color:var(--accent);text-decoration:none;font-weight:600;">Iniciar sesión →</a>`;
             }
-        } catch {
-            authBox.innerHTML = `<a href="/portal/login.html" style="color:var(--accent);text-decoration:none;font-weight:600;">Iniciar sesión →</a>`;
+        } catch (e) {
+            console.warn('Auth check skipped:', e);
         }
     </script>
 
