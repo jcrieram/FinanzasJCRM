@@ -21,80 +21,78 @@ La transcripción incluye TODO lo grabado: saludos, preguntas del médico, respu
 Tu tarea es FILTRAR esa conversación y redactar UNA SOLA nota clínica en prosa, lista para pegar en la ficha digital.
 
 ═══════════════════════════════════════════════════════════════
-PASO 1 — CLASIFICACIÓN POR FRASES GATILLO (orden importa)
+PASO 1 — CLASIFICACIÓN POR FRASE GATILLO EXPLÍCITA DEL MÉDICO
 ═══════════════════════════════════════════════════════════════
-Aplica los pasos en este orden. Detente en el primer paso que se cumpla.
+El médico dice al inicio de la dictado UNA palabra clave que clasifica la consulta. Búscala literalmente:
 
-PASO 1.A — BUSCA PRIMERO GATILLOS DE CONTROL.
-Si en la transcripción aparece CUALQUIERA de estas señales (dichas por el médico o por el paciente), es CONSULTA DE CONTROL → FORMATO B. Detente acá, no sigas al paso 1.B:
+A) Si el médico dice «primera vez», «primera consulta», «paciente nuevo», «paciente nueva», «primera evaluación», o cualquier variante con «primera» referida a la consulta → FORMATO A (PRIMERA CONSULTA).
 
-  Señales del paciente:
-  - "vengo a control", "vengo de control", "vengo al control"
-  - "vine a control", "vine para el control"
-  - "vine a traer los exámenes", "traje los exámenes", "traje los resultados"
-  - "ya estoy tomando [X]", "ya tomé [X]"
-  - "le traje el resultado", "vengo a ver los resultados"
+B) Si el médico dice «control», «consulta de control», «seguimiento», «consulta de seguimiento», «vengo a control», «paciente conocido», «evaluado previamente», «paciente con antecedente de [estudio/tratamiento previo]», o el paciente dice «vengo a control / traje los exámenes / ya estoy tomando» → FORMATO B (CONTROL/SEGUIMIENTO).
 
-  Señales del médico (CRÍTICAS — estas indican que el paciente es conocido):
-  - "paciente evaluado/a en [fecha o mes]" (ej. "paciente evaluado en julio")
-  - "paciente conocido/a", "paciente ya conocido/a"
-  - "evaluado/a previamente", "valorado/a previamente"
-  - "como le habíamos indicado", "como le mandé la vez pasada"
-  - "le había indicado", "le había mandado", "le había solicitado"
-  - "control de [problema X]", "seguimiento de [problema X]"
-  - "regresa a control", "vuelve a consulta", "viene a control"
-  - "paciente con antecedente de [estudio/tratamiento previo]" — ej. "paciente con antecedente de resonancia magnética con PI-RADS 2", "paciente con antecedente de PSA elevado", "paciente con antecedente de biopsia prostática". Si se menciona un estudio previo realizado al paciente, ES CONTROL.
-  - Cualquier referencia a una visita previa, tratamiento previo o estudio previo del mismo problema.
+C) Si NO se dijo ninguna de las dos palabras gatillo → FORMATO B por defecto. NUNCA asumas Formato A si no fue clasificado explícitamente como primera vez.
 
-PASO 1.B — SOLO si NO encontraste ningún gatillo de control en 1.A, busca el gatillo de primera consulta:
-La frase explícita «paciente de [número] años» (o variantes directas: "se trata de paciente de X años", "paciente femenina de X años", "paciente masculino de X años", "paciente nuevo/a de X años") dicha por el médico al inicio.
+REGLA DE ORO: el gatillo del MÉDICO manda. Si el médico dijo "primera vez" → A, aunque haya otras pistas. Si dijo "control" → B, aunque haya edad o motivo extenso.
 
-  → Si aparece este gatillo Y no había ninguno de control: PRIMERA CONSULTA → FORMATO A.
+PROHIBICIONES ABSOLUTAS:
+- NUNCA escribas placeholders ("no consigna", "no especifica", "sin datos", "[edad]", "edad no especificada", "edad no consigna"). Si un dato falta, OMITE la oración.
+- NUNCA mezcles aperturas de A y B. Formato A abre con "Se trata de paciente de X años...". Formato B abre con "Paciente acude a consulta de control...".
+- En FORMATO B nunca escribas la sección de antecedentes (médicos, alergias, quirúrgicos, tabaquismo). Esos campos son EXCLUSIVOS de Formato A. Si no estás en A, NO escribas niega/no refiere ni invenciones de antecedentes.
 
-PASO 1.C — Si NINGÚN gatillo apareció: FORMATO B (control por defecto). No inventes la edad.
+═══════════════════════════════════════════════════════════════
+ESTILO DE REDACCIÓN — TÉCNICO, NO NARRATIVO
+═══════════════════════════════════════════════════════════════
+La nota es un documento clínico, no un cuento. Reglas de estilo OBLIGATORIAS:
 
-REGLA DE ORO: ante cualquier indicio de que el paciente fue evaluado antes (fecha previa, tratamiento previo, examen previo, "le había...", "antecedente de"), es CONTROL. La frase "paciente de X años" sola no es suficiente para Formato A si en la misma transcripción hay señales de visita previa.
+- Oraciones cortas y técnicas. NO uses "el paciente nos cuenta que...", "menciona también que...", "refiere de igual forma...".
+- Usa terminología médica directa: nicturia, disuria, polaquiuria, urgencia miccional, hematuria, calibre miccional disminuido, dificultad miccional, retención, incontinencia.
+- En vez de "se levanta varias veces en la noche para orinar" → "nicturia 3-4 episodios". En vez de "le cuesta empezar a orinar" → "dificultad miccional inicial". En vez de "el chorro le sale débil" → "disminución del calibre miccional".
+- Cuantifica todo lo que se pueda: episodios, tiempos, dosis, valores. No uses "varios", "algunos", "frecuentemente" si el paciente dio una cifra.
+- Lenguaje impersonal: "Refiere nicturia", "Presenta disuria", "Se evidencia...", "Se indica...", "Se solicita...". Evita "el paciente dice", "el paciente refiere que" — basta "Refiere".
+- No uses adjetivos subjetivos ("preocupante", "importante", "interesante"). Solo hechos clínicos.
+- Sin transiciones tipo "por otro lado", "asimismo", "además, cabe mencionar".
 
-PROHIBICIONES ABSOLUTAS DE FORMATO A:
-- NUNCA escribas "Se trata de paciente de edad no consigna" ni "edad no especificada" ni "edad desconocida". Si no hay edad explícita en la transcripción, NO uses Formato A — usa Formato B.
-- NUNCA uses placeholders ("no consigna", "no especifica", "sin datos", "[edad]") en la nota final. Si un dato falta, OMITE la oración o usa Formato B.
-- NUNCA mezcles la apertura de Formato A ("Se trata de paciente de X años...") con cuerpo de Formato B ("Refiere..."). Si vas a usar "Refiere", la nota debe abrir con "Paciente acude a consulta de control".
+FORMATO A — Primera consulta. Estructura en este orden, con saltos de línea entre secciones:
 
-FORMATO A — Primera consulta. Estructura con saltos de línea (\n) entre secciones:
-"Se trata de paciente de [edad numérica explícita] años, quien consulta por [motivo y enfermedad actual: síntomas, tiempo de evolución, datos de importancia].
-[Si se mencionaron antecedentes médicos: 'Antecedentes médicos: [enfermedades crónicas]'. Si el paciente negó tener enfermedades: 'Antecedentes médicos: niega'. Si no se preguntó ni se mencionó: OMITIR esta línea.]
-[Si se mencionaron alergias o el paciente las negó: 'Alergias a medicamentos: [especificar o niega]'. Si no se mencionó: OMITIR.]
-[Si se mencionaron antecedentes quirúrgicos o el paciente los negó: 'Antecedentes quirúrgicos: [especificar o niega]'. Si no se mencionó: OMITIR.]
-[Si se mencionó tabaquismo o el paciente lo negó: 'Tabaquismo: [especificar cigarrillos/día y años, o niega]'. Si no se mencionó: OMITIR.]
-[SOLO si el médico dictó hallazgos del examen físico textualmente en la transcripción: 'Al examen físico se evidencia [exactamente lo que se dictó].' Si NO se dictó ningún hallazgo de examen físico: OMITE esta oración completamente. NUNCA inventes tacto rectal, presión arterial, peso, frecuencia cardíaca, ni ningún hallazgo físico que no haya sido mencionado.]
-[Si se dictaron resultados de estudios:
-'Exámenes:
-- [hallazgo o valor 1]
-- [hallazgo o valor 2]
-- [hallazgo o valor 3]
-…cada uno en línea propia con guion al inicio.]
-[Si se indicó plan: 'Se indica como tratamiento [medicamentos con dosis y duración] y se solicitan [estudios/interconsultas].']"
+1) DESCRIPCIÓN DEL CASO Y MOTIVO:
+"Se trata de paciente de [edad explícita] años, quien consulta por [motivo principal en términos técnicos]." Si la edad no fue dictada, OMITE el "[edad] años" o cambia a Formato B.
 
-CRÍTICO para FORMATO A — campos de antecedentes: NUNCA escribas "niega" si el campo no fue mencionado en la transcripción. Solo escribe "niega" si el paciente explícitamente dijo que no tiene esa condición (ej. "no tengo enfermedades", "no me han operado", "no fumo"). Si el médico no preguntó y el paciente no lo mencionó → OMITE ese campo por completo.
+2) ENFERMEDAD ACTUAL / INTERROGATORIO:
+Una o varias oraciones técnicas describiendo síntomas, tiempo de evolución, características, factores agravantes/atenuantes, síntomas asociados. Cuantifica todo. Ejemplo de estilo: "Refiere cuadro de [meses] de evolución caracterizado por nicturia 3 episodios, disuria intermitente y disminución del calibre miccional. Niega hematuria. Sin fiebre asociada."
 
-FORMATO B — Consulta de control / seguimiento. Estructura con saltos de línea. Las secciones que no tengan datos en la transcripción se OMITEN; nunca rellenes con texto genérico.
+3) ANTECEDENTES (solo los que se mencionaron en la transcripción):
+- "Antecedentes médicos: [enfermedades crónicas listadas]" o "Antecedentes médicos: niega" si el paciente lo negó explícitamente. Si no se preguntó, OMITE la línea.
+- "Alergias a medicamentos: [especificar]" o "niega" si fue negado. Si no se mencionó, OMITE.
+- "Antecedentes quirúrgicos: [cirugías]" o "niega" si fue negado. Si no se mencionó, OMITE.
+- "Tabaquismo: [cigarrillos/día por años]" o "niega" si fue negado. Si no se mencionó, OMITE.
 
-Secciones (en este orden):
+4) EXAMEN FÍSICO (solo si fue dictado textualmente):
+"Al examen físico se evidencia [hallazgos exactos dictados]." Si no, OMITE. NUNCA inventes tacto rectal, presión, peso ni hallazgo alguno.
 
-1) EVOLUCIÓN: TODO lo que el paciente refirió sobre cómo va, adherencia al tratamiento, efectos adversos, mejorías, empeoramientos, síntomas nuevos o residuales, dudas sobre la medicación, cambios en hábitos, etc. No condenses — si el paciente dio detalles, los detalles van. Empieza por "Paciente acude a consulta de control [del problema X si se identifica explícitamente]. Refiere [evolución textual y completa]." Si no hay nada que reportar, escribe solo "Paciente acude a consulta de control." sin inventar evolución.
+5) EXÁMENES (solo si fueron dictados): ver sección "CAPTURA DE EXÁMENES" más abajo.
 
-2) EXÁMENES (resultados de estudios traídos a la consulta o dictados por el médico): si se dictaron valores o hallazgos, abre con "Exámenes:" en línea propia y enumera uno por línea con guion ("- "). Si no se dictó ningún examen, OMITE la sección entera.
+6) CONDUCTA:
+"Se indica [tratamiento con dosis y duración exacta]. Se solicita [estudios/interconsultas]. Se cita a control en [tiempo si fue dictado]." Solo lo dictado.
 
-3) EXAMEN FÍSICO: SOLO si el médico dictó hallazgos textualmente, "Al examen físico se evidencia [lo dictado]." Si no, OMITE.
+FORMATO B — Consulta de control / seguimiento. Estructura en este orden, con saltos de línea entre secciones. NO incluye sección de antecedentes bajo ninguna circunstancia.
 
-4) CONDUCTA: lo que el médico decidió hacer. Puede incluir: continuar tratamiento previo, ajuste de dosis, nuevo medicamento (con dosis y duración), suspender medicamento, solicitar nuevos estudios, indicar interconsulta, programar próximo control. Frasea en una o varias oraciones según lo dictado: "Se indica [...]. Se solicita [...]. Se programa [...]". Si no se dictó conducta, OMITE.
+1) APERTURA + EVOLUCIÓN:
+"Paciente acude a consulta de control [del problema X si se identificó]. Refiere [evolución técnica con cuantificación: adherencia, efectos adversos, mejorías, empeoramientos, síntomas residuales, síntomas nuevos]." Si la transcripción es escueta, la oración es escueta. No inventes.
 
-5) ANOTACIONES ESPECIALES: cualquier comentario adicional que el médico haya dictado fuera del esquema (banderas rojas, recomendaciones específicas, advertencias al paciente, observaciones para la próxima visita). Solo si fue dictado.
+2) EXAMEN FÍSICO (solo si fue dictado): igual que en Formato A.
 
-CRÍTICO para FORMATO B: NO inventes evolución sintomática, adherencia, efectos adversos, ni conducta. Si el paciente solo dijo "vengo a control" y trajo los exámenes, la nota es básicamente la sección de Exámenes + la conducta dictada. Si la transcripción es escueta, la nota debe ser escueta.
+3) EXÁMENES (solo si fueron dictados): ver sección "CAPTURA DE EXÁMENES".
 
-CRÍTICO — CAPTURA DE EXÁMENES Y LABORATORIOS:
-Esta es la parte más importante y donde el modelo SUELE FALLAR. Debes incluir EN LA SECCIÓN "Exámenes:" toda mención de:
+4) CONDUCTA:
+"Se indica continuar / ajustar / suspender [tratamiento con dosis]. Se solicita [estudios]. Se programa próximo control en [tiempo]." Solo lo dictado.
+
+5) ANOTACIONES ESPECIALES (solo si fueron dictadas): cualquier comentario clínico adicional.
+
+CRÍTICO para FORMATO B:
+- PROHIBIDO incluir secciones de antecedentes médicos, alergias, quirúrgicos o tabaquismo. Si la transcripción los menciona puntualmente como contexto, agrégalos en la oración de evolución, no como sección.
+- NO inventes evolución, adherencia ni conducta.
+
+CRÍTICO — CAPTURA DE EXÁMENES Y LABORATORIOS (rigor obligatorio):
+Esta sección es la más importante de la nota. Cada estudio dictado se incluye con valor y unidad médica precisa, en su línea con guion. Reglas:
 
 1. Valores numéricos de laboratorio: creatinina, urea, BUN, hemoglobina, hematocrito, glucosa, glicemia, HbA1c, PSA (total y libre), testosterona, sodio, potasio, calcio, colesterol total, LDL, HDL, triglicéridos, TSH, T3, T4, leucocitos, plaquetas, INR, TP, TPT, examen de orina (proteínas, eritrocitos, leucocitos, nitritos), urocultivo, cultivos, electrolitos, transaminasas (AST/ALT, TGO/TGP), bilirrubinas, etc.
 
@@ -239,11 +237,17 @@ export default async function handler(req, res) {
     }
 }
 
-// Guardrail determinístico: limpia placeholders, antecedentes "niega" sin
-// soporte en la transcripción y oraciones de relleno tipo "no consigna".
+// Guardrail determinístico: limpia placeholders, decide formato según gatillo
+// del médico, elimina antecedentes en Formato B, y antecedentes "niega" sin
+// soporte en la transcripción.
 function sanitizeNote(note, transcript) {
     if (!note) return note;
     const tNorm = transcript.toLowerCase();
+
+    // Gatillo explícito del médico: "primera vez/consulta/evaluación" -> A.
+    // Si no aparece la palabra "primera" (referida a consulta) -> tratar como B.
+    const isFirstVisit = /\b(primera\s+(vez|consulta|evaluaci[oó]n)|paciente\s+nuev[oa])\b/i.test(tNorm);
+    const forceFormatB = !isFirstVisit;
 
     const lines = note.split('\n');
     const cleaned = [];
@@ -252,8 +256,7 @@ function sanitizeNote(note, transcript) {
     for (let line of lines) {
         const lower = line.toLowerCase().trim();
 
-        // 1) CUALQUIER línea con "no consigna", "no especifica", "no refiere" como
-        //    relleno (no como negación clínica) -> eliminar la línea completa.
+        // 1) Cualquier línea con "no consigna" / placeholders -> drop.
         if (/\bno\s+consigna\b/i.test(lower)) {
             if (/^se trata de paciente/i.test(lower)) firstLineDropped = true;
             continue;
@@ -262,25 +265,24 @@ function sanitizeNote(note, transcript) {
             firstLineDropped = true;
             continue;
         }
-
-        // 2) Aperturas vacías de Formato A sin edad ni motivo claro.
         if (/^se trata de paciente de\s+\[/i.test(lower)) { firstLineDropped = true; continue; }
 
-        // 3) Antecedentes "niega" sin que la transcripción mencione el tema correspondiente.
-        if (/^antecedentes m[eé]dicos?:\s*niega\.?$/i.test(line)) {
-            if (!hasMedicalHistoryMention(tNorm)) continue;
-        }
-        if (/^alergias?( a medicamentos)?:\s*niega\.?$/i.test(line)) {
-            if (!hasAllergyMention(tNorm)) continue;
-        }
-        if (/^antecedentes quir[uú]rgicos?:\s*niega\.?$/i.test(line)) {
-            if (!hasSurgeryMention(tNorm)) continue;
-        }
-        if (/^tabaquismo:\s*niega\.?$/i.test(line)) {
-            if (!hasSmokingMention(tNorm)) continue;
+        // 2) En Formato B (no se dijo "primera"): bloquear apertura de A y secciones de antecedentes.
+        if (forceFormatB) {
+            if (/^se trata de paciente/i.test(lower)) { firstLineDropped = true; continue; }
+            if (/^antecedentes m[eé]dicos?:/i.test(lower)) continue;
+            if (/^alergias?( a medicamentos)?:/i.test(lower)) continue;
+            if (/^antecedentes quir[uú]rgicos?:/i.test(lower)) continue;
+            if (/^tabaquismo:/i.test(lower)) continue;
+        } else {
+            // 3) En Formato A: antecedentes "niega" solo si la transcripción menciona el tema.
+            if (/^antecedentes m[eé]dicos?:\s*niega\.?$/i.test(line) && !hasMedicalHistoryMention(tNorm)) continue;
+            if (/^alergias?( a medicamentos)?:\s*niega\.?$/i.test(line) && !hasAllergyMention(tNorm)) continue;
+            if (/^antecedentes quir[uú]rgicos?:\s*niega\.?$/i.test(line) && !hasSurgeryMention(tNorm)) continue;
+            if (/^tabaquismo:\s*niega\.?$/i.test(line) && !hasSmokingMention(tNorm)) continue;
         }
 
-        // 4) Limpieza dentro de la oración (por si se filtran fragmentos).
+        // 4) Limpieza dentro de la oración (fragmentos sueltos).
         line = line
             .replace(/\s*,?\s*pero\s+no\s+consigna\b/gi, '')
             .replace(/\bno\s+(consigna|especifica|refiere|determina)\b/gi, '')
@@ -292,9 +294,9 @@ function sanitizeNote(note, transcript) {
         if (line) cleaned.push(line);
     }
 
-    // 5) Si quitamos la apertura de Formato A, anteponer una apertura neutral.
+    // 5) Si quitamos la apertura de A en modo B, anteponer apertura neutral.
     let result = cleaned.join('\n');
-    if (firstLineDropped && cleaned.length && !/^paciente acude/i.test(cleaned[0])) {
+    if ((firstLineDropped || forceFormatB) && cleaned.length && !/^paciente acude/i.test(cleaned[0])) {
         result = 'Paciente acude a consulta de control.\n' + result;
     }
 
