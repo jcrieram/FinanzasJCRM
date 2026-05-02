@@ -1,6 +1,8 @@
 // Recibe audio multipart/form-data y devuelve { text }.
 // El audio se reenvía a OpenAI Whisper en streaming y NO se persiste.
 
+import { authenticate } from '../lib/auth.js';
+
 export const config = {
     api: { bodyParser: false },
     maxDuration: 60
@@ -15,10 +17,8 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'OPENAI_API_KEY no configurada' });
     }
 
-    const requiredPin = process.env.CONSULTA_PIN;
-    if (requiredPin && req.headers['x-consulta-pin'] !== requiredPin) {
-        return res.status(401).json({ error: 'PIN inválido' });
-    }
+    const auth = await authenticate(req);
+    if (!auth.ok) return res.status(auth.status).json({ error: auth.error });
 
     const contentType = req.headers['content-type'];
     if (!contentType || !contentType.includes('multipart/form-data')) {

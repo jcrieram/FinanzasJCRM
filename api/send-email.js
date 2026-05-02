@@ -1,5 +1,7 @@
 // Envía la nota clínica por email vía Resend.
 
+import { authenticate } from '../lib/auth.js';
+
 export const config = { maxDuration: 15 };
 
 const TO_EMAIL = 'jcrieram@gmail.com';
@@ -13,10 +15,8 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'RESEND_API_KEY no configurada' });
     }
 
-    const requiredPin = process.env.CONSULTA_PIN;
-    if (requiredPin && req.headers['x-consulta-pin'] !== requiredPin) {
-        return res.status(401).json({ error: 'PIN inválido' });
-    }
+    const auth = await authenticate(req);
+    if (!auth.ok) return res.status(auth.status).json({ error: auth.error });
     const fromAddr = process.env.RESEND_FROM || 'Consulta <onboarding@resend.dev>';
 
     let body;

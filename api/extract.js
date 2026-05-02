@@ -1,5 +1,7 @@
 // Recibe { transcript } y devuelve { note } como párrafo listo para pegar.
 
+import { authenticate } from '../lib/auth.js';
+
 export const config = { maxDuration: 30 };
 
 const SYSTEM_PROMPT = `Eres asistente clínico. Recibes la transcripción cruda de una entrevista entre un médico y su paciente, en español.
@@ -202,10 +204,8 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'OPENAI_API_KEY no configurada' });
     }
 
-    const requiredPin = process.env.CONSULTA_PIN;
-    if (requiredPin && req.headers['x-consulta-pin'] !== requiredPin) {
-        return res.status(401).json({ error: 'PIN inválido' });
-    }
+    const auth = await authenticate(req);
+    if (!auth.ok) return res.status(auth.status).json({ error: auth.error });
 
     let body;
     try { body = req.body && typeof req.body === 'object' ? req.body : JSON.parse(req.body || '{}'); }

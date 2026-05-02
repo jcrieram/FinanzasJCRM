@@ -729,7 +729,7 @@
             <span class="dot"></span>
             UroWorkNet
         </div>
-        <div class="topbar-meta">v1 · 2026</div>
+        <div class="topbar-meta" id="authBox">v1 · 2026</div>
     </header>
 
     <section class="hero">
@@ -802,8 +802,8 @@
                 </div>
             </a>
 
-            <div class="card disabled">
-                <span class="card-status status-soon"><span class="dot"></span>Próximamente</span>
+            <a class="card" href="/uroatlas/">
+                <span class="card-status status-soon"><span class="dot"></span>Beta</span>
                 <div class="card-inner">
                     <div class="card-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="#64B5F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -813,9 +813,9 @@
                     </div>
                     <h3>UroAtlas</h3>
                     <p class="desc">IA experta con guidelines AUA y EAU. Discute casos clínicos complejos, analiza UroTAC y resonancias, y consulta literatura urológica con un toque.</p>
-                    <span class="card-cta">En desarrollo</span>
+                    <span class="card-cta">Abrir</span>
                 </div>
-            </div>
+            </a>
 
         </div>
 
@@ -906,6 +906,28 @@
         refreshBtn.addEventListener('click', () => fetchNews(true));
         modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+    </script>
+
+    <script type="module">
+        import { getCurrentUser, signOut } from '/lib/supabase-client.js';
+        const authBox = document.getElementById('authBox');
+        try {
+            const user = await getCurrentUser();
+            if (user) {
+                authBox.innerHTML = `
+                    <span style="margin-right:12px;">${user.email}</span>
+                    <a href="#" id="logoutLink" style="color:inherit;text-decoration:underline;">Salir</a>
+                `;
+                document.getElementById('logoutLink').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    signOut();
+                });
+            } else {
+                authBox.innerHTML = `<a href="/portal/login.html" style="color:var(--accent);text-decoration:none;font-weight:600;">Iniciar sesión →</a>`;
+            }
+        } catch {
+            authBox.innerHTML = `<a href="/portal/login.html" style="color:var(--accent);text-decoration:none;font-weight:600;">Iniciar sesión →</a>`;
+        }
     </script>
 
     <footer>

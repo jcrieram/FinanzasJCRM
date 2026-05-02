@@ -60,8 +60,30 @@ async function verifyPin(pin) {
     }
 }
 
+// Si el usuario está logueado en Supabase, mandamos el JWT.
+// Si no, caemos al PIN legacy (mientras dure la migración).
+let _supaToken = null;
+async function getSupabaseToken() {
+    if (_supaToken !== null) return _supaToken;
+    try {
+        const mod = await import('/lib/supabase-client.js');
+        _supaToken = await mod.getAccessToken();
+    } catch {
+        _supaToken = '';
+    }
+    return _supaToken;
+}
+
 function withPinHeaders(extra = {}) {
     return { ...extra, 'X-Consulta-Pin': getPin() };
+}
+
+async function withAuthHeaders(extra = {}) {
+    const headers = { ...extra };
+    const token = await getSupabaseToken();
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    else headers['X-Consulta-Pin'] = getPin();
+    return headers;
 }
 
 const primaryBtn = document.getElementById('primaryBtn');
@@ -261,7 +283,7 @@ async function transcribe(blob, mime) {
     const fd = new FormData();
     fd.append('file', blob, `consulta.${ext}`);
     const sizeKB = (blob.size / 1024).toFixed(0);
-    const res = await fetch('/api/transcribe', { method: 'POST', headers: withPinHeaders(), body: fd });
+    const res = await fetch('/api/transcribe', { method: 'POST', headers: await withAuthHeaders(), body: fd });
     if (res.status === 401) { clearPin(); throw new Error('Sesión expirada. Vuelve a abrir la app.'); }
     if (!res.ok) {
         const txt = await res.text();
@@ -274,7 +296,7 @@ async function transcribe(blob, mime) {
 async function extract(transcript) {
     const res = await fetch('/api/extract', {
         method: 'POST',
-        headers: withPinHeaders({ 'Content-Type': 'application/json' }),
+        headers: await withAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ transcript })
     });
     if (res.status === 401) { clearPin(); throw new Error('Sesión expirada. Vuelve a abrir la app.'); }
@@ -313,7 +335,7 @@ emailBtn.addEventListener('click', async () => {
     try {
         const res = await fetch('/api/send-email', {
             method: 'POST',
-            headers: withPinHeaders({ 'Content-Type': 'application/json' }),
+            headers: await withAuthHeaders({ 'Content-Type': 'application/json' }),
             body: JSON.stringify({ note: noteText.value })
         });
         if (res.status === 401) { clearPin(); throw new Error('Sesión expirada. Vuelve a abrir la app.'); }
