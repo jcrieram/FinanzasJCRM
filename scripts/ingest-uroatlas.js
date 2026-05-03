@@ -17,10 +17,12 @@ import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
 const BUCKET = 'uroatlas-sources';
 
 const FOLDERS = {
-    'eau-pocket':  { source: 'EAU-Pocket',   language: 'en' },
-    'aua-non-onc': { source: 'AUA-Non-Onc',  language: 'en' },
-    'aua-onc':     { source: 'AUA-Onc',      language: 'en' },
-    'libros':      { source: 'Libros',       language: 'en' }
+    'eau-pocket':    { source: 'EAU-Pocket',      language: 'en' },
+    'aua-non-onc':   { source: 'AUA-Non-Onc',     language: 'en' },
+    'aua-onc':       { source: 'AUA-Onc',          language: 'en' },
+    'libros':        { source: 'Libros',           language: 'en' },
+    'imagenologia':  { source: 'Imagenología',     language: 'en' },
+    'uro-general':   { source: 'Uro-General',      language: 'en' }
 };
 
 const CHUNK_SIZE = 1200;     // caracteres aprox; ~300 tokens
