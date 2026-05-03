@@ -12,7 +12,7 @@
 // (los detecta por la columna documents.metadata->>'storage_path').
 
 import { createClient } from '@supabase/supabase-js';
-import { extractText, getDocumentProxy } from 'unpdf';
+import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
 
 const BUCKET = 'uroatlas-sources';
 
@@ -42,6 +42,35 @@ const VOYAGE_KEY = need('VOYAGE_API_KEY');
 // ─────────────────────────────────────────────────────────────────────────
 // Utilidades
 // ─────────────────────────────────────────────────────────────────────────
+
+async function extractPdfText(buffer) {
+    const uint8 = new Uint8Array(buffer);
+    const loadingTask = getDocument({
+        data: uint8,
+        disableFontFace: true,
+        useSystemFonts: false,
+        verbosity: 0,
+        isEvalSupported: false
+    });
+    const pdf = await loadingTask.promise;
+    const pages = [];
+    for (let i = 1; i <= pdf.numPages; i++) {
+        try {
+            const page = await pdf.getPage(i);
+            const content = await page.getTextContent();
+            const pageText = content.items
+                .filter(it => 'str' in it)
+                .map(it => it.str)
+                .join(' ');
+            pages.push(pageText);
+            page.cleanup();
+        } catch (e) {
+            // Página corrupta, continuamos con el resto.
+        }
+    }
+    await pdf.destroy();
+    return pages.join('\n').trim();
+}
 
 function chunkText(text) {
     const cleaned = text.replace(/\s+/g, ' ').trim();
@@ -116,16 +145,14 @@ async function processPdf(folder, fileName, meta) {
     const buf = await downloadPdf(folder, fileName);
     let text = '';
     try {
-        const pdf = await getDocumentProxy(new Uint8Array(buf));
-        const result = await extractText(pdf, { mergePages: true });
-        text = (result.text || '').trim();
+        text = await extractPdfText(buf);
     } catch (e) {
         console.log(`  ✗ no se pudo extraer texto: ${e.message}`);
         return { skipped: false, chunks: 0, error: e.message };
     }
 
-    if (!text) {
-        console.log(`  ⚠ PDF sin texto extraíble`);
+    if (!text || text.length < 100) {
+        console.log(`  ⚠ PDF sin texto extraíble (${text.length} chars)`);
         return { skipped: false, chunks: 0 };
     }
 

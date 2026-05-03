@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
-    "unpdf": "^0.12.1"
+    "pdfjs-dist": "^4.7.76"
   },
   "scripts": {
     "ingest:uroatlas": "node scripts/ingest-uroatlas.js"
