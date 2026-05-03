@@ -300,9 +300,9 @@ function buildSolicitudCirugia({ paciente, clinica, data }) {
         ['Tipo de cirugía', data.tipo || 'Electiva'],
         ['Cirujano', MEDICO.nombre],
         ['Ayudante', data.ayudante || '— Sin ayudante —'],
-        ['Anestesia', data.anestesia || '—'],
         ['Insumos especiales', data.insumos || '—']
     );
+    // Cuando es HoLEP el peso de próstata es OBLIGATORIO (independiente del checkbox).
     if (data.peso_prostata || holep) procRows.push(['Solicitud adicional', 'Peso de próstata para anatomía patológica']);
     sections.push(patientTable(procRows));
 
@@ -363,15 +363,15 @@ function buildReceta({ paciente, clinica, data }) {
     sections.push(sectionTitle('PRESCRIPCIÓN FARMACOLÓGICA'));
     const meds = Array.isArray(data.medicamentos) ? data.medicamentos : [];
     meds.forEach(m => {
-        const partes = [
-            m.nombre,
-            m.frecuencia ? `— ${m.frecuencia}` : '',
-            m.duracion ? `— ${m.duracion}` : '',
-            m.notas ? ` (${m.notas})` : ''
-        ].filter(Boolean).join(' ');
+        // Formato final: "Bladuril 200 mg tomar 1 comprimido cada 8 horas por 6 días."
+        const frase = [m.nombre, m.posologia, m.duracion]
+            .map(s => (s || '').trim())
+            .filter(Boolean)
+            .join(' ');
+        const notas = (m.notas || '').trim();
         sections.push(new Paragraph({
             spacing: { before: 60, after: 60 },
-            children: [arial(`• ${partes}`, { size: 11 })]
+            children: [arial(`• ${frase}${frase.endsWith('.') ? '' : '.'}${notas ? '   ' + notas : ''}`, { size: 11 })]
         }));
     });
 

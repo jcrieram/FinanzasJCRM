@@ -222,11 +222,21 @@
 
         .med-row {
             display: grid;
-            grid-template-columns: 2fr 1.4fr 1fr 1fr 32px;
+            grid-template-columns: 1.5fr 2.2fr 1fr 1fr 32px;
             gap: 8px;
             margin-bottom: 8px;
             align-items: start;
         }
+        .coord-info {
+            margin-top: 12px;
+            padding: 10px 14px;
+            background: rgba(31, 78, 121, 0.07);
+            border-left: 3px solid var(--primary);
+            border-radius: 4px;
+            font-size: 13px;
+            color: var(--text);
+        }
+        .coord-info strong { color: var(--primary); }
         .med-row input { padding: 6px 10px; font-size: 13px; }
         .med-row .remove-med {
             width: 32px; height: 32px;
@@ -339,26 +349,35 @@
                                 <div class="form-row"><label>RUT</label><input id="c-rut" type="text"></div>
                                 <div class="form-row"><label>Edad</label><input id="c-edad" type="text"></div>
                                 <div class="form-row"><label>Clínica</label><select id="c-clinica" data-clinica></select></div>
-                                <div class="form-row"><label>Previsión</label><input id="c-prevision" type="text" placeholder="Isapre / Fonasa / Particular"></div>
+                                <div class="form-row"><label>Previsión</label><select id="c-prevision"></select></div>
                                 <div class="form-row"><label>Teléfono</label><input id="c-telefono" type="text"></div>
                             </div>
 
+                            <div id="c-coord" class="coord-info" style="display:none;"></div>
+
                             <h4 style="margin-top:20px;font-size:13px;color:var(--primary);">Procedimiento</h4>
                             <div class="form-grid" style="margin-top:8px;">
-                                <div class="form-row"><label>Código FONASA principal</label><select id="c-cod1"></select></div>
-                                <div class="form-row"><label>Código FONASA secundario (opcional)</label><select id="c-cod2"></select></div>
+                                <div class="form-row">
+                                    <label>Código FONASA principal</label>
+                                    <input id="c-cod1" type="text" list="fonasa-list" placeholder="Escribe código o palabra clave (ej. 19 02 055 o próstata)" autocomplete="off">
+                                </div>
+                                <div class="form-row">
+                                    <label>Código FONASA secundario (opcional)</label>
+                                    <input id="c-cod2" type="text" list="fonasa-list" placeholder="Escribe código o palabra clave" autocomplete="off">
+                                </div>
                                 <div class="form-row"><label>Ayudante</label><select id="c-ayudante"></select></div>
-                                <div class="form-row"><label>Tipo de anestesia</label><select id="c-anestesia"></select></div>
                             </div>
+                            <datalist id="fonasa-list"></datalist>
 
                             <div class="form-row" style="margin-top:14px;">
                                 <label>Insumos especiales</label>
-                                <textarea id="c-insumos" style="min-height:90px;" placeholder="Lista de insumos. Si seleccionas el código de HoLEP, se autocompleta una lista típica que puedes editar."></textarea>
+                                <textarea id="c-insumos" style="min-height:90px;" placeholder="Lista de insumos. Si seleccionas el código de HoLEP, se autocompleta una lista que puedes editar."></textarea>
                             </div>
                             <div style="margin-top:8px;">
                                 <label style="display:flex;align-items:center;gap:8px;font-size:13px;">
                                     <input type="checkbox" id="c-peso-prostata"> Solicitar peso de próstata para anatomía patológica
                                 </label>
+                                <div id="c-peso-note" style="display:none;font-size:12px;color:var(--primary);margin-top:4px;margin-left:24px;">Obligatorio para HoLEP — se incluirá automáticamente.</div>
                             </div>
 
                             <div class="form-row" style="margin-top:14px;">
@@ -438,8 +457,9 @@
     <script type="module">
         import { requireAuth, getCurrentUser, signOut, apiFetch } from '/lib/supabase-client.js';
         import {
-            FONASA_CODES, FONASA_CATEGORIES, findFonasa, isHolep, HOLEP_INSUMOS,
-            CLINIC_LIST, AYUDANTES, ANESTESIA, MEDICATIONS, MEDICO
+            FONASA_CODES, findFonasa, isHolep, HOLEP_INSUMOS,
+            CLINIC_LIST, AYUDANTES, MEDICATIONS, MEDICO,
+            PREVISIONES, COORDINADORES
         } from '/lib/uro-data.js';
 
         await requireAuth();
@@ -471,61 +491,99 @@
                 CLINIC_LIST.map(c => `<option>${c}</option>`).join('');
         });
 
-        // FONASA selectores
-        function buildFonasaOptions(includeEmpty = true) {
-            const grouped = {};
-            FONASA_CATEGORIES.forEach(cat => grouped[cat] = []);
-            FONASA_CODES.forEach(c => grouped[c.categoria].push(c));
-            const opts = [];
-            if (includeEmpty) opts.push('<option value="">— Seleccionar —</option>');
-            FONASA_CATEGORIES.forEach(cat => {
-                opts.push(`<optgroup label="${cat}">`);
-                grouped[cat].forEach(c => {
-                    opts.push(`<option value="${c.codigo}">${c.codigo} — ${c.nombre}</option>`);
-                });
-                opts.push('</optgroup>');
-            });
-            return opts.join('');
-        }
-        document.getElementById('c-cod1').innerHTML = buildFonasaOptions();
-        document.getElementById('c-cod2').innerHTML = buildFonasaOptions();
-        document.getElementById('c-ayudante').innerHTML = AYUDANTES.map(a => `<option>${a}</option>`).join('');
-        document.getElementById('c-anestesia').innerHTML = '<option value="">— Seleccionar —</option>' + ANESTESIA.map(a => `<option>${a}</option>`).join('');
+        // FONASA: input con datalist para búsqueda libre por código o palabra.
+        // El value de la opción es el código (ej. "19 02 055"), pero al
+        // mostrarlo incluimos también el nombre para que el navegador
+        // filtre por ambos.
+        const datalist = document.getElementById('fonasa-list');
+        datalist.innerHTML = FONASA_CODES.map(c =>
+            `<option value="${c.codigo}">${c.codigo} — ${c.categoria} — ${c.nombre}</option>`
+        ).join('');
 
-        // Auto-rellena insumos HoLEP cuando ambos códigos están seleccionados.
+        // Previsiones
+        document.getElementById('c-prevision').innerHTML = '<option value="">— Seleccionar —</option>' +
+            PREVISIONES.map(p => `<option>${p}</option>`).join('');
+
+        document.getElementById('c-ayudante').innerHTML = AYUDANTES.map(a => `<option>${a}</option>`).join('');
+
+        // Función para extraer solo el código (ignora cualquier texto que el
+        // doctor haya pegado o escrito después del código).
+        function parseFonasaInput(value) {
+            const trimmed = (value || '').trim();
+            if (!trimmed) return '';
+            // Si escribió "19 02 055 — Adenoma...", extraemos los primeros 3 grupos numéricos.
+            const m = trimmed.match(/^(\d{2})\s*(\d{2})\s*(\d{3})/);
+            if (m) return `${m[1]} ${m[2]} ${m[3]}`;
+            return trimmed;
+        }
+
+        // Auto-rellena insumos HoLEP cuando ambos códigos están detectados.
         function maybeFillHolep() {
-            const cod1 = document.getElementById('c-cod1').value;
-            const cod2 = document.getElementById('c-cod2').value;
+            const cod1 = parseFonasaInput(document.getElementById('c-cod1').value);
+            const cod2 = parseFonasaInput(document.getElementById('c-cod2').value);
             const insumos = document.getElementById('c-insumos');
-            if (isHolep(cod1, cod2) && !insumos.value.trim()) {
-                insumos.value = HOLEP_INSUMOS;
-                document.getElementById('c-peso-prostata').checked = true;
+            const checkbox = document.getElementById('c-peso-prostata');
+            const note = document.getElementById('c-peso-note');
+            const holep = isHolep(cod1, cod2);
+            if (holep) {
+                if (!insumos.value.trim()) insumos.value = HOLEP_INSUMOS;
+                checkbox.checked = true;
+                checkbox.disabled = true;
+                note.style.display = 'block';
+            } else {
+                checkbox.disabled = false;
+                note.style.display = 'none';
             }
         }
+        document.getElementById('c-cod1').addEventListener('input', maybeFillHolep);
+        document.getElementById('c-cod2').addEventListener('input', maybeFillHolep);
         document.getElementById('c-cod1').addEventListener('change', maybeFillHolep);
         document.getElementById('c-cod2').addEventListener('change', maybeFillHolep);
 
-        // ─── Receta: presets y filas de medicamentos ────────────────────
+        // Coordinación quirúrgica automática para Miraflores y Los Carrera.
+        function updateCoordInfo() {
+            const clinica = document.getElementById('c-clinica').value;
+            const box = document.getElementById('c-coord');
+            const c = COORDINADORES[clinica];
+            if (c) {
+                box.innerHTML = `<strong>Coordinación quirúrgica</strong> (se incluirá automáticamente en el documento):<br>Contactar a <strong>${c.nombre}</strong> (${clinica}) al <strong>${c.telefono}</strong>.`;
+                box.style.display = 'block';
+            } else {
+                box.style.display = 'none';
+            }
+        }
+        document.getElementById('c-clinica').addEventListener('change', updateCoordInfo);
+
+        // ─── Receta: presets categorizados y filas de medicamentos ──────
         const presetsEl = document.getElementById('r-presets');
         Object.entries(MEDICATIONS).forEach(([categoria, lista]) => {
+            const wrap = document.createElement('div');
+            wrap.style.cssText = 'flex-basis:100%;margin-top:6px;';
+            wrap.innerHTML = `<div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:4px;">${categoria}</div>`;
+            const grp = document.createElement('div');
+            grp.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;';
             lista.forEach(m => {
                 const btn = document.createElement('button');
                 btn.className = 'med-preset-btn';
                 btn.type = 'button';
                 btn.textContent = m.nombre;
-                btn.title = `${categoria} · ${m.frecuencia} · ${m.duracion}`;
+                btn.title = `${m.posologia} ${m.duracion}`;
                 btn.addEventListener('click', () => addMedRow(m));
-                presetsEl.appendChild(btn);
+                grp.appendChild(btn);
             });
+            wrap.appendChild(grp);
+            presetsEl.appendChild(wrap);
         });
+        // Sobreescribir display:flex del padre porque ahora son categorías apiladas.
+        presetsEl.style.display = 'block';
 
         function addMedRow(med = {}) {
             const row = document.createElement('div');
             row.className = 'med-row';
             row.innerHTML = `
-                <input type="text" placeholder="Medicamento + dosis" value="${escapeAttr(med.nombre || '')}">
-                <input type="text" placeholder="Frecuencia" value="${escapeAttr(med.frecuencia || '')}">
-                <input type="text" placeholder="Duración" value="${escapeAttr(med.duracion || '')}">
+                <input type="text" placeholder="Medicamento + dosis (ej. Bladuril 200 mg)" value="${escapeAttr(med.nombre || '')}">
+                <input type="text" placeholder="Posología (ej. tomar 1 comprimido cada 8 horas)" value="${escapeAttr(med.posologia || '')}">
+                <input type="text" placeholder="Duración (ej. por 6 días)" value="${escapeAttr(med.duracion || '')}">
                 <input type="text" placeholder="Notas" value="${escapeAttr(med.notas || '')}">
                 <button class="remove-med" title="Quitar">×</button>
             `;
@@ -636,32 +694,35 @@
 
         // ─── Solicitud de Cirugía ───────────────────────────────────────
         document.getElementById('c-clear').addEventListener('click', () => {
-            ['c-nombre','c-rut','c-edad','c-prevision','c-telefono','c-insumos','c-indicacion'].forEach(id => document.getElementById(id).value = '');
+            ['c-nombre','c-rut','c-edad','c-telefono','c-insumos','c-indicacion','c-cod1','c-cod2'].forEach(id => document.getElementById(id).value = '');
             document.getElementById('c-clinica').value = '';
-            document.getElementById('c-cod1').value = '';
-            document.getElementById('c-cod2').value = '';
+            document.getElementById('c-prevision').value = '';
             document.getElementById('c-ayudante').value = AYUDANTES[0];
-            document.getElementById('c-anestesia').value = '';
             document.getElementById('c-peso-prostata').checked = false;
+            document.getElementById('c-peso-prostata').disabled = false;
+            document.getElementById('c-peso-note').style.display = 'none';
+            document.getElementById('c-coord').style.display = 'none';
             document.getElementById('previewPanel').classList.remove('show');
             lastPayload = null;
         });
         document.getElementById('c-generate').addEventListener('click', () => {
             const nombre = val('c-nombre'); const rut = val('c-rut'); const edad = val('c-edad');
             if (!nombre || !rut) { alert('Nombre y RUT son obligatorios.'); return; }
-            const cod1 = val('c-cod1');
-            if (!cod1) { alert('Selecciona el código FONASA principal.'); return; }
+            const cod1 = parseFonasaInput(val('c-cod1'));
+            if (!cod1) { alert('Indica el código FONASA principal.'); return; }
             const cod1obj = findFonasa(cod1);
-            const cod2 = val('c-cod2');
+            if (!cod1obj) { alert(`El código "${cod1}" no existe en la lista FONASA. Revisa el formato (ej. 19 02 055).`); return; }
+            const cod2 = parseFonasaInput(val('c-cod2'));
             const cod2obj = cod2 ? findFonasa(cod2) : null;
+            if (cod2 && !cod2obj) { alert(`El código secundario "${cod2}" no existe en la lista FONASA.`); return; }
+            const holep = isHolep(cod1, cod2);
             const data = {
-                cod1_codigo: cod1, cod1_nombre: cod1obj?.nombre || '',
+                cod1_codigo: cod1, cod1_nombre: cod1obj.nombre,
                 cod2_codigo: cod2, cod2_nombre: cod2obj?.nombre || '',
                 tipo: 'Electiva',
                 ayudante: val('c-ayudante'),
-                anestesia: val('c-anestesia'),
                 insumos: val('c-insumos'),
-                peso_prostata: document.getElementById('c-peso-prostata').checked,
+                peso_prostata: holep || document.getElementById('c-peso-prostata').checked,
                 indicacion: val('c-indicacion'),
                 prevision: val('c-prevision'),
                 telefono: val('c-telefono')
@@ -686,15 +747,15 @@
                 ['Tipo de cirugía', data.tipo || 'Electiva'],
                 ['Cirujano', MEDICO.nombre],
                 ['Ayudante', data.ayudante || '— Sin ayudante —'],
-                ['Anestesia', data.anestesia || '—'],
                 ['Insumos especiales', data.insumos || '—']
             );
             if (data.peso_prostata) procRows.push(['Solicitud adicional', 'Peso de próstata para anatomía patológica']);
 
             const procHtml = procRows.map(([k, v]) => `<tr><td>${escapeHtml(k)}</td><td style="white-space:pre-wrap">${escapeHtml(v || '—')}</td></tr>`).join('');
 
-            const coordHtml = (clinica === 'Clínica Miraflores' || clinica === 'Clínica Los Carrera')
-                ? `<h3>Coordinación quirúrgica</h3><p>Contactar al equipo de coordinación de ${escapeHtml(clinica)}.</p>`
+            const c = COORDINADORES[clinica];
+            const coordHtml = c
+                ? `<h3>Coordinación quirúrgica</h3><p>Contactar a <strong>${escapeHtml(c.nombre)}</strong> (${escapeHtml(clinica)}) al <strong>${escapeHtml(c.telefono)}</strong> para coordinar fecha y confirmar la cirugía.</p>`
                 : '';
 
             document.getElementById('previewDoc').innerHTML = `
@@ -730,7 +791,7 @@
             if (!nombre || !rut) { alert('Nombre y RUT son obligatorios.'); return; }
             const meds = Array.from(document.querySelectorAll('#r-meds .med-row')).map(row => {
                 const inputs = row.querySelectorAll('input');
-                return { nombre: inputs[0].value.trim(), frecuencia: inputs[1].value.trim(), duracion: inputs[2].value.trim(), notas: inputs[3].value.trim() };
+                return { nombre: inputs[0].value.trim(), posologia: inputs[1].value.trim(), duracion: inputs[2].value.trim(), notas: inputs[3].value.trim() };
             }).filter(m => m.nombre);
             if (!meds.length) { alert('Agrega al menos un medicamento.'); return; }
             const data = {
@@ -748,8 +809,10 @@
         function renderRecetaPreview(paciente, clinica, data) {
             const fecha = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
             const medsHtml = (data.medicamentos || []).map(m => {
-                const partes = [m.nombre, m.frecuencia ? `— ${m.frecuencia}` : '', m.duracion ? `— ${m.duracion}` : '', m.notas ? ` (${m.notas})` : ''].filter(Boolean).join(' ');
-                return `<li>• ${escapeHtml(partes)}</li>`;
+                const frase = [m.nombre, m.posologia, m.duracion].map(s => (s || '').trim()).filter(Boolean).join(' ');
+                const final = frase + (frase.endsWith('.') ? '' : '.');
+                const notas = (m.notas || '').trim();
+                return `<li>• ${escapeHtml(final)}${notas ? ' &nbsp; <em style="color:#666">' + escapeHtml(notas) + '</em>' : ''}</li>`;
             }).join('');
             document.getElementById('previewDoc').innerHTML = `
                 <div class="right" style="font-size:14px;font-weight:700;color:var(--primary)">${escapeHtml(MEDICO.nombre)}</div>
