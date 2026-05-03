@@ -15,14 +15,12 @@
             --surface: #FFFFFF;
             --surface-alt: #FAFBFC;
             --border: #E1E5EA;
-            --border-strong: #C8CFD6;
             --navy: #0F2A47;
             --primary: #1F4E79;
             --primary-hover: #163A5C;
             --text: #1A2332;
             --text-secondary: #4A5666;
             --text-muted: #7B8794;
-            --success: #2A9D5F;
             --danger: #B3261E;
         }
         html, body {
@@ -50,10 +48,7 @@
             justify-content: space-between;
             padding: 0 20px;
         }
-        .header-brand {
-            display: flex; align-items: center; gap: 10px;
-            font-size: 15px; font-weight: 700;
-        }
+        .header-brand { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 700; }
         .header-brand-mark {
             width: 28px; height: 28px;
             background: linear-gradient(135deg, #1F4E79, #2A9D5F);
@@ -70,8 +65,10 @@
             border-radius: 6px;
             font-family: inherit; font-size: 13px;
             cursor: pointer;
+            text-decoration: none; display: inline-block;
         }
         .header-btn:hover { background: rgba(255,255,255,0.10); }
+
         .sidebar {
             grid-area: sidebar;
             background: var(--surface);
@@ -80,17 +77,14 @@
         }
         .sidebar-section {
             padding: 16px 18px 8px;
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 1.2px;
-            text-transform: uppercase;
+            font-size: 11px; font-weight: 700;
+            letter-spacing: 1.2px; text-transform: uppercase;
             color: var(--text-muted);
         }
         .nav-item {
             display: flex; align-items: center; gap: 10px;
             padding: 10px 18px;
-            cursor: pointer;
-            font-size: 13px;
+            cursor: pointer; font-size: 13px;
             color: var(--primary);
             border-left: 3px solid transparent;
             transition: background 0.15s, border-color 0.15s;
@@ -99,25 +93,18 @@
         .nav-item.active {
             background: rgba(31, 78, 121, 0.07);
             border-left-color: var(--primary);
-            color: var(--primary);
             font-weight: 600;
         }
         .nav-item.disabled { color: var(--primary); opacity: 0.55; cursor: not-allowed; }
-        .nav-item.disabled .badge { background: #FFE9C4; color: #8A5A00; }
         .badge {
-            margin-left: auto;
-            font-size: 10px;
-            padding: 2px 6px;
-            border-radius: 4px;
-            background: rgba(31, 78, 121, 0.10);
-            color: var(--primary);
+            margin-left: auto; font-size: 10px;
+            padding: 2px 6px; border-radius: 4px;
+            background: rgba(31, 78, 121, 0.10); color: var(--primary);
             font-weight: 600;
         }
-        .main {
-            grid-area: main;
-            overflow-y: auto;
-            padding: 24px;
-        }
+        .nav-item.disabled .badge { background: #FFE9C4; color: #8A5A00; }
+
+        .main { grid-area: main; overflow-y: auto; padding: 24px; }
         .container { max-width: 980px; margin: 0 auto; }
         .panel {
             background: var(--surface);
@@ -128,13 +115,11 @@
         .panel-header {
             padding: 14px 18px;
             border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            display: flex; justify-content: space-between; align-items: center;
         }
         .panel-title { font-size: 14px; font-weight: 700; }
-        .panel-body { padding: 18px; }
         .panel-subtitle { color: var(--text-muted); font-size: 13px; margin-top: 4px; }
+        .panel-body { padding: 18px; }
 
         .form-grid {
             display: grid;
@@ -143,26 +128,19 @@
         }
         .form-row { display: flex; flex-direction: column; }
         .form-row label {
-            font-size: 11px;
-            font-weight: 600;
+            font-size: 11px; font-weight: 600;
             color: var(--text-secondary);
             margin-bottom: 4px;
-            letter-spacing: 0.3px;
-            text-transform: uppercase;
+            letter-spacing: 0.3px; text-transform: uppercase;
         }
         .form-row input, .form-row select, .form-row textarea {
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 8px 12px;
-            font-family: inherit;
-            font-size: 14px;
-            color: var(--text);
-            background: var(--surface);
+            border: 1px solid var(--border); border-radius: 6px;
+            padding: 8px 12px; font-family: inherit; font-size: 14px;
+            color: var(--text); background: var(--surface);
         }
-        .form-row textarea { min-height: 180px; resize: vertical; line-height: 1.55; }
+        .form-row textarea { min-height: 140px; resize: vertical; line-height: 1.55; }
         .form-row input:focus, .form-row select:focus, .form-row textarea:focus {
-            outline: none;
-            border-color: var(--primary);
+            outline: none; border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(31, 78, 121, 0.10);
         }
         .actions {
@@ -183,12 +161,14 @@
         }
         .btn:hover { background: var(--surface-alt); }
         .btn-primary {
-            background: var(--primary);
-            color: #fff;
+            background: var(--primary); color: #fff;
             border-color: var(--primary);
         }
         .btn-primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
         .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .btn-sm { padding: 5px 12px; font-size: 12px; }
+        .btn-danger { color: var(--danger); border-color: rgba(179, 38, 30, 0.3); }
+        .btn-danger:hover { background: rgba(179, 38, 30, 0.05); }
 
         .preview-panel { display: none; }
         .preview-panel.show { display: block; }
@@ -215,17 +195,16 @@
             margin-top: 14px;
             margin-bottom: 6px;
         }
-        .preview-doc table {
-            width: 100%; border-collapse: collapse; margin: 6px 0;
-        }
+        .preview-doc table { width: 100%; border-collapse: collapse; margin: 6px 0; }
         .preview-doc table.patient td { padding: 3px 10px; background: #EBF3FB; border: 1px solid #D5DCE8; line-height: 1.35; }
         .preview-doc table.patient td:first-child { font-weight: 700; width: 35%; }
         .preview-doc table.studies th { background: var(--primary); color: white; padding: 4px 10px; }
         .preview-doc table.studies td { padding: 4px 10px; border: 1px solid #D5DCE8; line-height: 1.35; }
-        .preview-doc table.studies tr:nth-child(odd) td { background: #EBF3FB; }
         .preview-doc .right { text-align: right; font-style: italic; color: var(--text-secondary); }
         .preview-doc ol { margin-left: 24px; }
         .preview-doc .firma { margin-top: 32px; border-top: 2px solid var(--primary); padding-top: 12px; }
+        .preview-doc ul.meds { list-style: none; margin: 0; padding: 0; }
+        .preview-doc ul.meds li { padding: 5px 0; border-bottom: 1px dotted #D5DCE8; }
 
         .loading { display: none; align-items: center; gap: 10px; padding: 18px; color: var(--text-muted); }
         .loading.show { display: flex; }
@@ -238,20 +217,51 @@
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .med-row {
+            display: grid;
+            grid-template-columns: 2fr 1.4fr 1fr 1fr 32px;
+            gap: 8px;
+            margin-bottom: 8px;
+            align-items: start;
+        }
+        .med-row input { padding: 6px 10px; font-size: 13px; }
+        .med-row .remove-med {
+            width: 32px; height: 32px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--danger);
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .med-row .remove-med:hover { background: rgba(179, 38, 30, 0.05); }
+
+        .med-presets {
+            display: flex; flex-wrap: wrap; gap: 6px;
+            margin-bottom: 12px;
+        }
+        .med-preset-btn {
+            font-size: 11px; padding: 4px 10px;
+            background: rgba(31, 78, 121, 0.08);
+            border: 1px solid rgba(31, 78, 121, 0.2);
+            border-radius: 100px;
+            color: var(--primary); font-weight: 600;
+            cursor: pointer; font-family: inherit;
+        }
+        .med-preset-btn:hover { background: rgba(31, 78, 121, 0.15); }
+
         @media (max-width: 768px) {
             .app { grid-template-columns: 1fr; grid-template-areas: "header" "main"; }
             .sidebar { display: none; }
+            .med-row { grid-template-columns: 1fr; }
         }
-
         @media print {
             body * { visibility: hidden; }
             .preview-doc, .preview-doc * { visibility: visible; }
-            .preview-doc {
-                position: absolute;
-                inset: 0;
-                border: none;
-                margin: 0;
-            }
+            .preview-doc { position: absolute; inset: 0; border: none; margin: 0; }
         }
     </style>
 </head>
@@ -264,7 +274,7 @@
             </div>
             <div class="header-meta">
                 <span id="userEmail" style="opacity:0.8;"></span>
-                <a href="/portal/" class="header-btn" style="text-decoration:none;display:inline-block;">Portal</a>
+                <a href="/portal/" class="header-btn">Portal</a>
                 <button class="header-btn" id="signOutBtn">Salir</button>
             </div>
         </header>
@@ -272,65 +282,138 @@
         <aside class="sidebar">
             <div class="sidebar-section">Documentos</div>
             <div class="nav-item active" data-tab="informe">📄 Informe Urológico</div>
-            <div class="nav-item disabled" data-tab="cirugia">Solicitud de Cirugía<span class="badge">Próx.</span></div>
+            <div class="nav-item" data-tab="cirugia">🔪 Solicitud de Cirugía</div>
+            <div class="nav-item" data-tab="receta">💊 Receta</div>
             <div class="nav-item disabled" data-tab="examenes">Solicitud de Exámenes<span class="badge">Próx.</span></div>
             <div class="nav-item disabled" data-tab="estudios">Solicitud Estudios<span class="badge">Próx.</span></div>
             <div class="nav-item disabled" data-tab="alta">Alta Médica<span class="badge">Próx.</span></div>
             <div class="nav-item disabled" data-tab="post-quir">Post Quirúrgico<span class="badge">Próx.</span></div>
             <div class="nav-item disabled" data-tab="post-holep">Post HoLEP<span class="badge">Próx.</span></div>
-            <div class="nav-item disabled" data-tab="receta">Receta<span class="badge">Próx.</span></div>
             <div class="sidebar-section">Archivo</div>
             <div class="nav-item disabled" data-tab="historial">Historial<span class="badge">Próx.</span></div>
         </aside>
 
         <main class="main">
             <div class="container">
-                <section class="panel">
-                    <div class="panel-header">
-                        <div>
-                            <span class="panel-title">Informe Urológico</span>
-                            <div class="panel-subtitle">Reporte diagnóstico generado con IA. Llena los datos del paciente y dicta el caso clínico.</div>
-                        </div>
-                    </div>
-                    <div class="panel-body">
-                        <div class="form-grid">
-                            <div class="form-row">
-                                <label>Nombre del paciente</label>
-                                <input id="pNombre" type="text" autocomplete="off">
-                            </div>
-                            <div class="form-row">
-                                <label>RUT</label>
-                                <input id="pRut" type="text" placeholder="12.345.678-9" autocomplete="off">
-                            </div>
-                            <div class="form-row">
-                                <label>Edad</label>
-                                <input id="pEdad" type="text" autocomplete="off">
-                            </div>
-                            <div class="form-row">
-                                <label>Clínica</label>
-                                <select id="pClinica">
-                                    <option value="">— Seleccionar —</option>
-                                    <option>Hospital Clínico Viña del Mar</option>
-                                    <option>Aquamed</option>
-                                    <option>Clínica Provincia de Petorca</option>
-                                    <option>Clínica Los Carrera</option>
-                                    <option>Redsalud</option>
-                                    <option>Clínica Miraflores</option>
-                                </select>
-                            </div>
-                        </div>
 
-                        <div class="form-row" style="margin-top:18px;">
-                            <label>Caso clínico (texto libre)</label>
-                            <textarea id="caseText" placeholder="Dicta el caso completo: motivo, antecedentes, síntomas con tiempo de evolución, hallazgos al examen físico si los hay, exámenes con valores, diagnósticos y conducta propuesta. Cuanto más detalle, mejor el informe."></textarea>
+                <!-- ════════════ INFORME UROLÓGICO ════════════ -->
+                <div class="tab-content active" id="tab-informe">
+                    <section class="panel">
+                        <div class="panel-header">
+                            <div>
+                                <span class="panel-title">Informe Urológico</span>
+                                <div class="panel-subtitle">Reporte diagnóstico generado con IA. Llena los datos del paciente y dicta el caso clínico.</div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="actions">
-                        <button class="btn" id="clearBtn">Limpiar</button>
-                        <button class="btn btn-primary" id="generateBtn">Generar informe</button>
-                    </div>
-                </section>
+                        <div class="panel-body">
+                            <div class="form-grid">
+                                <div class="form-row"><label>Nombre del paciente</label><input id="i-nombre" type="text"></div>
+                                <div class="form-row"><label>RUT</label><input id="i-rut" type="text" placeholder="12.345.678-9"></div>
+                                <div class="form-row"><label>Edad</label><input id="i-edad" type="text"></div>
+                                <div class="form-row"><label>Clínica</label><select id="i-clinica" data-clinica></select></div>
+                            </div>
+                            <div class="form-row" style="margin-top:18px;">
+                                <label>Caso clínico (texto libre)</label>
+                                <textarea id="i-text" placeholder="Dicta el caso completo: motivo, antecedentes, síntomas con tiempo de evolución, hallazgos al examen físico si los hay, exámenes con valores, diagnósticos y conducta propuesta. Cuanto más detalle, mejor el informe."></textarea>
+                            </div>
+                        </div>
+                        <div class="actions">
+                            <button class="btn" id="i-clear">Limpiar</button>
+                            <button class="btn btn-primary" id="i-generate">Generar informe</button>
+                        </div>
+                    </section>
+                </div>
 
+                <!-- ════════════ SOLICITUD DE CIRUGÍA ════════════ -->
+                <div class="tab-content" id="tab-cirugia">
+                    <section class="panel">
+                        <div class="panel-header">
+                            <div>
+                                <span class="panel-title">Solicitud de Cirugía</span>
+                                <div class="panel-subtitle">Solicitud de intervención quirúrgica con código FONASA, ayudante, anestesia e insumos.</div>
+                            </div>
+                        </div>
+                        <div class="panel-body">
+                            <div class="form-grid">
+                                <div class="form-row"><label>Nombre del paciente</label><input id="c-nombre" type="text"></div>
+                                <div class="form-row"><label>RUT</label><input id="c-rut" type="text"></div>
+                                <div class="form-row"><label>Edad</label><input id="c-edad" type="text"></div>
+                                <div class="form-row"><label>Clínica</label><select id="c-clinica" data-clinica></select></div>
+                                <div class="form-row"><label>Previsión</label><input id="c-prevision" type="text" placeholder="Isapre / Fonasa / Particular"></div>
+                                <div class="form-row"><label>Teléfono</label><input id="c-telefono" type="text"></div>
+                            </div>
+
+                            <h4 style="margin-top:20px;font-size:13px;color:var(--primary);">Procedimiento</h4>
+                            <div class="form-grid" style="margin-top:8px;">
+                                <div class="form-row"><label>Código FONASA principal</label><select id="c-cod1"></select></div>
+                                <div class="form-row"><label>Código FONASA secundario (opcional)</label><select id="c-cod2"></select></div>
+                                <div class="form-row"><label>Ayudante</label><select id="c-ayudante"></select></div>
+                                <div class="form-row"><label>Tipo de anestesia</label><select id="c-anestesia"></select></div>
+                            </div>
+
+                            <div class="form-row" style="margin-top:14px;">
+                                <label>Insumos especiales</label>
+                                <textarea id="c-insumos" style="min-height:90px;" placeholder="Lista de insumos. Si seleccionas el código de HoLEP, se autocompleta una lista típica que puedes editar."></textarea>
+                            </div>
+                            <div style="margin-top:8px;">
+                                <label style="display:flex;align-items:center;gap:8px;font-size:13px;">
+                                    <input type="checkbox" id="c-peso-prostata"> Solicitar peso de próstata para anatomía patológica
+                                </label>
+                            </div>
+
+                            <div class="form-row" style="margin-top:14px;">
+                                <label>Indicación clínica (motivo de la cirugía)</label>
+                                <textarea id="c-indicacion" style="min-height:100px;" placeholder="Resumen clínico que justifica la intervención. Ej: Hiperplasia prostática benigna sintomática refractaria a tratamiento médico..."></textarea>
+                            </div>
+                        </div>
+                        <div class="actions">
+                            <button class="btn" id="c-clear">Limpiar</button>
+                            <button class="btn btn-primary" id="c-generate">Generar solicitud</button>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- ════════════ RECETA ════════════ -->
+                <div class="tab-content" id="tab-receta">
+                    <section class="panel">
+                        <div class="panel-header">
+                            <div>
+                                <span class="panel-title">Receta médica</span>
+                                <div class="panel-subtitle">Receta simple. Agrega medicamentos uno a uno o usa los presets urológicos.</div>
+                            </div>
+                        </div>
+                        <div class="panel-body">
+                            <div class="form-grid">
+                                <div class="form-row"><label>Nombre del paciente</label><input id="r-nombre" type="text"></div>
+                                <div class="form-row"><label>RUT</label><input id="r-rut" type="text"></div>
+                                <div class="form-row"><label>Edad</label><input id="r-edad" type="text"></div>
+                                <div class="form-row"><label>Clínica</label><select id="r-clinica" data-clinica></select></div>
+                            </div>
+                            <div class="form-row" style="margin-top:14px;">
+                                <label>Diagnóstico (opcional)</label>
+                                <input id="r-diagnostico" type="text" placeholder="Ej. Hiperplasia prostática benigna">
+                            </div>
+
+                            <h4 style="margin-top:20px;font-size:13px;color:var(--primary);">Presets urológicos (haz clic para agregar)</h4>
+                            <div class="med-presets" id="r-presets"></div>
+
+                            <h4 style="margin-top:14px;font-size:13px;color:var(--primary);">Medicamentos</h4>
+                            <div id="r-meds"></div>
+                            <button class="btn btn-sm" id="r-add-med" style="margin-top:6px;">+ Agregar medicamento</button>
+
+                            <div class="form-row" style="margin-top:18px;">
+                                <label>Indicaciones generales (opcional)</label>
+                                <textarea id="r-indicaciones" style="min-height:80px;" placeholder="Ej. Tomar con abundante agua. Suspender en caso de mareos. Control en un mes."></textarea>
+                            </div>
+                        </div>
+                        <div class="actions">
+                            <button class="btn" id="r-clear">Limpiar</button>
+                            <button class="btn btn-primary" id="r-generate">Generar receta</button>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- ════════════ PREVIEW (compartida) ════════════ -->
                 <section class="panel preview-panel" id="previewPanel">
                     <div class="panel-header">
                         <span class="panel-title">Vista previa</span>
@@ -341,102 +424,124 @@
                     </div>
                     <div class="loading" id="loading">
                         <span class="spinner"></span>
-                        <span id="loadingText">Procesando texto y generando informe…</span>
+                        <span id="loadingText">Generando…</span>
                     </div>
                     <div class="panel-body">
                         <div class="preview-doc" id="previewDoc"></div>
                     </div>
                 </section>
+
             </div>
         </main>
     </div>
 
     <script type="module">
         import { requireAuth, getCurrentUser, signOut, apiFetch } from '/lib/supabase-client.js';
+        import {
+            FONASA_CODES, FONASA_CATEGORIES, findFonasa, isHolep, HOLEP_INSUMOS,
+            CLINIC_LIST, AYUDANTES, ANESTESIA, MEDICATIONS, MEDICO
+        } from '/lib/uro-data.js';
 
         await requireAuth();
         const user = await getCurrentUser();
         document.getElementById('userEmail').textContent = user?.email || '';
         document.getElementById('signOutBtn').addEventListener('click', () => signOut());
 
-        // Sidebar (placeholder para próximas implementaciones)
-        document.querySelectorAll('.nav-item.disabled').forEach(item => {
+        // ─── Sidebar tabs ───────────────────────────────────────────────
+        document.querySelectorAll('.nav-item').forEach(item => {
             item.addEventListener('click', () => {
-                alert('Próximamente. Estamos implementando los demás documentos.');
+                if (item.classList.contains('disabled')) {
+                    alert('Próximamente.');
+                    return;
+                }
+                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                item.classList.add('active');
+                const tab = item.dataset.tab;
+                const panel = document.getElementById(`tab-${tab}`);
+                if (panel) panel.classList.add('active');
+                document.getElementById('previewPanel').classList.remove('show');
+                lastPayload = null;
             });
         });
 
-        const pNombre = document.getElementById('pNombre');
-        const pRut = document.getElementById('pRut');
-        const pEdad = document.getElementById('pEdad');
-        const pClinica = document.getElementById('pClinica');
-        const caseText = document.getElementById('caseText');
-        const previewPanel = document.getElementById('previewPanel');
-        const previewDoc = document.getElementById('previewDoc');
-        const loading = document.getElementById('loading');
-        const generateBtn = document.getElementById('generateBtn');
-
-        let lastPayload = null;
-
-        document.getElementById('clearBtn').addEventListener('click', () => {
-            pNombre.value = ''; pRut.value = ''; pEdad.value = '';
-            pClinica.value = ''; caseText.value = '';
-            previewPanel.classList.remove('show');
-            lastPayload = null;
+        // ─── Poblar selectores comunes ──────────────────────────────────
+        document.querySelectorAll('select[data-clinica]').forEach(sel => {
+            sel.innerHTML = '<option value="">— Seleccionar —</option>' +
+                CLINIC_LIST.map(c => `<option>${c}</option>`).join('');
         });
 
-        generateBtn.addEventListener('click', async () => {
-            if (!pNombre.value.trim() || !pRut.value.trim()) {
-                alert('Nombre y RUT son obligatorios.');
-                return;
-            }
-            if (!caseText.value.trim()) {
-                alert('Escribe el caso clínico.');
-                return;
-            }
-            previewPanel.classList.add('show');
-            loading.classList.add('show');
-            previewDoc.innerHTML = '';
-            generateBtn.disabled = true;
-            try {
-                const res = await apiFetch('/api/informesuro/extract', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text: caseText.value.trim() })
+        // FONASA selectores
+        function buildFonasaOptions(includeEmpty = true) {
+            const grouped = {};
+            FONASA_CATEGORIES.forEach(cat => grouped[cat] = []);
+            FONASA_CODES.forEach(c => grouped[c.categoria].push(c));
+            const opts = [];
+            if (includeEmpty) opts.push('<option value="">— Seleccionar —</option>');
+            FONASA_CATEGORIES.forEach(cat => {
+                opts.push(`<optgroup label="${cat}">`);
+                grouped[cat].forEach(c => {
+                    opts.push(`<option value="${c.codigo}">${c.codigo} — ${c.nombre}</option>`);
                 });
-                if (!res.ok) {
-                    const txt = await res.text();
-                    throw new Error(`Extracción falló (${res.status}): ${txt}`);
-                }
-                const { data } = await res.json();
-                const paciente = {
-                    nombre: pNombre.value.trim(),
-                    rut: pRut.value.trim(),
-                    edad: pEdad.value.trim()
-                };
-                const clinica = pClinica.value;
+                opts.push('</optgroup>');
+            });
+            return opts.join('');
+        }
+        document.getElementById('c-cod1').innerHTML = buildFonasaOptions();
+        document.getElementById('c-cod2').innerHTML = buildFonasaOptions();
+        document.getElementById('c-ayudante').innerHTML = AYUDANTES.map(a => `<option>${a}</option>`).join('');
+        document.getElementById('c-anestesia').innerHTML = '<option value="">— Seleccionar —</option>' + ANESTESIA.map(a => `<option>${a}</option>`).join('');
 
-                lastPayload = {
-                    doc_type: 'informe',
-                    paciente,
-                    clinica,
-                    data,
-                    case_text: caseText.value.trim()
-                };
-
-                renderPreview(paciente, clinica, data);
-            } catch (e) {
-                previewDoc.innerHTML = `<div style="color:#B3261E">Error: ${escapeHtml(e.message || e)}</div>`;
-            } finally {
-                loading.classList.remove('show');
-                generateBtn.disabled = false;
+        // Auto-rellena insumos HoLEP cuando ambos códigos están seleccionados.
+        function maybeFillHolep() {
+            const cod1 = document.getElementById('c-cod1').value;
+            const cod2 = document.getElementById('c-cod2').value;
+            const insumos = document.getElementById('c-insumos');
+            if (isHolep(cod1, cod2) && !insumos.value.trim()) {
+                insumos.value = HOLEP_INSUMOS;
+                document.getElementById('c-peso-prostata').checked = true;
             }
+        }
+        document.getElementById('c-cod1').addEventListener('change', maybeFillHolep);
+        document.getElementById('c-cod2').addEventListener('change', maybeFillHolep);
+
+        // ─── Receta: presets y filas de medicamentos ────────────────────
+        const presetsEl = document.getElementById('r-presets');
+        Object.entries(MEDICATIONS).forEach(([categoria, lista]) => {
+            lista.forEach(m => {
+                const btn = document.createElement('button');
+                btn.className = 'med-preset-btn';
+                btn.type = 'button';
+                btn.textContent = m.nombre;
+                btn.title = `${categoria} · ${m.frecuencia} · ${m.duracion}`;
+                btn.addEventListener('click', () => addMedRow(m));
+                presetsEl.appendChild(btn);
+            });
         });
+
+        function addMedRow(med = {}) {
+            const row = document.createElement('div');
+            row.className = 'med-row';
+            row.innerHTML = `
+                <input type="text" placeholder="Medicamento + dosis" value="${escapeAttr(med.nombre || '')}">
+                <input type="text" placeholder="Frecuencia" value="${escapeAttr(med.frecuencia || '')}">
+                <input type="text" placeholder="Duración" value="${escapeAttr(med.duracion || '')}">
+                <input type="text" placeholder="Notas" value="${escapeAttr(med.notas || '')}">
+                <button class="remove-med" title="Quitar">×</button>
+            `;
+            row.querySelector('.remove-med').addEventListener('click', () => row.remove());
+            document.getElementById('r-meds').appendChild(row);
+        }
+        document.getElementById('r-add-med').addEventListener('click', () => addMedRow());
+        addMedRow(); // arranca con una fila vacía
+
+        // ─── Preview / descarga compartido ──────────────────────────────
+        let lastPayload = null;
 
         document.getElementById('downloadBtn').addEventListener('click', async () => {
             if (!lastPayload) return;
             const btn = document.getElementById('downloadBtn');
-            btn.disabled = true; btn.textContent = 'Generando…';
+            btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Generando…';
             try {
                 const res = await apiFetch('/api/informesuro/generate-docx', {
                     method: 'POST',
@@ -450,32 +555,61 @@
                 const blob = await res.blob();
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
+                const name = (lastPayload.paciente.nombre || 'paciente').replace(/[^a-z0-9]+/gi, '_').toLowerCase();
+                const label = lastPayload.doc_type === 'cirugia' ? 'solicitud_cirugia'
+                            : lastPayload.doc_type === 'receta' ? 'receta'
+                            : 'informe';
                 a.href = url;
-                a.download = `informe_${(lastPayload.paciente.nombre || 'paciente').replace(/[^a-z0-9]+/gi, '_').toLowerCase()}.docx`;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
+                a.download = `${label}_${name}.docx`;
+                document.body.appendChild(a); a.click(); a.remove();
                 URL.revokeObjectURL(url);
-            } catch (e) {
-                alert(e.message);
-            } finally {
-                btn.disabled = false; btn.textContent = 'Descargar .docx';
-            }
+            } catch (e) { alert(e.message); }
+            finally { btn.disabled = false; btn.textContent = orig; }
         });
-
         document.getElementById('printBtn').addEventListener('click', () => window.print());
 
-        function renderPreview(paciente, clinica, data) {
-            const fecha = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
-            const studiesRows = (data.estudios || []).map(e => `<tr><td>${escapeHtml(e.examen || '')}</td><td>${escapeHtml(e.resultado || '')}</td></tr>`).join('');
-            const dxList = (data.diagnosticos || []).map(d => `<li>${escapeHtml(d)}</li>`).join('');
+        function showPreview() {
+            document.getElementById('previewPanel').classList.add('show');
+        }
 
-            previewDoc.innerHTML = `
+        // ─── Informe Urológico ──────────────────────────────────────────
+        document.getElementById('i-clear').addEventListener('click', () => {
+            ['i-nombre','i-rut','i-edad','i-text'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('i-clinica').value = '';
+            document.getElementById('previewPanel').classList.remove('show');
+            lastPayload = null;
+        });
+        document.getElementById('i-generate').addEventListener('click', async () => {
+            const nombre = val('i-nombre'); const rut = val('i-rut'); const edad = val('i-edad');
+            const clinica = val('i-clinica'); const text = val('i-text');
+            if (!nombre || !rut) { alert('Nombre y RUT son obligatorios.'); return; }
+            if (!text) { alert('Escribe el caso clínico.'); return; }
+            showPreview();
+            setLoading(true, 'Procesando texto y generando informe…');
+            try {
+                const res = await apiFetch('/api/informesuro/extract', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text })
+                });
+                if (!res.ok) throw new Error(`Extracción falló (${res.status}): ${await res.text()}`);
+                const { data } = await res.json();
+                const paciente = { nombre, rut, edad };
+                lastPayload = { doc_type: 'informe', paciente, clinica, data, case_text: text };
+                renderInformePreview(paciente, clinica, data);
+            } catch (e) {
+                document.getElementById('previewDoc').innerHTML = `<div style="color:var(--danger)">Error: ${escapeHtml(e.message)}</div>`;
+            } finally { setLoading(false); }
+        });
+
+        function renderInformePreview(paciente, clinica, data) {
+            const fecha = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
+            const studiesRows = (data.estudios || []).map(e => `<tr><td>${escapeHtml(e.examen)}</td><td>${escapeHtml(e.resultado)}</td></tr>`).join('');
+            const dxList = (data.diagnosticos || []).map(d => `<li>${escapeHtml(d)}</li>`).join('');
+            document.getElementById('previewDoc').innerHTML = `
                 <div class="right">${escapeHtml(fecha)}</div>
                 <div class="right">A fines de uso de paciente</div>
                 <div class="right">Presente</div>
                 <h2>INFORME UROLÓGICO</h2>
-
                 <h3>Datos del paciente</h3>
                 <table class="patient">
                     <tr><td>Nombre del paciente</td><td>${escapeHtml(paciente.nombre)}</td></tr>
@@ -486,43 +620,176 @@
                     <tr><td>Antecedente quirúrgico</td><td>${escapeHtml(data.paciente?.quirurgicos || '—')}</td></tr>
                     <tr><td>Tabaquismo</td><td>${escapeHtml(data.paciente?.tabaquismo || '—')}</td></tr>
                 </table>
-
                 <h3>Motivo de consulta y resumen clínico</h3>
                 <p style="text-align:justify">${escapeHtml(data.motivo_resumen || '')}</p>
-
-                ${(data.estudios || []).length ? `
-                <h3>Estudios complementarios realizados</h3>
-                <table class="studies">
-                    <thead><tr><th>Examen</th><th>Resultado / Hallazgo</th></tr></thead>
-                    <tbody>${studiesRows}</tbody>
-                </table>` : ''}
-
-                ${(data.diagnosticos || []).length ? `
-                <h3>Impresión diagnóstica</h3>
-                <ol>${dxList}</ol>` : ''}
-
-                ${(data.procedimiento || data.justificacion || data.consideraciones) ? `
-                <h3>Indicación y conducta propuesta</h3>
+                ${(data.estudios || []).length ? `<h3>Estudios complementarios realizados</h3>
+                <table class="studies"><thead><tr><th>Examen</th><th>Resultado / Hallazgo</th></tr></thead><tbody>${studiesRows}</tbody></table>` : ''}
+                ${(data.diagnosticos || []).length ? `<h3>Impresión diagnóstica</h3><ol>${dxList}</ol>` : ''}
+                ${(data.procedimiento || data.justificacion || data.consideraciones) ? `<h3>Indicación y conducta propuesta</h3>
                 ${data.procedimiento ? `<p style="text-align:justify"><strong>${escapeHtml(data.procedimiento)}</strong></p>` : ''}
                 ${data.justificacion ? `<p style="text-align:justify">${escapeHtml(data.justificacion)}</p>` : ''}
                 ${data.consideraciones ? `<p style="text-align:justify">${escapeHtml(data.consideraciones)}</p>` : ''}` : ''}
-
-                ${data.analisis ? `
-                <h3>Análisis objetivo del caso</h3>
-                <p style="text-align:justify">${escapeHtml(data.analisis)}</p>` : ''}
-
-                <div class="firma">
-                    <p><em>Atentamente,</em></p>
-                    <p style="margin-top:24px;font-weight:700">Dr. Juan Carlos Riera M.</p>
-                    <p>Especialista en Urología</p>
-                    <p style="font-style:italic;color:#666">V Región, Chile</p>
-                </div>
+                ${data.analisis ? `<h3>Análisis objetivo del caso</h3><p style="text-align:justify">${escapeHtml(data.analisis)}</p>` : ''}
+                ${firmaBlock()}
             `;
         }
 
+        // ─── Solicitud de Cirugía ───────────────────────────────────────
+        document.getElementById('c-clear').addEventListener('click', () => {
+            ['c-nombre','c-rut','c-edad','c-prevision','c-telefono','c-insumos','c-indicacion'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('c-clinica').value = '';
+            document.getElementById('c-cod1').value = '';
+            document.getElementById('c-cod2').value = '';
+            document.getElementById('c-ayudante').value = AYUDANTES[0];
+            document.getElementById('c-anestesia').value = '';
+            document.getElementById('c-peso-prostata').checked = false;
+            document.getElementById('previewPanel').classList.remove('show');
+            lastPayload = null;
+        });
+        document.getElementById('c-generate').addEventListener('click', () => {
+            const nombre = val('c-nombre'); const rut = val('c-rut'); const edad = val('c-edad');
+            if (!nombre || !rut) { alert('Nombre y RUT son obligatorios.'); return; }
+            const cod1 = val('c-cod1');
+            if (!cod1) { alert('Selecciona el código FONASA principal.'); return; }
+            const cod1obj = findFonasa(cod1);
+            const cod2 = val('c-cod2');
+            const cod2obj = cod2 ? findFonasa(cod2) : null;
+            const data = {
+                cod1_codigo: cod1, cod1_nombre: cod1obj?.nombre || '',
+                cod2_codigo: cod2, cod2_nombre: cod2obj?.nombre || '',
+                tipo: 'Electiva',
+                ayudante: val('c-ayudante'),
+                anestesia: val('c-anestesia'),
+                insumos: val('c-insumos'),
+                peso_prostata: document.getElementById('c-peso-prostata').checked,
+                indicacion: val('c-indicacion'),
+                prevision: val('c-prevision'),
+                telefono: val('c-telefono')
+            };
+            const paciente = { nombre, rut, edad };
+            const clinica = val('c-clinica');
+            lastPayload = { doc_type: 'cirugia', paciente, clinica, data };
+            showPreview();
+            renderCirugiaPreview(paciente, clinica, data);
+        });
+
+        function renderCirugiaPreview(paciente, clinica, data) {
+            const fecha = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
+            const procRows = [
+                ['Código FONASA 1', data.cod1_codigo],
+                ['Procedimiento 1', data.cod1_nombre]
+            ];
+            if (data.cod2_codigo && data.cod2_nombre) {
+                procRows.push(['Código FONASA 2', data.cod2_codigo], ['Procedimiento 2', data.cod2_nombre]);
+            }
+            procRows.push(
+                ['Tipo de cirugía', data.tipo || 'Electiva'],
+                ['Cirujano', MEDICO.nombre],
+                ['Ayudante', data.ayudante || '— Sin ayudante —'],
+                ['Anestesia', data.anestesia || '—'],
+                ['Insumos especiales', data.insumos || '—']
+            );
+            if (data.peso_prostata) procRows.push(['Solicitud adicional', 'Peso de próstata para anatomía patológica']);
+
+            const procHtml = procRows.map(([k, v]) => `<tr><td>${escapeHtml(k)}</td><td style="white-space:pre-wrap">${escapeHtml(v || '—')}</td></tr>`).join('');
+
+            const coordHtml = (clinica === 'Clínica Miraflores' || clinica === 'Clínica Los Carrera')
+                ? `<h3>Coordinación quirúrgica</h3><p>Contactar al equipo de coordinación de ${escapeHtml(clinica)}.</p>`
+                : '';
+
+            document.getElementById('previewDoc').innerHTML = `
+                <div class="right">${escapeHtml(fecha)}</div>
+                <h2>SOLICITUD DE INTERVENCIÓN QUIRÚRGICA</h2>
+                <h3>Datos del paciente</h3>
+                <table class="patient">
+                    <tr><td>Nombre del paciente</td><td>${escapeHtml(paciente.nombre)}</td></tr>
+                    <tr><td>RUT</td><td>${escapeHtml(paciente.rut)}</td></tr>
+                    <tr><td>Edad</td><td>${escapeHtml(paciente.edad || '—')}</td></tr>
+                    <tr><td>Previsión</td><td>${escapeHtml(data.prevision || '—')}</td></tr>
+                    <tr><td>Teléfono</td><td>${escapeHtml(data.telefono || '—')}</td></tr>
+                </table>
+                <h3>Procedimiento solicitado</h3>
+                <table class="patient">${procHtml}</table>
+                ${data.indicacion ? `<h3>Indicación clínica</h3><p style="text-align:justify">${escapeHtml(data.indicacion)}</p>` : ''}
+                ${coordHtml}
+                ${firmaBlock()}
+            `;
+        }
+
+        // ─── Receta ─────────────────────────────────────────────────────
+        document.getElementById('r-clear').addEventListener('click', () => {
+            ['r-nombre','r-rut','r-edad','r-diagnostico','r-indicaciones'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('r-clinica').value = '';
+            document.getElementById('r-meds').innerHTML = '';
+            addMedRow();
+            document.getElementById('previewPanel').classList.remove('show');
+            lastPayload = null;
+        });
+        document.getElementById('r-generate').addEventListener('click', () => {
+            const nombre = val('r-nombre'); const rut = val('r-rut'); const edad = val('r-edad');
+            if (!nombre || !rut) { alert('Nombre y RUT son obligatorios.'); return; }
+            const meds = Array.from(document.querySelectorAll('#r-meds .med-row')).map(row => {
+                const inputs = row.querySelectorAll('input');
+                return { nombre: inputs[0].value.trim(), frecuencia: inputs[1].value.trim(), duracion: inputs[2].value.trim(), notas: inputs[3].value.trim() };
+            }).filter(m => m.nombre);
+            if (!meds.length) { alert('Agrega al menos un medicamento.'); return; }
+            const data = {
+                diagnostico: val('r-diagnostico'),
+                medicamentos: meds,
+                indicaciones_generales: val('r-indicaciones')
+            };
+            const paciente = { nombre, rut, edad };
+            const clinica = val('r-clinica');
+            lastPayload = { doc_type: 'receta', paciente, clinica, data };
+            showPreview();
+            renderRecetaPreview(paciente, clinica, data);
+        });
+
+        function renderRecetaPreview(paciente, clinica, data) {
+            const fecha = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
+            const medsHtml = (data.medicamentos || []).map(m => {
+                const partes = [m.nombre, m.frecuencia ? `— ${m.frecuencia}` : '', m.duracion ? `— ${m.duracion}` : '', m.notas ? ` (${m.notas})` : ''].filter(Boolean).join(' ');
+                return `<li>• ${escapeHtml(partes)}</li>`;
+            }).join('');
+            document.getElementById('previewDoc').innerHTML = `
+                <div class="right" style="font-size:14px;font-weight:700;color:var(--primary)">${escapeHtml(MEDICO.nombre)}</div>
+                <div class="right">${escapeHtml(MEDICO.rut)}</div>
+                <div class="right">${escapeHtml(MEDICO.cm)}</div>
+                <div class="right">${escapeHtml(fecha)}</div>
+                <h2>RECETA MÉDICA</h2>
+                <h3>Datos del paciente</h3>
+                <table class="patient">
+                    <tr><td>Nombre del paciente</td><td>${escapeHtml(paciente.nombre)}</td></tr>
+                    <tr><td>RUT</td><td>${escapeHtml(paciente.rut)}</td></tr>
+                    <tr><td>Edad</td><td>${escapeHtml(paciente.edad || '—')}</td></tr>
+                </table>
+                ${data.diagnostico ? `<h3>Diagnóstico</h3><p>${escapeHtml(data.diagnostico)}</p>` : ''}
+                <h3>Prescripción farmacológica</h3>
+                <ul class="meds">${medsHtml}</ul>
+                ${data.indicaciones_generales ? `<h3>Indicaciones generales</h3><p style="text-align:justify">${escapeHtml(data.indicaciones_generales)}</p>` : ''}
+                ${firmaBlock()}
+            `;
+        }
+
+        // ─── Helpers ────────────────────────────────────────────────────
+        function val(id) { return (document.getElementById(id).value || '').trim(); }
+        function setLoading(on, text) {
+            const l = document.getElementById('loading');
+            if (on) { l.classList.add('show'); document.getElementById('loadingText').textContent = text || 'Generando…'; document.getElementById('previewDoc').innerHTML = ''; }
+            else l.classList.remove('show');
+        }
+        function firmaBlock() {
+            return `<div class="firma">
+                <p><em>Atentamente,</em></p>
+                <p style="margin-top:24px;font-weight:700">${escapeHtml(MEDICO.nombre)}</p>
+                <p>${escapeHtml(MEDICO.especialidad)}</p>
+                <p style="font-style:italic;color:#666">${escapeHtml(MEDICO.ubicacion)}</p>
+            </div>`;
+        }
         function escapeHtml(s) {
             return String(s || '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
         }
+        function escapeAttr(s) { return escapeHtml(s); }
     </script>
 </body>
 </html>
