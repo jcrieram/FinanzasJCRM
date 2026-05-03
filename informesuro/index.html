@@ -259,8 +259,29 @@
         .med-row .remove-med:hover { background: rgba(179, 38, 30, 0.05); }
 
         .med-presets {
-            display: flex; flex-wrap: wrap; gap: 6px;
-            margin-bottom: 12px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        .preset-card {
+            background: var(--surface-alt);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 12px;
+        }
+        .preset-card-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--primary);
+            margin-bottom: 8px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--border);
+        }
+        .preset-card-chips {
+            display: flex; flex-wrap: wrap; gap: 5px;
         }
         .med-preset-btn {
             font-size: 11px; padding: 4px 10px;
@@ -270,7 +291,33 @@
             color: var(--primary); font-weight: 600;
             cursor: pointer; font-family: inherit;
         }
-        .med-preset-btn:hover { background: rgba(31, 78, 121, 0.15); }
+        .med-preset-btn:hover { background: rgba(31, 78, 121, 0.18); transform: translateY(-1px); transition: all 0.15s; }
+
+        /* ── Branding strip UroWorkNet ─────────────────────────────── */
+        .brand-strip {
+            background: linear-gradient(180deg, #07162D 0%, #04102A 100%);
+            margin: -24px -24px 18px;
+            padding: 16px 24px 14px;
+            text-align: center;
+            border-bottom: 1px solid rgba(100, 181, 246, 0.18);
+        }
+        .brand-mark {
+            font-size: 26px;
+            font-weight: 900;
+            letter-spacing: -0.025em;
+            line-height: 1;
+            background: linear-gradient(135deg, #ffffff 0%, #ffffff 30%, #64B5F6 65%, #34c759 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            display: inline-block;
+        }
+        .brand-credit {
+            font-size: 11px;
+            color: rgba(232, 244, 253, 0.70);
+            margin-top: 4px;
+            letter-spacing: 0.5px;
+        }
 
         @media (max-width: 768px) {
             .app { grid-template-columns: 1fr; grid-template-areas: "header" "main"; }
@@ -314,6 +361,10 @@
 
         <main class="main">
             <div class="container">
+                <div class="brand-strip">
+                    <div class="brand-mark">UroWorkNet</div>
+                    <div class="brand-credit">Creado por Dr. Juan Carlos Riera M.</div>
+                </div>
 
                 <!-- ════════════ INFORME UROLÓGICO ════════════ -->
                 <div class="tab-content active" id="tab-informe">
@@ -563,28 +614,26 @@
         }
         document.getElementById('c-clinica').addEventListener('change', updateCoordInfo);
 
-        // ─── Receta: presets categorizados y filas de medicamentos ──────
+        // ─── Receta: presets en cajas por categoría ─────────────────────
         const presetsEl = document.getElementById('r-presets');
         Object.entries(MEDICATIONS).forEach(([categoria, lista]) => {
-            const wrap = document.createElement('div');
-            wrap.style.cssText = 'flex-basis:100%;margin-top:6px;';
-            wrap.innerHTML = `<div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:4px;">${categoria}</div>`;
-            const grp = document.createElement('div');
-            grp.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;';
+            const card = document.createElement('div');
+            card.className = 'preset-card';
+            card.innerHTML = `<div class="preset-card-title">${categoria}</div><div class="preset-card-chips"></div>`;
+            const chips = card.querySelector('.preset-card-chips');
             lista.forEach(m => {
                 const btn = document.createElement('button');
                 btn.className = 'med-preset-btn';
                 btn.type = 'button';
                 btn.textContent = m.nombre;
-                btn.title = `${m.posologia} ${m.duracion}`;
+                const durTxt = m.duracion_u === 'permanente' ? 'permanente'
+                             : (m.duracion_n && m.duracion_u ? `por ${m.duracion_n} ${m.duracion_u}` : '');
+                btn.title = `${m.posologia} ${durTxt}`.trim();
                 btn.addEventListener('click', () => addMedRow(m));
-                grp.appendChild(btn);
+                chips.appendChild(btn);
             });
-            wrap.appendChild(grp);
-            presetsEl.appendChild(wrap);
+            presetsEl.appendChild(card);
         });
-        // Sobreescribir display:flex del padre porque ahora son categorías apiladas.
-        presetsEl.style.display = 'block';
 
         function addMedRow(med = {}) {
             const row = document.createElement('div');
