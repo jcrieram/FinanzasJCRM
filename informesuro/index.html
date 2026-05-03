@@ -543,7 +543,7 @@
                         <div class="panel-header">
                             <div>
                                 <span class="panel-title">Solicitud de Estudios</span>
-                                <div class="panel-subtitle">Procedimientos diagnósticos: cistoscopía, urodinamia, biopsia de próstata, uroflujometría, etc.</div>
+                                <div class="panel-subtitle">Selecciona el tipo y completa los datos puntuales. El texto se arma automáticamente.</div>
                             </div>
                         </div>
                         <div class="panel-body">
@@ -554,26 +554,18 @@
                                 <div class="form-row"><label>Clínica</label><select id="s-clinica" data-clinica></select></div>
                             </div>
 
-                            <h4 style="margin-top:18px;font-size:13px;color:var(--primary);">Paquetes de estudios</h4>
-                            <div class="med-presets" id="s-presets" style="margin-top:8px;"></div>
-
-                            <h4 style="margin-top:14px;font-size:13px;color:var(--primary);">Estudios solicitados</h4>
-                            <div id="s-items" style="margin-top:8px;"></div>
-                            <button class="btn btn-sm" id="s-add" style="margin-top:6px;">+ Agregar estudio</button>
-
-                            <div class="form-grid" style="margin-top:18px;">
-                                <div class="form-row" style="grid-column:1 / -1;">
-                                    <label>Indicación clínica</label>
-                                    <textarea id="s-indicacion" style="min-height:80px;"></textarea>
-                                </div>
-                                <div class="form-row" style="max-width:220px;">
-                                    <label>Prioridad</label>
-                                    <select id="s-prioridad">
-                                        <option>Normal</option>
-                                        <option>Urgente</option>
-                                    </select>
-                                </div>
+                            <div class="form-row" style="margin-top:14px;">
+                                <label>Tipo de estudio</label>
+                                <select id="s-tipo">
+                                    <option value="">— Seleccionar —</option>
+                                    <option value="cistoscopia">Cistoscopía (Hospital Clínico Viña del Mar)</option>
+                                    <option value="urodinamia">Estudio Urodinámico (Dr. Pedro Acuña)</option>
+                                    <option value="biopsia">Biopsia de Próstata (Dr. Pedro Acuña)</option>
+                                    <option value="sige">Derivación a Clínica Sige</option>
+                                </select>
                             </div>
+
+                            <div id="s-fields" style="margin-top:14px;"></div>
                         </div>
                         <div class="actions">
                             <button class="btn" id="s-clear">Limpiar</button>
@@ -664,7 +656,7 @@
             FONASA_CODES, findFonasa, isHolep, HOLEP_INSUMOS,
             CLINIC_LIST, AYUDANTES, MEDICATIONS, MEDICO,
             PREVISIONES, COORDINADORES, formatDuracion,
-            EXAM_PACKAGES, STUDY_PACKAGES, generateEpicrisisBody
+            EXAM_PACKAGES, STUDY_TEMPLATES, generateEpicrisisBody
         } from '/lib/uro-data.js';
 
         await requireAuth();
@@ -1059,106 +1051,181 @@
             `;
         }
 
-        // ─── Solicitud de Exámenes / Estudios ───────────────────────────
-        function buildItemsManager(prefix, packages) {
-            const presetsEl = document.getElementById(`${prefix}-presets`);
-            const itemsEl = document.getElementById(`${prefix}-items`);
+        // ─── Solicitud de Exámenes ──────────────────────────────────────
+        // Cada fila tiene: nombre + selector tipo (Laboratorio / Imagen) + remove.
+        const ePresetsEl = document.getElementById('e-presets');
+        const eItemsEl = document.getElementById('e-items');
 
-            // Render presets cards
-            Object.entries(packages).forEach(([nombre, lista]) => {
-                const card = document.createElement('div');
-                card.className = 'preset-card';
-                card.innerHTML = `<div class="preset-card-title">${nombre}</div><div class="preset-card-chips"></div>`;
-                const chips = card.querySelector('.preset-card-chips');
-                const btn = document.createElement('button');
-                btn.className = 'med-preset-btn';
-                btn.type = 'button';
-                btn.textContent = `Cargar paquete (${lista.length})`;
-                btn.title = lista.join(', ');
-                btn.addEventListener('click', () => {
-                    lista.forEach(item => addItemRow(prefix, item));
-                });
-                chips.appendChild(btn);
-                presetsEl.appendChild(card);
+        Object.entries(EXAM_PACKAGES).forEach(([nombre, lista]) => {
+            const card = document.createElement('div');
+            card.className = 'preset-card';
+            card.innerHTML = `<div class="preset-card-title">${nombre}</div><div class="preset-card-chips"></div>`;
+            const chips = card.querySelector('.preset-card-chips');
+            const btn = document.createElement('button');
+            btn.className = 'med-preset-btn';
+            btn.type = 'button';
+            btn.textContent = `Cargar paquete (${lista.length})`;
+            btn.title = lista.map(it => `${it.name} [${it.type}]`).join(', ');
+            btn.addEventListener('click', () => {
+                lista.forEach(it => addExamRow(it.name, it.type));
             });
+            chips.appendChild(btn);
+            ePresetsEl.appendChild(card);
+        });
 
-            document.getElementById(`${prefix}-add`).addEventListener('click', () => addItemRow(prefix, ''));
-
-            document.getElementById(`${prefix}-clear`).addEventListener('click', () => {
-                ['nombre','rut','edad','indicacion'].forEach(id => {
-                    const el = document.getElementById(`${prefix}-${id}`);
-                    if (el) el.value = '';
-                });
-                document.getElementById(`${prefix}-clinica`).value = '';
-                document.getElementById(`${prefix}-prioridad`).value = 'Normal';
-                itemsEl.innerHTML = '';
-                addItemRow(prefix, '');
-                document.getElementById('previewPanel').classList.remove('show');
-                lastPayload = null;
-            });
-
-            // Empezamos con una fila vacía
-            addItemRow(prefix, '');
-        }
-
-        function addItemRow(prefix, value) {
-            const itemsEl = document.getElementById(`${prefix}-items`);
+        function addExamRow(name = '', type = 'lab') {
             const row = document.createElement('div');
-            row.style.cssText = 'display:flex;gap:8px;margin-bottom:6px;align-items:center;';
+            row.style.cssText = 'display:grid;grid-template-columns:1fr 130px 32px;gap:8px;margin-bottom:6px;align-items:center;';
             row.innerHTML = `
-                <input type="text" placeholder="Nombre del examen / estudio" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:13px;font-family:inherit;" value="${escapeAttr(value)}">
+                <input type="text" placeholder="Nombre del examen" style="border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:13px;font-family:inherit;" value="${escapeAttr(name)}">
+                <select style="border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:13px;font-family:inherit;background:var(--surface);">
+                    <option value="lab" ${type === 'lab' ? 'selected' : ''}>Laboratorio</option>
+                    <option value="imagen" ${type === 'imagen' ? 'selected' : ''}>Imagen / estudio</option>
+                </select>
                 <button class="remove-med" type="button" title="Quitar">×</button>
             `;
             row.querySelector('.remove-med').addEventListener('click', () => row.remove());
-            itemsEl.appendChild(row);
+            eItemsEl.appendChild(row);
         }
 
-        function collectItems(prefix) {
-            return Array.from(document.querySelectorAll(`#${prefix}-items input`))
-                .map(i => i.value.trim()).filter(Boolean);
-        }
+        document.getElementById('e-add').addEventListener('click', () => addExamRow('', 'lab'));
+        document.getElementById('e-clear').addEventListener('click', () => {
+            ['e-nombre','e-rut','e-edad','e-indicacion'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('e-clinica').value = '';
+            document.getElementById('e-prioridad').value = 'Normal';
+            eItemsEl.innerHTML = '';
+            addExamRow('', 'lab');
+            document.getElementById('previewPanel').classList.remove('show');
+            lastPayload = null;
+        });
+        addExamRow('', 'lab');
 
-        buildItemsManager('e', EXAM_PACKAGES);
-        buildItemsManager('s', STUDY_PACKAGES);
-
-        document.getElementById('e-generate').addEventListener('click', () => generateExStudy('e', 'examenes'));
-        document.getElementById('s-generate').addEventListener('click', () => generateExStudy('s', 'estudios'));
-
-        function generateExStudy(prefix, doc_type) {
-            const nombre = val(`${prefix}-nombre`); const rut = val(`${prefix}-rut`); const edad = val(`${prefix}-edad`);
+        document.getElementById('e-generate').addEventListener('click', () => {
+            const nombre = val('e-nombre'); const rut = val('e-rut'); const edad = val('e-edad');
             if (!nombre || !rut) { alert('Nombre y RUT son obligatorios.'); return; }
-            const items = collectItems(prefix);
-            if (!items.length) { alert('Agrega al menos un ítem.'); return; }
+            const items = Array.from(eItemsEl.children).map(row => {
+                const inp = row.querySelector('input');
+                const sel = row.querySelector('select');
+                return { name: inp.value.trim(), type: sel.value };
+            }).filter(it => it.name);
+            if (!items.length) { alert('Agrega al menos un examen.'); return; }
             const data = {
                 items,
-                indicacion: val(`${prefix}-indicacion`),
-                prioridad: val(`${prefix}-prioridad`) || 'Normal'
+                indicacion: val('e-indicacion'),
+                prioridad: val('e-prioridad') || 'Normal'
             };
             const paciente = { nombre, rut, edad };
-            const clinica = val(`${prefix}-clinica`);
-            lastPayload = { doc_type, paciente, clinica, data };
+            const clinica = val('e-clinica');
+            lastPayload = { doc_type: 'examenes', paciente, clinica, data };
             showPreview();
-            renderExStudyPreview(paciente, clinica, data, doc_type);
+            renderExamenesPreview(paciente, clinica, data);
+        });
+
+        function renderExamenesPreview(paciente, clinica, data) {
+            const fecha = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
+            const lab = data.items.filter(it => it.type === 'lab');
+            const img = data.items.filter(it => it.type === 'imagen');
+            const renderTable = (items, colName) => {
+                const rows = items.map((it, i) => `<tr><td style="width:50px">${i + 1}</td><td>${escapeHtml(it.name)}</td></tr>`).join('');
+                return `<table class="studies"><thead><tr><th>N°</th><th>${colName}</th></tr></thead><tbody>${rows}</tbody></table>`;
+            };
+            const patientTbl = `<table class="patient">
+                <tr><td>Nombre del paciente</td><td>${escapeHtml(paciente.nombre)}</td></tr>
+                <tr><td>RUT</td><td>${escapeHtml(paciente.rut)}</td></tr>
+                <tr><td>Edad</td><td>${escapeHtml(paciente.edad || '—')}</td></tr>
+            </table>`;
+            const indyPrior = `${data.indicacion ? `<h3>Indicación clínica</h3><p style="text-align:justify">${escapeHtml(data.indicacion)}</p>` : ''}
+                ${data.prioridad && data.prioridad !== 'Normal' ? `<p style="margin-top:12px;color:var(--primary);font-weight:700">Prioridad: ${escapeHtml(data.prioridad)}</p>` : ''}`;
+            let html = '';
+            if (lab.length) {
+                html += `<div class="right">${escapeHtml(fecha)}</div>
+                    <h2>SOLICITUD DE EXÁMENES</h2>
+                    <h3>Datos del paciente</h3>${patientTbl}
+                    <h3>Exámenes de laboratorio</h3>${renderTable(lab, 'Examen')}
+                    ${indyPrior}
+                    ${firmaBlock()}`;
+            }
+            if (img.length) {
+                html += `<div style="border-top:2px dashed #ccc;margin:32px 0;text-align:center;color:#999;font-size:11px;letter-spacing:2px;text-transform:uppercase;">— Hoja 2 —</div>
+                    <div class="right">${escapeHtml(fecha)}</div>
+                    <h2>SOLICITUD DE ESTUDIOS DE IMAGEN</h2>
+                    <h3>Datos del paciente</h3>${patientTbl}
+                    <h3>Estudios de imagen solicitados</h3>${renderTable(img, 'Estudio')}
+                    ${indyPrior}
+                    ${firmaBlock()}`;
+            }
+            document.getElementById('previewDoc').innerHTML = html;
         }
 
-        function renderExStudyPreview(paciente, clinica, data, doc_type) {
+        // ─── Solicitud de Estudios (procedimientos derivados) ───────────
+        const sFieldsEl = document.getElementById('s-fields');
+        const sTipoEl = document.getElementById('s-tipo');
+        sTipoEl.addEventListener('change', renderStudyFields);
+        function renderStudyFields() {
+            sFieldsEl.innerHTML = '';
+            const tipo = sTipoEl.value;
+            if (!tipo) return;
+            const tpl = STUDY_TEMPLATES[tipo];
+            if (!tpl) return;
+            const grid = document.createElement('div');
+            grid.className = 'form-grid';
+            tpl.fields.forEach(f => {
+                const row = document.createElement('div');
+                row.className = 'form-row';
+                row.innerHTML = `<label>${escapeHtml(f.label)}</label><input id="s-f-${f.key}" type="text" placeholder="${escapeAttr(f.placeholder || '')}">`;
+                grid.appendChild(row);
+            });
+            sFieldsEl.appendChild(grid);
+        }
+
+        document.getElementById('s-clear').addEventListener('click', () => {
+            ['s-nombre','s-rut','s-edad'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('s-clinica').value = '';
+            sTipoEl.value = '';
+            sFieldsEl.innerHTML = '';
+            document.getElementById('previewPanel').classList.remove('show');
+            lastPayload = null;
+        });
+
+        document.getElementById('s-generate').addEventListener('click', () => {
+            const nombre = val('s-nombre'); const rut = val('s-rut'); const edad = val('s-edad');
+            if (!nombre || !rut) { alert('Nombre y RUT son obligatorios.'); return; }
+            const tipo = sTipoEl.value;
+            if (!tipo) { alert('Selecciona el tipo de estudio.'); return; }
+            const tpl = STUDY_TEMPLATES[tipo];
+            const fields = {};
+            tpl.fields.forEach(f => {
+                const el = document.getElementById(`s-f-${f.key}`);
+                fields[f.key] = el ? el.value.trim() : '';
+            });
+            const paciente = { nombre, rut, edad };
+            const clinica = val('s-clinica');
+            const body = tpl.build({ paciente, fields });
+            const data = {
+                tipo,
+                titulo: tpl.title,
+                fields,
+                body
+            };
+            lastPayload = { doc_type: 'estudios', paciente, clinica, data };
+            showPreview();
+            renderEstudioPreview(paciente, clinica, data);
+        });
+
+        function renderEstudioPreview(paciente, clinica, data) {
             const fecha = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
-            const titulo = doc_type === 'examenes' ? 'SOLICITUD DE EXÁMENES' : 'SOLICITUD DE ESTUDIOS';
-            const colHeader = doc_type === 'examenes' ? 'Examen' : 'Estudio';
-            const rows = data.items.map((it, i) => `<tr><td style="width:50px">${i + 1}</td><td>${escapeHtml(it)}</td></tr>`).join('');
+            const lines = (data.body || '').split('\n').map(l => l ? `<p style="margin:0 0 6px 0">${escapeHtml(l)}</p>` : '<p style="margin:0 0 6px 0">&nbsp;</p>').join('');
             document.getElementById('previewDoc').innerHTML = `
                 <div class="right">${escapeHtml(fecha)}</div>
-                <h2>${titulo}</h2>
+                <h2>${escapeHtml(data.titulo || 'SOLICITUD DE ESTUDIO')}</h2>
                 <h3>Datos del paciente</h3>
                 <table class="patient">
                     <tr><td>Nombre del paciente</td><td>${escapeHtml(paciente.nombre)}</td></tr>
                     <tr><td>RUT</td><td>${escapeHtml(paciente.rut)}</td></tr>
                     <tr><td>Edad</td><td>${escapeHtml(paciente.edad || '—')}</td></tr>
                 </table>
-                <h3>${colHeader === 'Examen' ? 'Exámenes solicitados' : 'Estudios solicitados'}</h3>
-                <table class="studies"><thead><tr><th>N°</th><th>${colHeader}</th></tr></thead><tbody>${rows}</tbody></table>
-                ${data.indicacion ? `<h3>Indicación clínica</h3><p style="text-align:justify">${escapeHtml(data.indicacion)}</p>` : ''}
-                ${data.prioridad && data.prioridad !== 'Normal' ? `<p style="margin-top:12px;color:var(--primary);font-weight:700">Prioridad: ${escapeHtml(data.prioridad)}</p>` : ''}
+                <h3>Solicitud</h3>
+                <div style="font-family:Arial;font-size:13px;line-height:1.55">${lines}</div>
                 ${firmaBlock()}
             `;
         }

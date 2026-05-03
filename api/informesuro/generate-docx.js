@@ -397,13 +397,16 @@ function buildSolicitudExamenes({ paciente, clinica, data, titulo = 'SOLICITUD D
         ['Edad', paciente.edad]
     ]));
 
-    const items = Array.isArray(data.items) ? data.items.filter(Boolean) : [];
-    if (items.length) {
-        const isExamenes = (data.kind || 'examenes') === 'examenes';
-        sections.push(sectionTitle(isExamenes ? 'EXÁMENES SOLICITADOS' : 'ESTUDIOS SOLICITADOS'));
+    // Items pueden venir como strings (legacy) o como { name, type }.
+    const all = (Array.isArray(data.items) ? data.items : [])
+        .map(it => typeof it === 'string' ? { name: it, type: 'lab' } : it)
+        .filter(it => (it?.name || '').trim());
+    const labItems    = all.filter(it => it.type === 'lab').map(it => it.name);
+    const imagenItems = all.filter(it => it.type === 'imagen').map(it => it.name);
 
+    function buildItemsTable(items, headerLabel) {
         const headerRow = new TableRow({
-            children: ['N°', isExamenes ? 'Examen' : 'Estudio'].map(t => new TableCell({
+            children: ['N°', headerLabel].map(t => new TableCell({
                 shading: { type: ShadingType.CLEAR, fill: AZUL },
                 margins: { top: 40, bottom: 40, left: 100, right: 100 },
                 children: [new Paragraph({ children: [arial(t, { size: 10, bold: true, color: BLANCO })] })]
@@ -426,10 +429,15 @@ function buildSolicitudExamenes({ paciente, clinica, data, titulo = 'SOLICITUD D
                 ]
             });
         });
-        sections.push(new Table({
+        return new Table({
             width: { size: 100, type: WidthType.PERCENTAGE },
             rows: [headerRow, ...dataRows]
-        }));
+        });
+    }
+
+    if (labItems.length) {
+        sections.push(sectionTitle('EXÁMENES DE LABORATORIO'));
+        sections.push(buildItemsTable(labItems, 'Examen'));
     }
 
     if (data.indicacion) {
@@ -442,6 +450,63 @@ function buildSolicitudExamenes({ paciente, clinica, data, titulo = 'SOLICITUD D
             children: [arial(`Prioridad: ${data.prioridad}`, { bold: true, color: AZUL })]
         }));
     }
+
+    buildSignature(true).forEach(p => sections.push(p));
+
+    // Si hay items de imagen, generamos una segunda hoja con encabezado propio.
+    if (imagenItems.length) {
+        sections.push(new Paragraph({
+            children: [arial('')],
+            pageBreakBefore: true
+        }));
+        sections.push(fechaParagraph());
+        sections.push(centerTitle('SOLICITUD DE ESTUDIOS DE IMAGEN'));
+        sections.push(sectionTitle('DATOS DEL PACIENTE'));
+        sections.push(patientTable([
+            ['Nombre del paciente', paciente.nombre],
+            ['RUT', paciente.rut],
+            ['Edad', paciente.edad]
+        ]));
+        sections.push(sectionTitle('ESTUDIOS DE IMAGEN SOLICITADOS'));
+        sections.push(buildItemsTable(imagenItems, 'Estudio'));
+        if (data.indicacion) {
+            sections.push(sectionTitle('INDICACIÓN CLÍNICA'));
+            sections.push(new Paragraph({ alignment: AlignmentType.JUSTIFIED, children: [arial(data.indicacion)] }));
+        }
+        if (data.prioridad && data.prioridad !== 'Normal') {
+            sections.push(new Paragraph({
+                spacing: { before: 120 },
+                children: [arial(`Prioridad: ${data.prioridad}`, { bold: true, color: AZUL })]
+            }));
+        }
+        buildSignature(true).forEach(p => sections.push(p));
+    }
+
+    return wrapDocument({ sections, title: titulo, clinica });
+}
+
+function buildSolicitudEstudio({ paciente, clinica, data }) {
+    const sections = [];
+    const titulo = data.titulo || 'SOLICITUD DE ESTUDIO';
+
+    sections.push(fechaParagraph());
+    sections.push(centerTitle(titulo));
+
+    sections.push(sectionTitle('DATOS DEL PACIENTE'));
+    sections.push(patientTable([
+        ['Nombre del paciente', paciente.nombre],
+        ['RUT', paciente.rut],
+        ['Edad', paciente.edad]
+    ]));
+
+    sections.push(sectionTitle('SOLICITUD'));
+    const cuerpo = (data.body || '').split('\n');
+    cuerpo.forEach(line => {
+        sections.push(new Paragraph({
+            spacing: { before: 0, after: 60 },
+            children: [arial(line, { size: 11 })]
+        }));
+    });
 
     buildSignature(true).forEach(p => sections.push(p));
     return wrapDocument({ sections, title: titulo, clinica });
@@ -549,7 +614,7 @@ export default async function handler(req, res) {
         else if (doc_type === 'cirugia')   docObj = buildSolicitudCirugia({ paciente, clinica, data });
         else if (doc_type === 'receta')    docObj = buildReceta({ paciente, clinica, data });
         else if (doc_type === 'examenes')  docObj = buildSolicitudExamenes({ paciente, clinica, data: { ...data, kind: 'examenes' }, titulo: 'SOLICITUD DE EXÁMENES' });
-        else if (doc_type === 'estudios')  docObj = buildSolicitudExamenes({ paciente, clinica, data: { ...data, kind: 'estudios' }, titulo: 'SOLICITUD DE ESTUDIOS' });
+        else if (doc_type === 'estudios')  docObj = buildSolicitudEstudio({ paciente, clinica, data });
         else if (doc_type === 'alta')      docObj = buildAltaMedica({ paciente, clinica, data });
         else return res.status(400).json({ error: `Tipo de documento '${doc_type}' aún no implementado` });
     } catch (e) {
