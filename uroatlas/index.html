@@ -459,6 +459,47 @@
             }
         }
 
+        /* ── Feedback ── */
+        .feedback-section {
+            padding: 14px 0 0;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            margin-top: 14px;
+        }
+        .feedback-question {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+        .feedback-btns { display: flex; gap: 10px; margin-bottom: 8px; }
+        .feedback-btn {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            color: var(--text);
+            border-radius: 6px;
+            padding: 6px 18px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .feedback-btn:hover { background: rgba(255,255,255,0.1); }
+        .feedback-btn.active-up { background: rgba(100,181,246,0.18); border-color: #64B5F6; }
+        .feedback-btn.active-down { background: rgba(239,83,80,0.18); border-color: #EF5350; }
+        #fbComment {
+            width: 100%; min-height: 80px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 6px;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 13px;
+            padding: 10px;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+        #fbComment:focus { outline: none; border-color: var(--primary); }
+        #fbComment::placeholder { color: var(--text-muted); }
+        #fbThanks { font-size: 12px; color: #81C784; padding: 6px 0; }
+
         @media (max-width: 768px) {
             .app {
                 grid-template-columns: 1fr;
@@ -538,6 +579,18 @@
                     <div class="response-citations" id="responseCitations" style="display:none">
                         <h4>Fuentes citadas</h4>
                         <div id="citationsList"></div>
+                    </div>
+                    <div class="feedback-section" id="feedbackSection" style="display:none">
+                        <div class="feedback-question">¿Fue útil esta opinión?</div>
+                        <div class="feedback-btns">
+                            <button class="feedback-btn" id="fbUp">👍 Sí</button>
+                            <button class="feedback-btn" id="fbDown">👎 No</button>
+                        </div>
+                        <div id="fbCommentBox" style="display:none">
+                            <textarea id="fbComment" placeholder="¿Qué faltó o fue incorrecto? Esta corrección mejora las respuestas en casos similares futuros."></textarea>
+                            <button class="btn btn-primary" id="fbSubmit" style="margin-top:8px">Enviar corrección</button>
+                        </div>
+                        <div id="fbThanks" style="display:none"></div>
                     </div>
                 </section>
 
@@ -770,7 +823,10 @@
             responsePanel.classList.remove('show');
             placeholder.style.display = 'block';
             currentCase = null;
+            currentCaseId = null;
             document.getElementById('reportBtn').style.display = 'none';
+            document.getElementById('feedbackSection').style.display = 'none';
+            resetFeedback();
         });
 
         document.getElementById('newCaseBtn').addEventListener('click', () => {
@@ -781,7 +837,9 @@
         // ─────────────────────────────────────────────────────────────
         // Sidebar: lista de casos persistidos
         // ─────────────────────────────────────────────────────────────
-        let currentCase = null; // { case_text, response } del último caso visible
+        let currentCase = null;   // { case_text, response } del último caso visible
+        let currentCaseId = null; // UUID guardado en DB; null si fue consulta anónima
+        let feedbackSent = false;
 
         // Después de cada Consultar exitoso, recordar el caso para informe.
         const origConsultHandler = consultBtn.onclick;
@@ -859,7 +917,13 @@
         const origAddCitation = (window._afterConsult || (() => {}));
         window._afterConsult = (data, text) => {
             currentCase = { case_text: text, response: data.response || '' };
+            currentCaseId = data.id || null;
             document.getElementById('reportBtn').style.display = currentCase.response ? 'inline-block' : 'none';
+            // Mostrar sección de feedback para la nueva consulta
+            if (currentCaseId) {
+                resetFeedback();
+                document.getElementById('feedbackSection').style.display = 'block';
+            }
             loadCasesList();
         };
 
@@ -926,6 +990,60 @@
 
         // Cargar la lista al inicio.
         loadCasesList();
+
+        // ─────────────────────────────────────────────────────────────
+        // Feedback
+        // ─────────────────────────────────────────────────────────────
+        function resetFeedback() {
+            feedbackSent = false;
+            document.getElementById('fbCommentBox').style.display = 'none';
+            document.getElementById('fbThanks').style.display = 'none';
+            document.getElementById('fbComment').value = '';
+            document.getElementById('fbUp').classList.remove('active-up');
+            document.getElementById('fbDown').classList.remove('active-down');
+        }
+
+        async function sendFeedback(rating, comment) {
+            if (!currentCaseId) return;
+            try {
+                await apiFetch('/api/uroatlas/feedback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ case_id: currentCaseId, rating, comment: comment || '' })
+                });
+            } catch (e) {
+                console.warn('Feedback no se pudo enviar:', e);
+            }
+        }
+
+        document.getElementById('fbUp').addEventListener('click', async () => {
+            if (feedbackSent) return;
+            document.getElementById('fbUp').classList.add('active-up');
+            document.getElementById('fbDown').classList.remove('active-down');
+            document.getElementById('fbCommentBox').style.display = 'none';
+            await sendFeedback(1, '');
+            feedbackSent = true;
+            document.getElementById('fbThanks').textContent = '✓ Gracias. Seguimos mejorando.';
+            document.getElementById('fbThanks').style.display = 'block';
+        });
+
+        document.getElementById('fbDown').addEventListener('click', () => {
+            if (feedbackSent) return;
+            document.getElementById('fbDown').classList.add('active-down');
+            document.getElementById('fbUp').classList.remove('active-up');
+            document.getElementById('fbCommentBox').style.display = 'block';
+            document.getElementById('fbComment').focus();
+        });
+
+        document.getElementById('fbSubmit').addEventListener('click', async () => {
+            if (feedbackSent) return;
+            const comment = document.getElementById('fbComment').value.trim();
+            await sendFeedback(-1, comment);
+            feedbackSent = true;
+            document.getElementById('fbCommentBox').style.display = 'none';
+            document.getElementById('fbThanks').textContent = '✓ Corrección guardada. UroAtlas la usará en casos similares futuros.';
+            document.getElementById('fbThanks').style.display = 'block';
+        });
     </script>
 </body>
 </html>

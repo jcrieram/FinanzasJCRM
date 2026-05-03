@@ -13,7 +13,7 @@ export const config = {
 
 const VOYAGE_MODEL = 'voyage-3';
 const CLAUDE_MODEL = 'claude-sonnet-4-6';
-const TOP_K = 8;
+const TOP_K = 15;
 
 const SYSTEM_PROMPT = `Eres un asistente urológico experto que asiste al Dr. Juan Carlos Riera M. con una segunda opinión clínica basada en los fragmentos de guidelines AUA, EAU y libros de urología que se te proporcionan como contexto, y en las imágenes médicas que el médico te envíe.
 
@@ -92,6 +92,29 @@ async function callClaude(systemPrompt, content, apiKey, opts = {}) {
     return data.content?.[0]?.text || '';
 }
 
+// Traduce el texto clínico al inglés para mejorar el retrieval contra
+// documentos en inglés. Usa haiku (rápido y barato). Falla silenciosamente.
+async function translateToEnglish(text, apiKey) {
+    try {
+        const res = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+            body: JSON.stringify({
+                model: 'claude-haiku-4-5-20251001',
+                max_tokens: 800,
+                temperature: 0,
+                system: 'Translate the clinical case to medical English. Preserve all values, drug names, diagnoses and lab results exactly. Return ONLY the translated text, nothing else.',
+                messages: [{ role: 'user', content: text }]
+            })
+        });
+        if (!res.ok) return text;
+        const data = await res.json();
+        return data.content?.[0]?.text?.trim() || text;
+    } catch {
+        return text;
+    }
+}
+
 // Convierte una data URL (data:image/png;base64,...) en el bloque de
 // imagen que espera la API de Anthropic.
 function dataUrlToImageBlock(dataUrl) {
@@ -154,10 +177,13 @@ export default async function handler(req, res) {
             )).trim();
         }
 
-        // 2) Embedding de la query
-        const queryEmbedding = await voyageEmbedQuery(retrievalQuery, voyageKey);
+        // 2) Traducir al inglés para mejorar retrieval contra guidelines en inglés
+        const retrievalQueryEn = await translateToEnglish(retrievalQuery, anthropicKey);
 
-        // 3) Retrieval con pgvector
+        // 3) Embedding de la query
+        const queryEmbedding = await voyageEmbedQuery(retrievalQueryEn, voyageKey);
+
+        // 4) Retrieval con pgvector
         const supa = getServiceClient();
         const { data: chunks, error: matchError } = await supa.rpc('match_documents', {
             query_embedding: queryEmbedding,
@@ -172,27 +198,46 @@ export default async function handler(req, res) {
             });
         }
 
-        // 4) Armar contexto y prompt para Claude
+        // 5) Armar contexto y prompt para Claude
         const contextBlocks = chunks.map((c, i) => {
             const tag = `[${i + 1}]`;
             const ref = `${c.source} — ${c.guideline_name || 'sin nombre'}${c.page ? `, p.${c.page}` : ''}`;
             return `${tag} ${ref}\n${c.content}`;
         }).join('\n\n────────\n\n');
 
+        // Recuperar correcciones previas del doctor para casos similares
+        let correctionContext = '';
+        if (auth.user) {
+            try {
+                const { data: corrections } = await supa.rpc('match_corrections', {
+                    query_embedding: queryEmbedding,
+                    target_user_id: auth.user.id,
+                    match_count: 3
+                });
+                const relevant = (corrections || []).filter(c => c.rating === -1 && c.comment && c.similarity > 0.75);
+                if (relevant.length) {
+                    correctionContext = '\n\n────────\n\nCORRECCIONES DEL DOCTOR EN CASOS SIMILARES (considerar al redactar la opinión):\n'
+                        + relevant.map(c => `• ${c.comment}`).join('\n');
+                }
+            } catch {
+                // match_corrections aún no existe; se activa después de correr el SQL
+            }
+        }
+
         const caseSection = clinicalText
             ? `CASO CLÍNICO DEL MÉDICO:\n\n${clinicalText}`
             : `CASO CLÍNICO: el médico envió únicamente la imagen adjunta y solicita una opinión sobre lo que se observa.`;
 
-        const textPrompt = `CONTEXTO (fragmentos recuperados de las guidelines, ordenados por relevancia):\n\n${contextBlocks}\n\n────────────────────\n\n${caseSection}\n\n────────────────────\n\nRedacta tu opinión siguiendo la estructura del system prompt. Recuerda: sin headers de markdown, sin separadores horizontales, análisis global. Cita [1], [2], etc.`;
+        const textPrompt = `CONTEXTO (fragmentos recuperados de las guidelines, ordenados por relevancia):\n\n${contextBlocks}${correctionContext}\n\n────────────────────\n\n${caseSection}\n\n────────────────────\n\nRedacta tu opinión siguiendo la estructura del system prompt. Recuerda: sin headers de markdown, sin separadores horizontales, análisis global. Cita [1], [2], etc.`;
 
         const messageContent = imageBlocks.length
             ? [...imageBlocks, { type: 'text', text: textPrompt }]
             : textPrompt;
 
-        // 5) Llamada a Claude (con o sin imágenes)
+        // 6) Llamada a Claude (con o sin imágenes)
         const responseText = await callClaude(SYSTEM_PROMPT, messageContent, anthropicKey);
 
-        // 6) Construir lista de citas para la UI
+        // 7) Construir lista de citas para la UI
         const citations = chunks.map((c, i) => ({
             n: i + 1,
             source: c.source,
@@ -203,7 +248,7 @@ export default async function handler(req, res) {
             preview: (c.content || '').slice(0, 220)
         }));
 
-        // 7) Persistir el caso en la tabla `cases` (si el usuario está autenticado vía JWT, no PIN).
+        // 8) Persistir el caso en la tabla `cases` (si el usuario está autenticado vía JWT, no PIN).
         let caseId = null;
         if (auth.user) {
             const { data: inserted, error: insertError } = await supa
