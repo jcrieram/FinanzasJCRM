@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0F2A47">
+    <title>InformesUro · Documentos clínicos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg: #F5F7FA;
+            --surface: #FFFFFF;
+            --surface-alt: #FAFBFC;
+            --border: #E1E5EA;
+            --border-strong: #C8CFD6;
+            --navy: #0F2A47;
+            --primary: #1F4E79;
+            --primary-hover: #163A5C;
+            --text: #1A2332;
+            --text-secondary: #4A5666;
+            --text-muted: #7B8794;
+            --success: #2A9D5F;
+            --danger: #B3261E;
+        }
+        html, body {
+            height: 100%;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', -apple-system, sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+        .app {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            grid-template-rows: 56px 1fr;
+            grid-template-areas: "header header" "sidebar main";
+            height: 100vh; height: 100dvh;
+        }
+        .header {
+            grid-area: header;
+            background: var(--navy);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+        }
+        .header-brand {
+            display: flex; align-items: center; gap: 10px;
+            font-size: 15px; font-weight: 700;
+        }
+        .header-brand-mark {
+            width: 28px; height: 28px;
+            background: linear-gradient(135deg, #1F4E79, #2A9D5F);
+            border-radius: 6px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px; font-weight: 800;
+        }
+        .header-meta { display: flex; align-items: center; gap: 16px; font-size: 13px; }
+        .header-btn {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.25);
+            color: #fff;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-family: inherit; font-size: 13px;
+            cursor: pointer;
+        }
+        .header-btn:hover { background: rgba(255,255,255,0.10); }
+        .sidebar {
+            grid-area: sidebar;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
+        }
+        .sidebar-section {
+            padding: 16px 18px 8px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+        .nav-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 18px;
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text);
+            border-left: 3px solid transparent;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .nav-item:hover { background: var(--surface-alt); }
+        .nav-item.active {
+            background: rgba(31, 78, 121, 0.07);
+            border-left-color: var(--primary);
+            color: var(--primary);
+            font-weight: 600;
+        }
+        .nav-item.disabled { color: var(--text-muted); cursor: not-allowed; }
+        .nav-item.disabled .badge { background: #FFE9C4; color: #8A5A00; }
+        .badge {
+            margin-left: auto;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(31, 78, 121, 0.10);
+            color: var(--primary);
+            font-weight: 600;
+        }
+        .main {
+            grid-area: main;
+            overflow-y: auto;
+            padding: 24px;
+        }
+        .container { max-width: 980px; margin: 0 auto; }
+        .panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+        .panel-header {
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .panel-title { font-size: 14px; font-weight: 700; }
+        .panel-body { padding: 18px; }
+        .panel-subtitle { color: var(--text-muted); font-size: 13px; margin-top: 4px; }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 14px;
+        }
+        .form-row { display: flex; flex-direction: column; }
+        .form-row label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+        }
+        .form-row input, .form-row select, .form-row textarea {
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-family: inherit;
+            font-size: 14px;
+            color: var(--text);
+            background: var(--surface);
+        }
+        .form-row textarea { min-height: 180px; resize: vertical; line-height: 1.55; }
+        .form-row input:focus, .form-row select:focus, .form-row textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(31, 78, 121, 0.10);
+        }
+        .actions {
+            display: flex; gap: 10px; justify-content: flex-end;
+            padding: 12px 18px;
+            border-top: 1px solid var(--border);
+            background: var(--surface-alt);
+            border-radius: 0 0 8px 8px;
+        }
+        .btn {
+            padding: 8px 18px;
+            font-family: inherit; font-size: 13px; font-weight: 600;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text);
+            cursor: pointer;
+        }
+        .btn:hover { background: var(--surface-alt); }
+        .btn-primary {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+        }
+        .btn-primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .preview-panel { display: none; }
+        .preview-panel.show { display: block; }
+        .preview-doc {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 32px 40px;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+            line-height: 1.55;
+        }
+        .preview-doc h2 {
+            color: var(--primary);
+            text-decoration: underline;
+            text-align: center;
+            font-size: 18px;
+            margin: 12px 0 16px;
+        }
+        .preview-doc h3 {
+            color: var(--primary);
+            font-size: 13px;
+            text-decoration: underline;
+            margin-top: 14px;
+            margin-bottom: 6px;
+        }
+        .preview-doc table {
+            width: 100%; border-collapse: collapse; margin: 8px 0;
+        }
+        .preview-doc table.patient td { padding: 6px 10px; background: #EBF3FB; border: 1px solid #D5DCE8; }
+        .preview-doc table.patient td:first-child { font-weight: 700; width: 35%; }
+        .preview-doc table.studies th { background: var(--primary); color: white; padding: 6px 10px; }
+        .preview-doc table.studies td { padding: 6px 10px; border: 1px solid #D5DCE8; }
+        .preview-doc table.studies tr:nth-child(odd) td { background: #EBF3FB; }
+        .preview-doc .right { text-align: right; font-style: italic; color: var(--text-secondary); }
+        .preview-doc ol { margin-left: 24px; }
+        .preview-doc .firma { margin-top: 32px; border-top: 2px solid var(--primary); padding-top: 12px; }
+
+        .loading { display: none; align-items: center; gap: 10px; padding: 18px; color: var(--text-muted); }
+        .loading.show { display: flex; }
+        .spinner {
+            width: 16px; height: 16px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            border-top-color: var(--primary);
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @media (max-width: 768px) {
+            .app { grid-template-columns: 1fr; grid-template-areas: "header" "main"; }
+            .sidebar { display: none; }
+        }
+
+        @media print {
+            body * { visibility: hidden; }
+            .preview-doc, .preview-doc * { visibility: visible; }
+            .preview-doc {
+                position: absolute;
+                inset: 0;
+                border: none;
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <header class="header">
+            <div class="header-brand">
+                <div class="header-brand-mark">I</div>
+                InformesUro
+            </div>
+            <div class="header-meta">
+                <span id="userEmail" style="opacity:0.8;"></span>
+                <a href="/portal/" class="header-btn" style="text-decoration:none;display:inline-block;">Portal</a>
+                <button class="header-btn" id="signOutBtn">Salir</button>
+            </div>
+        </header>
+
+        <aside class="sidebar">
+            <div class="sidebar-section">Documentos</div>
+            <div class="nav-item active" data-tab="informe">📄 Informe Urológico</div>
+            <div class="nav-item disabled" data-tab="cirugia">Solicitud de Cirugía<span class="badge">Próx.</span></div>
+            <div class="nav-item disabled" data-tab="examenes">Solicitud de Exámenes<span class="badge">Próx.</span></div>
+            <div class="nav-item disabled" data-tab="estudios">Solicitud Estudios<span class="badge">Próx.</span></div>
+            <div class="nav-item disabled" data-tab="alta">Alta Médica<span class="badge">Próx.</span></div>
+            <div class="nav-item disabled" data-tab="post-quir">Post Quirúrgico<span class="badge">Próx.</span></div>
+            <div class="nav-item disabled" data-tab="post-holep">Post HoLEP<span class="badge">Próx.</span></div>
+            <div class="nav-item disabled" data-tab="receta">Receta<span class="badge">Próx.</span></div>
+            <div class="sidebar-section">Archivo</div>
+            <div class="nav-item disabled" data-tab="historial">Historial<span class="badge">Próx.</span></div>
+        </aside>
+
+        <main class="main">
+            <div class="container">
+                <section class="panel">
+                    <div class="panel-header">
+                        <div>
+                            <span class="panel-title">Informe Urológico</span>
+                            <div class="panel-subtitle">Reporte diagnóstico generado con IA. Llena los datos del paciente y dicta el caso clínico.</div>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="form-grid">
+                            <div class="form-row">
+                                <label>Nombre del paciente</label>
+                                <input id="pNombre" type="text" autocomplete="off">
+                            </div>
+                            <div class="form-row">
+                                <label>RUT</label>
+                                <input id="pRut" type="text" placeholder="12.345.678-9" autocomplete="off">
+                            </div>
+                            <div class="form-row">
+                                <label>Edad</label>
+                                <input id="pEdad" type="text" autocomplete="off">
+                            </div>
+                            <div class="form-row">
+                                <label>Clínica</label>
+                                <select id="pClinica">
+                                    <option value="">— Seleccionar —</option>
+                                    <option>Hospital Clínico Viña del Mar</option>
+                                    <option>Aquamed</option>
+                                    <option>Clínica Provincia de Petorca</option>
+                                    <option>Clínica Los Carrera</option>
+                                    <option>Redsalud</option>
+                                    <option>Clínica Miraflores</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row" style="margin-top:18px;">
+                            <label>Caso clínico (texto libre)</label>
+                            <textarea id="caseText" placeholder="Dicta el caso completo: motivo, antecedentes, síntomas con tiempo de evolución, hallazgos al examen físico si los hay, exámenes con valores, diagnósticos y conducta propuesta. Cuanto más detalle, mejor el informe."></textarea>
+                        </div>
+                    </div>
+                    <div class="actions">
+                        <button class="btn" id="clearBtn">Limpiar</button>
+                        <button class="btn btn-primary" id="generateBtn">Generar informe</button>
+                    </div>
+                </section>
+
+                <section class="panel preview-panel" id="previewPanel">
+                    <div class="panel-header">
+                        <span class="panel-title">Vista previa</span>
+                        <div style="display:flex;gap:8px;">
+                            <button class="btn" id="printBtn">Imprimir</button>
+                            <button class="btn btn-primary" id="downloadBtn">Descargar .docx</button>
+                        </div>
+                    </div>
+                    <div class="loading" id="loading">
+                        <span class="spinner"></span>
+                        <span id="loadingText">Procesando texto y generando informe…</span>
+                    </div>
+                    <div class="panel-body">
+                        <div class="preview-doc" id="previewDoc"></div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        import { requireAuth, getCurrentUser, signOut, apiFetch } from '/lib/supabase-client.js';
+
+        await requireAuth();
+        const user = await getCurrentUser();
+        document.getElementById('userEmail').textContent = user?.email || '';
+        document.getElementById('signOutBtn').addEventListener('click', () => signOut());
+
+        // Sidebar (placeholder para próximas implementaciones)
+        document.querySelectorAll('.nav-item.disabled').forEach(item => {
+            item.addEventListener('click', () => {
+                alert('Próximamente. Estamos implementando los demás documentos.');
+            });
+        });
+
+        const pNombre = document.getElementById('pNombre');
+        const pRut = document.getElementById('pRut');
+        const pEdad = document.getElementById('pEdad');
+        const pClinica = document.getElementById('pClinica');
+        const caseText = document.getElementById('caseText');
+        const previewPanel = document.getElementById('previewPanel');
+        const previewDoc = document.getElementById('previewDoc');
+        const loading = document.getElementById('loading');
+        const generateBtn = document.getElementById('generateBtn');
+
+        let lastPayload = null;
+
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            pNombre.value = ''; pRut.value = ''; pEdad.value = '';
+            pClinica.value = ''; caseText.value = '';
+            previewPanel.classList.remove('show');
+            lastPayload = null;
+        });
+
+        generateBtn.addEventListener('click', async () => {
+            if (!pNombre.value.trim() || !pRut.value.trim()) {
+                alert('Nombre y RUT son obligatorios.');
+                return;
+            }
+            if (!caseText.value.trim()) {
+                alert('Escribe el caso clínico.');
+                return;
+            }
+            previewPanel.classList.add('show');
+            loading.classList.add('show');
+            previewDoc.innerHTML = '';
+            generateBtn.disabled = true;
+            try {
+                const res = await apiFetch('/api/informesuro/extract', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: caseText.value.trim() })
+                });
+                if (!res.ok) {
+                    const txt = await res.text();
+                    throw new Error(`Extracción falló (${res.status}): ${txt}`);
+                }
+                const { data } = await res.json();
+                const paciente = {
+                    nombre: pNombre.value.trim(),
+                    rut: pRut.value.trim(),
+                    edad: pEdad.value.trim()
+                };
+                const clinica = pClinica.value;
+
+                lastPayload = {
+                    doc_type: 'informe',
+                    paciente,
+                    clinica,
+                    data,
+                    case_text: caseText.value.trim()
+                };
+
+                renderPreview(paciente, clinica, data);
+            } catch (e) {
+                previewDoc.innerHTML = `<div style="color:#B3261E">Error: ${escapeHtml(e.message || e)}</div>`;
+            } finally {
+                loading.classList.remove('show');
+                generateBtn.disabled = false;
+            }
+        });
+
+        document.getElementById('downloadBtn').addEventListener('click', async () => {
+            if (!lastPayload) return;
+            const btn = document.getElementById('downloadBtn');
+            btn.disabled = true; btn.textContent = 'Generando…';
+            try {
+                const res = await apiFetch('/api/informesuro/generate-docx', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(lastPayload)
+                });
+                if (!res.ok) {
+                    const txt = await res.text();
+                    throw new Error(`Descarga falló (${res.status}): ${txt}`);
+                }
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `informe_${(lastPayload.paciente.nombre || 'paciente').replace(/[^a-z0-9]+/gi, '_').toLowerCase()}.docx`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(url);
+            } catch (e) {
+                alert(e.message);
+            } finally {
+                btn.disabled = false; btn.textContent = 'Descargar .docx';
+            }
+        });
+
+        document.getElementById('printBtn').addEventListener('click', () => window.print());
+
+        function renderPreview(paciente, clinica, data) {
+            const fecha = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
+            const studiesRows = (data.estudios || []).map(e => `<tr><td>${escapeHtml(e.examen || '')}</td><td>${escapeHtml(e.resultado || '')}</td></tr>`).join('');
+            const dxList = (data.diagnosticos || []).map(d => `<li>${escapeHtml(d)}</li>`).join('');
+
+            previewDoc.innerHTML = `
+                <div class="right">${escapeHtml(fecha)}</div>
+                <div class="right">A fines de uso de paciente</div>
+                <div class="right">Presente</div>
+                <h2>INFORME UROLÓGICO</h2>
+
+                <h3>I. Datos del paciente</h3>
+                <table class="patient">
+                    <tr><td>Nombre del paciente</td><td>${escapeHtml(paciente.nombre)}</td></tr>
+                    <tr><td>RUT</td><td>${escapeHtml(paciente.rut)}</td></tr>
+                    <tr><td>Edad</td><td>${escapeHtml(paciente.edad || '—')}</td></tr>
+                    <tr><td>Antecedentes relevantes</td><td>${escapeHtml(data.paciente?.antecedentes || '—')}</td></tr>
+                    <tr><td>Alergias a fármacos</td><td>${escapeHtml(data.paciente?.alergias || '—')}</td></tr>
+                    <tr><td>Antecedente quirúrgico</td><td>${escapeHtml(data.paciente?.quirurgicos || '—')}</td></tr>
+                    <tr><td>Tabaquismo</td><td>${escapeHtml(data.paciente?.tabaquismo || '—')}</td></tr>
+                </table>
+
+                <h3>II. Motivo de consulta y resumen clínico</h3>
+                <p style="text-align:justify">${escapeHtml(data.motivo_resumen || '')}</p>
+
+                ${(data.estudios || []).length ? `
+                <h3>III. Estudios complementarios realizados</h3>
+                <table class="studies">
+                    <thead><tr><th>Examen</th><th>Resultado / Hallazgo</th></tr></thead>
+                    <tbody>${studiesRows}</tbody>
+                </table>` : ''}
+
+                ${(data.diagnosticos || []).length ? `
+                <h3>IV. Impresión diagnóstica</h3>
+                <ol>${dxList}</ol>` : ''}
+
+                ${(data.procedimiento || data.justificacion || data.consideraciones) ? `
+                <h3>V. Indicación y conducta propuesta</h3>
+                ${data.procedimiento ? `<p style="text-align:justify"><strong>${escapeHtml(data.procedimiento)}</strong></p>` : ''}
+                ${data.justificacion ? `<p style="text-align:justify">${escapeHtml(data.justificacion)}</p>` : ''}
+                ${data.consideraciones ? `<p style="text-align:justify">${escapeHtml(data.consideraciones)}</p>` : ''}` : ''}
+
+                ${data.analisis ? `
+                <h3>VI. Análisis objetivo del caso</h3>
+                <p style="text-align:justify">${escapeHtml(data.analisis)}</p>` : ''}
+
+                <div class="firma">
+                    <p><em>Atentamente,</em></p>
+                    <p style="margin-top:24px;font-weight:700">Dr. Juan Carlos Riera M.</p>
+                    <p>Especialista en Urología</p>
+                    <p style="font-style:italic;color:#666">V Región, Chile</p>
+                </div>
+            `;
+        }
+
+        function escapeHtml(s) {
+            return String(s || '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+    </script>
+</body>
+</html>
