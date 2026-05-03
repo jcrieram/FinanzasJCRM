@@ -652,8 +652,9 @@
                                 <div class="form-row"><label>Clínica</label><select id="pq-clinica" data-clinica></select></div>
                             </div>
                             <div id="pq-esp-row" class="form-row" style="margin-top:12px;">
-                                <label>Fecha tentativa espermiograma</label>
-                                <input id="pq-fecha-esp" type="text" placeholder="Ej. 3 meses a partir de hoy">
+                                <label>Fecha de la vasectomía</label>
+                                <input id="pq-fecha-cirugia" type="date">
+                                <small id="pq-fecha-esp-calc" style="margin-top:6px;color:var(--primary);font-size:12px;"></small>
                             </div>
                         </div>
                         <div class="actions">
@@ -1434,16 +1435,33 @@
         }
 
         // ─── Post Quirúrgico ────────────────────────────────────────────
+        const MESES_ES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+        function calcEspermiograma(fechaInput) {
+            if (!fechaInput) return '';
+            const [y, m, d] = fechaInput.split('-').map(Number);
+            const dt = new Date(y, m - 1, d);
+            dt.setMonth(dt.getMonth() + 3);
+            return `${dt.getDate()} de ${MESES_ES[dt.getMonth()]} de ${dt.getFullYear()}`;
+        }
+
         document.getElementById('pq-tipo').addEventListener('change', () => {
             const isVas = document.getElementById('pq-tipo').value === 'vasectomia';
             document.getElementById('pq-esp-row').style.display = isVas ? '' : 'none';
         });
 
+        document.getElementById('pq-fecha-cirugia').addEventListener('change', () => {
+            const fechaEsp = calcEspermiograma(document.getElementById('pq-fecha-cirugia').value);
+            document.getElementById('pq-fecha-esp-calc').textContent =
+                fechaEsp ? `Espermiograma estimado: ${fechaEsp}` : '';
+        });
+
         document.getElementById('pq-clear').addEventListener('click', () => {
-            ['pq-nombre','pq-rut','pq-edad','pq-fecha-esp'].forEach(id => document.getElementById(id).value = '');
+            ['pq-nombre','pq-rut','pq-edad','pq-fecha-cirugia'].forEach(id => document.getElementById(id).value = '');
             document.getElementById('pq-clinica').value = '';
             document.getElementById('pq-tipo').value = 'vasectomia';
             document.getElementById('pq-esp-row').style.display = '';
+            document.getElementById('pq-fecha-esp-calc').textContent = '';
             document.getElementById('previewPanel').classList.remove('show');
             lastPayload = null;
         });
@@ -1454,7 +1472,12 @@
             const tipo = document.getElementById('pq-tipo').value;
             const clinica = val('pq-clinica');
             const paciente = { nombre, rut, edad };
-            const data = tipo === 'vasectomia' ? { fecha_espermiograma: val('pq-fecha-esp') } : {};
+            let data = {};
+            if (tipo === 'vasectomia') {
+                const fechaCx = val('pq-fecha-cirugia');
+                if (!fechaCx) { alert('Selecciona la fecha de la vasectomía.'); return; }
+                data = { fecha_espermiograma: calcEspermiograma(fechaCx) };
+            }
             const doc_type = tipo === 'vasectomia' ? 'postvasectomia' : 'postprostata';
             lastPayload = { doc_type, paciente, clinica, data };
             showPreview();
@@ -1488,7 +1511,7 @@
                     <table class="studies"><thead><tr><th>N°</th><th>Examen</th></tr></thead>
                     <tbody><tr><td>1</td><td><strong>ESPERMIOGRAMA</strong></td></tr></tbody></table>
                     <p style="margin-top:12px"><strong>Indicación clínica:</strong> Control post-vasectomía</p>
-                    <p style="margin-top:8px;color:var(--primary)"><strong>Fecha tentativa para realizarlo: ${escapeHtml(data.fecha_espermiograma || '—')}</strong></p>
+                    <p style="margin-top:8px;color:var(--primary)"><strong>No olvide que debe realizarse el espermiograma en fecha estimada: ${escapeHtml(data.fecha_espermiograma || '—')}</strong></p>
                     ${firmaBlock()}`;
             } else {
                 document.getElementById('previewDoc').innerHTML = `

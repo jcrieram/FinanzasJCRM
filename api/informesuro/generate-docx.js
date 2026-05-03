@@ -627,7 +627,7 @@ function buildPostVasectomia({ paciente, clinica, data }) {
     secs.push(buildExamTable(['ESPERMIOGRAMA']));
     secs.push(new Paragraph({ children: [] }));
     secs.push(new Paragraph({ children: [arial('Indicación clínica: ', { size: 10, bold: true }), arial('Control post-vasectomía', { size: 10 })] }));
-    secs.push(new Paragraph({ spacing: { before: 120 }, children: [arial('Fecha tentativa para realizarlo: ', { size: 10, bold: true, color: AZUL }), arial(fechaEsp, { size: 12, bold: true })] }));
+    secs.push(new Paragraph({ spacing: { before: 120 }, children: [arial('No olvide que debe realizarse el espermiograma en fecha estimada: ', { size: 10, bold: true, color: AZUL }), arial(fechaEsp, { size: 12, bold: true })] }));
     buildSignature(true).forEach(p => secs.push(p));
 
     return wrapDocument({ sections: secs, title: 'POST-VASECTOMÍA', clinica });
