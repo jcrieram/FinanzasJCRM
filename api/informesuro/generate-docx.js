@@ -565,6 +565,148 @@ function buildAltaMedica({ paciente, clinica, data }) {
     return wrapDocument({ sections, title: 'INFORME DE ALTA MÉDICA', clinica });
 }
 
+// ─── Post Quirúrgico helpers ─────────────────────────────────────────────────
+
+function buildExamTable(examenes) {
+    const headerRow = new TableRow({
+        children: [
+            new TableCell({
+                shading: { type: ShadingType.CLEAR, fill: AZUL },
+                margins: { top: 30, bottom: 30, left: 100, right: 100 },
+                children: [new Paragraph({ children: [arial('N°', { size: 9, bold: true, color: BLANCO })] })]
+            }),
+            new TableCell({
+                shading: { type: ShadingType.CLEAR, fill: AZUL },
+                margins: { top: 30, bottom: 30, left: 100, right: 100 },
+                children: [new Paragraph({ children: [arial('Examen', { size: 9, bold: true, color: BLANCO })] })]
+            })
+        ]
+    });
+    const dataRows = examenes.map((nombre, i) => {
+        const fill = i % 2 === 0 ? AZUL_CLR : 'FFFFFF';
+        return new TableRow({
+            children: [
+                new TableCell({ shading: { type: ShadingType.CLEAR, fill }, margins: { top: 30, bottom: 30, left: 100, right: 100 }, children: [new Paragraph({ spacing: { line: 240 }, children: [arial(String(i + 1), { size: 9, bold: true })] })] }),
+                new TableCell({ shading: { type: ShadingType.CLEAR, fill }, margins: { top: 30, bottom: 30, left: 100, right: 100 }, children: [new Paragraph({ spacing: { line: 240 }, children: [arial(nombre, { size: 10, bold: true })] })] })
+            ]
+        });
+    });
+    return new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: [headerRow, ...dataRows] });
+}
+
+function buildPostVasectomia({ paciente, clinica, data }) {
+    const secs = [];
+    const fechaEsp = data.fecha_espermiograma || '—';
+
+    // Hoja 1: Recomendaciones
+    secs.push(new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 200, after: 160 },
+        children: [arial('RECOMENDACIONES VASECTOMÍA', { size: 14, bold: true, color: AZUL, underline: true })]
+    }));
+    const pacRows = [];
+    if (paciente.nombre) pacRows.push(['Paciente', paciente.nombre]);
+    if (paciente.rut) pacRows.push(['RUT', paciente.rut]);
+    if (pacRows.length) { secs.push(patientTable(pacRows)); secs.push(new Paragraph({ children: [] })); }
+    secs.push(new Paragraph({ spacing: { before: 120 }, children: [arial('RECUERDE:', { size: 12, bold: true, color: AZUL })] }));
+    [
+        'DEBE USAR MÉTODOS ANTICONCEPTIVOS (AL MÍNIMO 3 MESES) HASTA QUE TENGAMOS EL ESPERMIOGRAMA CONTROL (SOLICITADO HOY)',
+        'DEBE TENER EYACULACIONES HABITUALES DURANTE ESTE TIEMPO (1-2 semanal)',
+        'ESTA CIRUGÍA NO INTERFIERE CON SU ERECCIÓN, LA CUAL SEGUIRÁ SIENDO EXACTAMENTE COMO ANTES DE LA CIRUGÍA'
+    ].forEach((item, i) => {
+        secs.push(new Paragraph({ spacing: { before: 160, after: 120 }, children: [arial(`${i + 1}. ${item}`, { size: 11, bold: true })] }));
+    });
+    buildSignature(true).forEach(p => secs.push(p));
+
+    // Hoja 2: Solicitud Espermiograma
+    secs.push(new Paragraph({ pageBreakBefore: true, alignment: AlignmentType.RIGHT, spacing: { before: 0, after: 40 }, children: [arial(fechaHoy(), { italic: true })] }));
+    secs.push(new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 120, after: 160 }, children: [arial('SOLICITUD DE EXAMEN DE LABORATORIO', { size: 13, bold: true, color: AZUL, underline: true })] }));
+    secs.push(sectionTitle('I. DATOS DEL PACIENTE'));
+    secs.push(patientTable([['Nombre del paciente', paciente.nombre], ['RUT', paciente.rut], ['Edad', paciente.edad]]));
+    secs.push(sectionTitle('II. EXAMEN SOLICITADO'));
+    secs.push(buildExamTable(['ESPERMIOGRAMA']));
+    secs.push(new Paragraph({ children: [] }));
+    secs.push(new Paragraph({ children: [arial('Indicación clínica: ', { size: 10, bold: true }), arial('Control post-vasectomía', { size: 10 })] }));
+    secs.push(new Paragraph({ spacing: { before: 120 }, children: [arial('Fecha tentativa para realizarlo: ', { size: 10, bold: true, color: AZUL }), arial(fechaEsp, { size: 12, bold: true })] }));
+    buildSignature(true).forEach(p => secs.push(p));
+
+    return wrapDocument({ sections: secs, title: 'POST-VASECTOMÍA', clinica });
+}
+
+function buildPostProstata({ paciente, clinica, data }) {
+    const secs = [];
+
+    // Hoja 1: Instrucciones
+    secs.push(new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 120, after: 160 }, children: [arial('INSTRUCCIONES POST CIRUGÍA DE PRÓSTATA', { size: 13, bold: true, color: AZUL, underline: true })] }));
+    const pacRows = [];
+    if (paciente.nombre) pacRows.push(['Paciente', paciente.nombre]);
+    if (paciente.rut) pacRows.push(['RUT', paciente.rut]);
+    if (pacRows.length) { secs.push(patientTable(pacRows)); secs.push(new Paragraph({ children: [] })); }
+    secs.push(new Paragraph({ spacing: { before: 80 }, children: [arial('Estimado Paciente,', { size: 11, bold: true })] }));
+    secs.push(new Paragraph({ alignment: AlignmentType.JUSTIFIED, spacing: { before: 120, after: 120 }, children: [arial('El próximo control será cuando le entreguen el resultado de la biopsia tomada el día de la cirugía y el examen de orina y urocultivo que debe realizarse al momento de retirar la biopsia. Con esos exámenes debe acudir a la consulta control.', { size: 11 })] }));
+    secs.push(new Paragraph({ alignment: AlignmentType.JUSTIFIED, spacing: { before: 80 }, children: [arial('No olvide contactarme en caso de cualquier situación inesperada, como fiebre, dolor intenso, sangrado abundante o dificultad para orinar.', { size: 11, bold: true })] }));
+    buildSignature(true).forEach(p => secs.push(p));
+
+    // Hoja 2: Solicitud exámenes
+    secs.push(new Paragraph({ pageBreakBefore: true, alignment: AlignmentType.RIGHT, spacing: { before: 0, after: 40 }, children: [arial(fechaHoy(), { italic: true })] }));
+    secs.push(new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 120, after: 160 }, children: [arial('SOLICITUD DE EXÁMENES DE LABORATORIO', { size: 13, bold: true, color: AZUL, underline: true })] }));
+    secs.push(sectionTitle('I. DATOS DEL PACIENTE'));
+    secs.push(patientTable([['Nombre del paciente', paciente.nombre], ['RUT', paciente.rut], ['Edad', paciente.edad]]));
+    secs.push(sectionTitle('II. EXÁMENES SOLICITADOS'));
+    secs.push(buildExamTable(['Orina completa', 'Urocultivo']));
+    secs.push(new Paragraph({ children: [] }));
+    secs.push(new Paragraph({ children: [arial('Indicación clínica: ', { size: 10, bold: true }), arial('Control post-cirugía prostática. Realizar al momento de retirar resultado de biopsia.', { size: 10 })] }));
+    buildSignature(true).forEach(p => secs.push(p));
+
+    return wrapDocument({ sections: secs, title: 'POST CIRUGÍA PROSTÁTICA', clinica });
+}
+
+function buildPostHolep({ paciente, clinica }) {
+    const secs = [];
+
+    const p9 = (text, opts = {}) => new Paragraph({
+        alignment: opts.justify ? AlignmentType.JUSTIFIED : undefined,
+        spacing: { before: opts.sb || 40, after: opts.sa || 40 },
+        children: [arial(text, { size: 9, bold: opts.bold, color: opts.color })]
+    });
+    const subtitulo = (text) => new Paragraph({ spacing: { before: 80, after: 20 }, children: [arial(text, { size: 9, bold: true, color: AZUL, underline: true })] });
+    const bullet = (text) => new Paragraph({ spacing: { before: 20, after: 20 }, children: [arial(`• ${text}`, { size: 9 })] });
+
+    secs.push(new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 40, after: 80 }, children: [arial('Ejercicios posterior a HoLEP', { size: 12, bold: true, color: AZUL, underline: true })] }));
+    const pacRows = [];
+    if (paciente.nombre) pacRows.push(['Paciente', paciente.nombre]);
+    if (paciente.rut) pacRows.push(['RUT', paciente.rut]);
+    if (pacRows.length) secs.push(patientTable(pacRows));
+
+    secs.push(p9('Estimado paciente,', { bold: true, sb: 80, sa: 40 }));
+    secs.push(p9('Después de la cirugía HoLEP, es normal que algunos hombres presenten pérdida leve de orina al toser, levantarse o hacer fuerza. Ocurre porque trabajamos muy cerca del esfínter urinario, que puede quedar transitoriamente debilitado. Esto no significa que algo salió mal — la gran mayoría recupera el control completo en pocas semanas o meses.', { justify: true }));
+    secs.push(p9('Para acelerar esa recuperación, te indico ejercicios de Kegel, que fortalecen el suelo pélvico.', { justify: true }));
+
+    secs.push(subtitulo('¿Cómo se hacen los ejercicios de Kegel?'));
+    secs.push(p9('1. Identifica el músculo correcto:', { bold: true }));
+    secs.push(p9('Al orinar, intenta detener el chorro por 3–5 segundos. Ese músculo que contraes es el que ejercitaremos.'));
+    secs.push(p9('2. Ejecuta el ejercicio:', { bold: true }));
+    secs.push(bullet('Aprieta ese músculo 3–5 segundos y suelta.'));
+    secs.push(bullet('10 repeticiones, 3 veces al día (mañana, tarde y noche).'));
+
+    secs.push(subtitulo('Consejos útiles'));
+    ['Hazlos acostado, sentado o de pie, como te sea más cómodo.',
+     'No aprietes glúteos, abdomen ni piernas al ejercitar.',
+     'No los hagas mientras orinas normalmente (solo para identificar el músculo).',
+     'Hidratación: al menos 2 litros de agua al día.',
+     'Usa protectores masculinos si hay pérdida leve mientras te recuperas — es temporal.',
+     'Evita café, alcohol y bebidas gaseosas: irritan la vejiga.',
+     'No levantes objetos pesados las primeras 3 semanas.',
+     'Retoma el ejercicio físico de forma gradual, comenzando con caminatas cortas.'
+    ].forEach(c => secs.push(bullet(c)));
+
+    secs.push(p9('La incontinencia temporal es pasajera y tratable. Con constancia la mejoría llega.', { bold: true, sb: 80, sa: 20 }));
+    secs.push(p9('No olvide contactarme en caso de cualquier situación inesperada.', { bold: true }));
+    buildSignature(true).forEach(p => secs.push(p));
+
+    return wrapDocument({ sections: secs, title: 'POST HoLEP', clinica });
+}
+
 // ─── Wrapper común ──────────────────────────────────────────────────────────
 
 function wrapDocument({ sections, title, clinica }) {
@@ -610,12 +752,15 @@ export default async function handler(req, res) {
 
     let docObj;
     try {
-        if (doc_type === 'informe')        docObj = buildInformeUrologico({ paciente, clinica, data });
-        else if (doc_type === 'cirugia')   docObj = buildSolicitudCirugia({ paciente, clinica, data });
-        else if (doc_type === 'receta')    docObj = buildReceta({ paciente, clinica, data });
-        else if (doc_type === 'examenes')  docObj = buildSolicitudExamenes({ paciente, clinica, data: { ...data, kind: 'examenes' }, titulo: 'SOLICITUD DE EXÁMENES' });
-        else if (doc_type === 'estudios')  docObj = buildSolicitudEstudio({ paciente, clinica, data });
-        else if (doc_type === 'alta')      docObj = buildAltaMedica({ paciente, clinica, data });
+        if (doc_type === 'informe')           docObj = buildInformeUrologico({ paciente, clinica, data });
+        else if (doc_type === 'cirugia')      docObj = buildSolicitudCirugia({ paciente, clinica, data });
+        else if (doc_type === 'receta')       docObj = buildReceta({ paciente, clinica, data });
+        else if (doc_type === 'examenes')     docObj = buildSolicitudExamenes({ paciente, clinica, data: { ...data, kind: 'examenes' }, titulo: 'SOLICITUD DE EXÁMENES' });
+        else if (doc_type === 'estudios')     docObj = buildSolicitudEstudio({ paciente, clinica, data });
+        else if (doc_type === 'alta')         docObj = buildAltaMedica({ paciente, clinica, data });
+        else if (doc_type === 'postvasectomia') docObj = buildPostVasectomia({ paciente, clinica, data });
+        else if (doc_type === 'postprostata')   docObj = buildPostProstata({ paciente, clinica, data });
+        else if (doc_type === 'postholep')      docObj = buildPostHolep({ paciente, clinica, data });
         else return res.status(400).json({ error: `Tipo de documento '${doc_type}' aún no implementado` });
     } catch (e) {
         return res.status(500).json({ error: `Error armando documento: ${e.message}` });
@@ -649,6 +794,9 @@ export default async function handler(req, res) {
                     : doc_type === 'examenes' ? 'solicitud_examenes'
                     : doc_type === 'estudios' ? 'solicitud_estudios'
                     : doc_type === 'alta' ? 'alta_medica'
+                    : doc_type === 'postvasectomia' ? 'post_vasectomia'
+                    : doc_type === 'postprostata' ? 'post_prostata'
+                    : doc_type === 'postholep' ? 'post_holep'
                     : 'informe';
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
     res.setHeader('Content-Disposition', `attachment; filename="${fileLabel}_${safeName}.docx"`);

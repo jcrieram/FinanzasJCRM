@@ -353,10 +353,10 @@
             <div class="nav-item" data-tab="examenes">🧪 Solicitud de Exámenes</div>
             <div class="nav-item" data-tab="estudios">🩻 Solicitud de Estudios</div>
             <div class="nav-item" data-tab="alta">🏥 Alta Médica</div>
-            <div class="nav-item disabled" data-tab="post-quir">Post Quirúrgico<span class="badge">Próx.</span></div>
-            <div class="nav-item disabled" data-tab="post-holep">Post HoLEP<span class="badge">Próx.</span></div>
+            <div class="nav-item" data-tab="post-quir">🩹 Post Quirúrgico</div>
+            <div class="nav-item" data-tab="post-holep">🏋️ Post HoLEP</div>
             <div class="sidebar-section">Archivo</div>
-            <div class="nav-item disabled" data-tab="historial">Historial<span class="badge">Próx.</span></div>
+            <div class="nav-item" data-tab="historial">📋 Historial</div>
         </aside>
 
         <main class="main">
@@ -628,6 +628,116 @@
                     </section>
                 </div>
 
+                <!-- ════════════ POST QUIRÚRGICO ════════════ -->
+                <div class="tab-content" id="tab-post-quir">
+                    <section class="panel">
+                        <div class="panel-header">
+                            <div>
+                                <span class="panel-title">Post Quirúrgico</span>
+                                <div class="panel-subtitle">Instrucciones y solicitud de exámenes post-operatorios.</div>
+                            </div>
+                        </div>
+                        <div class="panel-body">
+                            <div class="form-grid">
+                                <div class="form-row" style="grid-column:1 / -1;">
+                                    <label>Tipo de cirugía</label>
+                                    <select id="pq-tipo">
+                                        <option value="vasectomia">Post Vasectomía</option>
+                                        <option value="prostata">Post Cirugía de Próstata</option>
+                                    </select>
+                                </div>
+                                <div class="form-row"><label>Nombre del paciente</label><input id="pq-nombre" type="text"></div>
+                                <div class="form-row"><label>RUT</label><input id="pq-rut" type="text"></div>
+                                <div class="form-row"><label>Edad</label><input id="pq-edad" type="text"></div>
+                                <div class="form-row"><label>Clínica</label><select id="pq-clinica" data-clinica></select></div>
+                            </div>
+                            <div id="pq-esp-row" class="form-row" style="margin-top:12px;">
+                                <label>Fecha tentativa espermiograma</label>
+                                <input id="pq-fecha-esp" type="text" placeholder="Ej. 3 meses a partir de hoy">
+                            </div>
+                        </div>
+                        <div class="actions">
+                            <button class="btn" id="pq-clear">Limpiar</button>
+                            <button class="btn btn-primary" id="pq-generate">Generar documento</button>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- ════════════ POST HoLEP ════════════ -->
+                <div class="tab-content" id="tab-post-holep">
+                    <section class="panel">
+                        <div class="panel-header">
+                            <div>
+                                <span class="panel-title">Post HoLEP</span>
+                                <div class="panel-subtitle">Ejercicios de Kegel y recomendaciones post-operatorias.</div>
+                            </div>
+                        </div>
+                        <div class="panel-body">
+                            <div class="form-grid">
+                                <div class="form-row"><label>Nombre del paciente</label><input id="ph-nombre" type="text"></div>
+                                <div class="form-row"><label>RUT</label><input id="ph-rut" type="text"></div>
+                                <div class="form-row"><label>Clínica</label><select id="ph-clinica" data-clinica></select></div>
+                            </div>
+                        </div>
+                        <div class="actions">
+                            <button class="btn" id="ph-clear">Limpiar</button>
+                            <button class="btn btn-primary" id="ph-generate">Generar documento</button>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- ════════════ HISTORIAL ════════════ -->
+                <div class="tab-content" id="tab-historial">
+                    <section class="panel">
+                        <div class="panel-header">
+                            <div>
+                                <span class="panel-title">Historial de documentos</span>
+                                <div class="panel-subtitle">Documentos generados en esta cuenta.</div>
+                            </div>
+                            <button class="btn" id="hist-refresh" style="align-self:center;">Actualizar</button>
+                        </div>
+                        <div class="panel-body">
+                            <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+                                <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:160px;">
+                                    <label style="font-size:12px;font-weight:600;">Tipo</label>
+                                    <select id="hist-tipo" style="padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;">
+                                        <option value="">— Todos —</option>
+                                        <option value="informe">Informe Urológico</option>
+                                        <option value="cirugia">Solicitud Cirugía</option>
+                                        <option value="receta">Receta</option>
+                                        <option value="examenes">Solicitud Exámenes</option>
+                                        <option value="estudios">Solicitud Estudios</option>
+                                        <option value="alta">Alta Médica</option>
+                                        <option value="postvasectomia">Post Vasectomía</option>
+                                        <option value="postprostata">Post Cirugía Próstata</option>
+                                        <option value="postholep">Post HoLEP</option>
+                                    </select>
+                                </div>
+                                <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:160px;">
+                                    <label style="font-size:12px;font-weight:600;">RUT paciente</label>
+                                    <input id="hist-rut" type="text" placeholder="Buscar por RUT" style="padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;">
+                                </div>
+                            </div>
+                            <div id="hist-loading" style="display:none;text-align:center;padding:20px;color:#666;font-size:13px;">Cargando…</div>
+                            <div id="hist-empty" style="display:none;text-align:center;padding:20px;color:#666;font-size:13px;">No hay documentos que coincidan.</div>
+                            <div style="overflow-x:auto;">
+                                <table id="hist-table" style="width:100%;border-collapse:collapse;font-size:13px;display:none;">
+                                    <thead>
+                                        <tr style="background:#EBF3FB;color:#1F4E79;">
+                                            <th style="padding:8px 12px;text-align:left;font-weight:600;">Fecha</th>
+                                            <th style="padding:8px 12px;text-align:left;font-weight:600;">Tipo</th>
+                                            <th style="padding:8px 12px;text-align:left;font-weight:600;">Paciente</th>
+                                            <th style="padding:8px 12px;text-align:left;font-weight:600;">RUT</th>
+                                            <th style="padding:8px 12px;text-align:left;font-weight:600;">Clínica</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="hist-tbody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
                 <!-- ════════════ PREVIEW (compartida) ════════════ -->
                 <section class="panel preview-panel" id="previewPanel">
                     <div class="panel-header">
@@ -667,10 +777,7 @@
         // ─── Sidebar tabs ───────────────────────────────────────────────
         document.querySelectorAll('.nav-item').forEach(item => {
             item.addEventListener('click', () => {
-                if (item.classList.contains('disabled')) {
-                    alert('Próximamente.');
-                    return;
-                }
+                if (item.classList.contains('disabled')) return;
                 document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
                 document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
                 item.classList.add('active');
@@ -679,6 +786,7 @@
                 if (panel) panel.classList.add('active');
                 document.getElementById('previewPanel').classList.remove('show');
                 lastPayload = null;
+                if (tab === 'historial') loadHistorial();
             });
         });
 
@@ -826,6 +934,12 @@
                 const name = (lastPayload.paciente.nombre || 'paciente').replace(/[^a-z0-9]+/gi, '_').toLowerCase();
                 const label = lastPayload.doc_type === 'cirugia' ? 'solicitud_cirugia'
                             : lastPayload.doc_type === 'receta' ? 'receta'
+                            : lastPayload.doc_type === 'examenes' ? 'solicitud_examenes'
+                            : lastPayload.doc_type === 'estudios' ? 'solicitud_estudios'
+                            : lastPayload.doc_type === 'alta' ? 'alta_medica'
+                            : lastPayload.doc_type === 'postvasectomia' ? 'post_vasectomia'
+                            : lastPayload.doc_type === 'postprostata' ? 'post_prostata'
+                            : lastPayload.doc_type === 'postholep' ? 'post_holep'
                             : 'informe';
                 a.href = url;
                 a.download = `${label}_${name}.docx`;
@@ -1318,6 +1432,181 @@
                 ${firmaBlock()}
             `;
         }
+
+        // ─── Post Quirúrgico ────────────────────────────────────────────
+        document.getElementById('pq-tipo').addEventListener('change', () => {
+            const isVas = document.getElementById('pq-tipo').value === 'vasectomia';
+            document.getElementById('pq-esp-row').style.display = isVas ? '' : 'none';
+        });
+
+        document.getElementById('pq-clear').addEventListener('click', () => {
+            ['pq-nombre','pq-rut','pq-edad','pq-fecha-esp'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('pq-clinica').value = '';
+            document.getElementById('pq-tipo').value = 'vasectomia';
+            document.getElementById('pq-esp-row').style.display = '';
+            document.getElementById('previewPanel').classList.remove('show');
+            lastPayload = null;
+        });
+
+        document.getElementById('pq-generate').addEventListener('click', () => {
+            const nombre = val('pq-nombre'); const rut = val('pq-rut'); const edad = val('pq-edad');
+            if (!nombre || !rut) { alert('Nombre y RUT son obligatorios.'); return; }
+            const tipo = document.getElementById('pq-tipo').value;
+            const clinica = val('pq-clinica');
+            const paciente = { nombre, rut, edad };
+            const data = tipo === 'vasectomia' ? { fecha_espermiograma: val('pq-fecha-esp') } : {};
+            const doc_type = tipo === 'vasectomia' ? 'postvasectomia' : 'postprostata';
+            lastPayload = { doc_type, paciente, clinica, data };
+            showPreview();
+            renderPostQuirPreview(paciente, clinica, tipo, data);
+        });
+
+        function renderPostQuirPreview(paciente, clinica, tipo, data) {
+            const fecha = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
+            if (tipo === 'vasectomia') {
+                document.getElementById('previewDoc').innerHTML = `
+                    <h2>RECOMENDACIONES VASECTOMÍA</h2>
+                    <table class="patient">
+                        <tr><td>Paciente</td><td>${escapeHtml(paciente.nombre)}</td></tr>
+                        <tr><td>RUT</td><td>${escapeHtml(paciente.rut)}</td></tr>
+                    </table>
+                    <p style="margin-top:14px"><strong>RECUERDE:</strong></p>
+                    <p style="margin-top:8px"><strong>1. DEBE USAR MÉTODOS ANTICONCEPTIVOS (AL MÍNIMO 3 MESES) HASTA QUE TENGAMOS EL ESPERMIOGRAMA CONTROL (SOLICITADO HOY)</strong></p>
+                    <p style="margin-top:8px"><strong>2. DEBE TENER EYACULACIONES HABITUALES DURANTE ESTE TIEMPO (1-2 semanal)</strong></p>
+                    <p style="margin-top:8px"><strong>3. ESTA CIRUGÍA NO INTERFIERE CON SU ERECCIÓN, LA CUAL SEGUIRÁ SIENDO EXACTAMENTE COMO ANTES DE LA CIRUGÍA</strong></p>
+                    ${firmaBlock()}
+                    <hr style="border-color:var(--primary);margin:24px 0;">
+                    <div style="text-align:right;font-style:italic;">${escapeHtml(fecha)}</div>
+                    <h2>SOLICITUD DE EXAMEN DE LABORATORIO</h2>
+                    <h3>I. Datos del paciente</h3>
+                    <table class="patient">
+                        <tr><td>Nombre del paciente</td><td>${escapeHtml(paciente.nombre)}</td></tr>
+                        <tr><td>RUT</td><td>${escapeHtml(paciente.rut)}</td></tr>
+                        <tr><td>Edad</td><td>${escapeHtml(paciente.edad || '—')}</td></tr>
+                    </table>
+                    <h3>II. Examen solicitado</h3>
+                    <table class="studies"><thead><tr><th>N°</th><th>Examen</th></tr></thead>
+                    <tbody><tr><td>1</td><td><strong>ESPERMIOGRAMA</strong></td></tr></tbody></table>
+                    <p style="margin-top:12px"><strong>Indicación clínica:</strong> Control post-vasectomía</p>
+                    <p style="margin-top:8px;color:var(--primary)"><strong>Fecha tentativa para realizarlo: ${escapeHtml(data.fecha_espermiograma || '—')}</strong></p>
+                    ${firmaBlock()}`;
+            } else {
+                document.getElementById('previewDoc').innerHTML = `
+                    <h2>INSTRUCCIONES POST CIRUGÍA DE PRÓSTATA</h2>
+                    <table class="patient">
+                        <tr><td>Paciente</td><td>${escapeHtml(paciente.nombre)}</td></tr>
+                        <tr><td>RUT</td><td>${escapeHtml(paciente.rut)}</td></tr>
+                    </table>
+                    <p style="margin-top:14px"><strong>Estimado Paciente,</strong></p>
+                    <p style="text-align:justify;margin-top:10px">El próximo control será cuando le entreguen el resultado de la biopsia tomada el día de la cirugía y el examen de orina y urocultivo que debe realizarse al momento de retirar la biopsia. Con esos exámenes debe acudir a la consulta control.</p>
+                    <p style="text-align:justify;margin-top:10px"><strong>No olvide contactarme en caso de cualquier situación inesperada, como fiebre, dolor intenso, sangrado abundante o dificultad para orinar.</strong></p>
+                    ${firmaBlock()}
+                    <hr style="border-color:var(--primary);margin:24px 0;">
+                    <div style="text-align:right;font-style:italic;">${escapeHtml(fecha)}</div>
+                    <h2>SOLICITUD DE EXÁMENES DE LABORATORIO</h2>
+                    <h3>I. Datos del paciente</h3>
+                    <table class="patient">
+                        <tr><td>Nombre del paciente</td><td>${escapeHtml(paciente.nombre)}</td></tr>
+                        <tr><td>RUT</td><td>${escapeHtml(paciente.rut)}</td></tr>
+                        <tr><td>Edad</td><td>${escapeHtml(paciente.edad || '—')}</td></tr>
+                    </table>
+                    <h3>II. Exámenes solicitados</h3>
+                    <table class="studies"><thead><tr><th>N°</th><th>Examen</th></tr></thead>
+                    <tbody><tr><td>1</td><td><strong>Orina completa</strong></td></tr>
+                    <tr class="alt"><td>2</td><td><strong>Urocultivo</strong></td></tr></tbody></table>
+                    <p style="margin-top:12px"><strong>Indicación clínica:</strong> Control post-cirugía prostática. Realizar al momento de retirar resultado de biopsia.</p>
+                    ${firmaBlock()}`;
+            }
+        }
+
+        // ─── Post HoLEP ─────────────────────────────────────────────────
+        document.getElementById('ph-clear').addEventListener('click', () => {
+            ['ph-nombre','ph-rut'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('ph-clinica').value = '';
+            document.getElementById('previewPanel').classList.remove('show');
+            lastPayload = null;
+        });
+
+        document.getElementById('ph-generate').addEventListener('click', () => {
+            const nombre = val('ph-nombre'); const rut = val('ph-rut');
+            if (!nombre || !rut) { alert('Nombre y RUT son obligatorios.'); return; }
+            const clinica = val('ph-clinica');
+            const paciente = { nombre, rut };
+            lastPayload = { doc_type: 'postholep', paciente, clinica, data: {} };
+            showPreview();
+            document.getElementById('previewDoc').innerHTML = `
+                <h2>Ejercicios posterior a HoLEP</h2>
+                <table class="patient">
+                    <tr><td>Paciente</td><td>${escapeHtml(nombre)}</td></tr>
+                    <tr><td>RUT</td><td>${escapeHtml(rut)}</td></tr>
+                </table>
+                <p style="margin-top:14px"><strong>Estimado paciente,</strong></p>
+                <p style="text-align:justify;margin-top:10px;font-size:13px">Después de la cirugía HoLEP, es normal que algunos hombres presenten pérdida leve de orina al toser, levantarse o hacer fuerza. Ocurre porque trabajamos muy cerca del esfínter urinario, que puede quedar transitoriamente debilitado. Esto no significa que algo salió mal — la gran mayoría recupera el control completo en pocas semanas o meses.</p>
+                <p style="text-align:justify;margin-top:8px;font-size:13px">Para acelerar esa recuperación, te indico ejercicios de Kegel, que fortalecen el suelo pélvico.</p>
+                <h3 style="color:var(--primary);margin-top:14px">¿Cómo se hacen los ejercicios de Kegel?</h3>
+                <p style="font-size:13px;margin-top:8px"><strong>1. Identifica el músculo correcto:</strong></p>
+                <p style="font-size:13px">Al orinar, intenta detener el chorro por 3–5 segundos. Ese músculo que contraes es el que ejercitaremos.</p>
+                <p style="font-size:13px;margin-top:8px"><strong>2. Ejecuta el ejercicio:</strong></p>
+                <ul class="meds" style="font-size:13px"><li>• Aprieta ese músculo 3–5 segundos y suelta.</li><li>• 10 repeticiones, 3 veces al día (mañana, tarde y noche).</li></ul>
+                <h3 style="color:var(--primary);margin-top:14px">Consejos útiles</h3>
+                <ul class="meds" style="font-size:13px">
+                    <li>• Hazlos acostado, sentado o de pie, como te sea más cómodo.</li>
+                    <li>• No aprietes glúteos, abdomen ni piernas al ejercitar.</li>
+                    <li>• No los hagas mientras orinas normalmente (solo para identificar el músculo).</li>
+                    <li>• Hidratación: al menos 2 litros de agua al día.</li>
+                    <li>• Usa protectores masculinos si hay pérdida leve mientras te recuperas — es temporal.</li>
+                    <li>• Evita café, alcohol y bebidas gaseosas: irritan la vejiga.</li>
+                    <li>• No levantes objetos pesados las primeras 3 semanas.</li>
+                    <li>• Retoma el ejercicio físico de forma gradual, comenzando con caminatas cortas.</li>
+                </ul>
+                <p style="font-size:13px;margin-top:12px"><strong>La incontinencia temporal es pasajera y tratable. Con constancia la mejoría llega.</strong></p>
+                <p style="font-size:13px;margin-top:6px"><strong>No olvide contactarme en caso de cualquier situación inesperada.</strong></p>
+                ${firmaBlock()}`;
+        });
+
+        // ─── Historial ───────────────────────────────────────────────────
+        async function loadHistorial() {
+            const tipo = document.getElementById('hist-tipo').value;
+            const rut = document.getElementById('hist-rut').value.trim();
+            const loading = document.getElementById('hist-loading');
+            const empty = document.getElementById('hist-empty');
+            const table = document.getElementById('hist-table');
+            const tbody = document.getElementById('hist-tbody');
+            loading.style.display = 'block'; empty.style.display = 'none'; table.style.display = 'none';
+            try {
+                const params = new URLSearchParams();
+                if (tipo) params.set('tipo', tipo);
+                if (rut) params.set('rut', rut);
+                const res = await apiFetch(`/api/informesuro/historial?${params}`);
+                if (!res.ok) throw new Error(`Error ${res.status}: ${await res.text()}`);
+                const { documents } = await res.json();
+                loading.style.display = 'none';
+                if (!documents.length) { empty.textContent = 'No hay documentos que coincidan.'; empty.style.display = 'block'; return; }
+                tbody.innerHTML = documents.map((d, i) => {
+                    const fecha = new Date(d.created_at).toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + new Date(d.created_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+                    const bg = i % 2 === 0 ? '' : 'background:#f9fafb;';
+                    return `<tr style="${bg}">
+                        <td style="padding:8px 12px;">${escapeHtml(fecha)}</td>
+                        <td style="padding:8px 12px;">${escapeHtml(d.doc_type_label)}</td>
+                        <td style="padding:8px 12px;">${escapeHtml(d.patient_name || '—')}</td>
+                        <td style="padding:8px 12px;">${escapeHtml(d.patient_rut || '—')}</td>
+                        <td style="padding:8px 12px;">${escapeHtml(d.clinic || '—')}</td>
+                    </tr>`;
+                }).join('');
+                table.style.display = 'table';
+            } catch (e) {
+                loading.style.display = 'none';
+                empty.textContent = `Error al cargar: ${e.message}`;
+                empty.style.display = 'block';
+            }
+        }
+
+        document.getElementById('hist-refresh').addEventListener('click', loadHistorial);
+        document.getElementById('hist-tipo').addEventListener('change', loadHistorial);
+        document.getElementById('hist-rut').addEventListener('input', () => {
+            clearTimeout(document.getElementById('hist-rut')._debounce);
+            document.getElementById('hist-rut')._debounce = setTimeout(loadHistorial, 400);
+        });
 
         // ─── Helpers ────────────────────────────────────────────────────
         function val(id) { return (document.getElementById(id).value || '').trim(); }
