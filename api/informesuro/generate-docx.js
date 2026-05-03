@@ -77,8 +77,11 @@ function sectionTitle(text) {
 function shadedCell(text, opts = {}) {
     return new TableCell({
         shading: { type: ShadingType.CLEAR, fill: opts.fill || AZUL_CLR },
-        margins: { top: 60, bottom: 60, left: 100, right: 100 },
-        children: [new Paragraph({ children: [arial(text, { size: 10, bold: opts.bold, color: opts.color })] })]
+        margins: { top: 30, bottom: 30, left: 100, right: 100 },
+        children: [new Paragraph({
+            spacing: { before: 0, after: 0, line: 240 },
+            children: [arial(text, { size: 10, bold: opts.bold, color: opts.color })]
+        })]
     });
 }
 
@@ -244,8 +247,8 @@ function buildInformeUrologico({ paciente, clinica, data }) {
         })
     );
 
-    // I. Datos del paciente
-    sections.push(sectionTitle('I. DATOS DEL PACIENTE'));
+    // Datos del paciente
+    sections.push(sectionTitle('DATOS DEL PACIENTE'));
     sections.push(patientTable([
         ['Nombre del paciente', paciente.nombre],
         ['RUT',                 paciente.rut],
@@ -256,30 +259,30 @@ function buildInformeUrologico({ paciente, clinica, data }) {
         ['Tabaquismo',              data.paciente?.tabaquismo   || '—']
     ]));
 
-    // II. Motivo de consulta
-    sections.push(sectionTitle('II. MOTIVO DE CONSULTA Y RESUMEN CLÍNICO'));
+    // Motivo de consulta
+    sections.push(sectionTitle('MOTIVO DE CONSULTA Y RESUMEN CLÍNICO'));
     sections.push(new Paragraph({
         alignment: AlignmentType.JUSTIFIED,
         children: [arial(data.motivo_resumen || '')]
     }));
 
-    // III. Estudios
+    // Estudios
     if (Array.isArray(data.estudios) && data.estudios.length) {
-        sections.push(sectionTitle('III. ESTUDIOS COMPLEMENTARIOS REALIZADOS'));
+        sections.push(sectionTitle('ESTUDIOS COMPLEMENTARIOS REALIZADOS'));
         sections.push(studiesTable(data.estudios));
     }
 
-    // IV. Diagnóstico
+    // Diagnóstico
     if (Array.isArray(data.diagnosticos) && data.diagnosticos.length) {
-        sections.push(sectionTitle('IV. IMPRESIÓN DIAGNÓSTICA'));
+        sections.push(sectionTitle('IMPRESIÓN DIAGNÓSTICA'));
         data.diagnosticos.forEach((dx, i) => {
             sections.push(new Paragraph({ children: [arial(`${i + 1}. ${dx}`)] }));
         });
     }
 
-    // V. Indicación
+    // Indicación
     if (data.procedimiento || data.justificacion || data.consideraciones) {
-        sections.push(sectionTitle('V. INDICACIÓN Y CONDUCTA PROPUESTA'));
+        sections.push(sectionTitle('INDICACIÓN Y CONDUCTA PROPUESTA'));
         if (data.procedimiento) {
             sections.push(new Paragraph({
                 alignment: AlignmentType.JUSTIFIED,
@@ -300,9 +303,9 @@ function buildInformeUrologico({ paciente, clinica, data }) {
         }
     }
 
-    // VI. Análisis
+    // Análisis
     if (data.analisis) {
-        sections.push(sectionTitle('VI. ANÁLISIS OBJETIVO DEL CASO'));
+        sections.push(sectionTitle('ANÁLISIS OBJETIVO DEL CASO'));
         sections.push(new Paragraph({
             alignment: AlignmentType.JUSTIFIED,
             children: [arial(data.analisis)]
