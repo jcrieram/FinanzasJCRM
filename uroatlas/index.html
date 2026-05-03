@@ -510,10 +510,10 @@
             placeholder.style.display = 'none';
             responsePanel.classList.add('show');
             responseBody.textContent = '';
+            document.getElementById('responseCitations').style.display = 'none';
             loading.classList.add('show');
             consultBtn.disabled = true;
             try {
-                // Endpoint pendiente de Fase 3.
                 const res = await apiFetch('/api/uroatlas/query', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -525,6 +525,25 @@
                 }
                 const data = await res.json();
                 responseBody.textContent = data.response || 'Sin respuesta.';
+
+                // Renderizar citas usadas (solo las que el modelo referencia con [n])
+                if (Array.isArray(data.citations) && data.citations.length) {
+                    const usedNumbers = new Set();
+                    const re = /\[(\d+)\]/g;
+                    let m;
+                    while ((m = re.exec(data.response || '')) !== null) {
+                        usedNumbers.add(parseInt(m[1], 10));
+                    }
+                    const citationsToShow = usedNumbers.size
+                        ? data.citations.filter(c => usedNumbers.has(c.n))
+                        : data.citations;
+                    const citationsList = document.getElementById('citationsList');
+                    citationsList.innerHTML = citationsToShow.map(c => {
+                        const ref = `${c.source} — ${c.guideline_name || 'sin nombre'}${c.page ? `, p.${c.page}` : ''}`;
+                        return `<div class="citation"><strong>[${c.n}]</strong> ${escapeHtml(ref)}</div>`;
+                    }).join('');
+                    document.getElementById('responseCitations').style.display = 'block';
+                }
             } catch (e) {
                 responseBody.textContent = 'No se pudo consultar: ' + (e.message || e);
             } finally {
@@ -532,6 +551,10 @@
                 consultBtn.disabled = false;
             }
         });
+
+        function escapeHtml(s) {
+            return String(s).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
 
         clearBtn.addEventListener('click', () => {
             caseInput.value = '';
