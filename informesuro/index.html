@@ -222,10 +222,19 @@
 
         .med-row {
             display: grid;
-            grid-template-columns: 1.5fr 2.2fr 1fr 1fr 32px;
-            gap: 8px;
+            grid-template-columns: 1.5fr 2.2fr 60px 1.1fr 1fr 32px;
+            gap: 6px;
             margin-bottom: 8px;
             align-items: start;
+        }
+        .med-row input[type="number"] {
+            text-align: center;
+            -moz-appearance: textfield;
+        }
+        .med-row input[type="number"]::-webkit-outer-spin-button,
+        .med-row input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
         }
         .coord-info {
             margin-top: 12px;
@@ -459,7 +468,7 @@
         import {
             FONASA_CODES, findFonasa, isHolep, HOLEP_INSUMOS,
             CLINIC_LIST, AYUDANTES, MEDICATIONS, MEDICO,
-            PREVISIONES, COORDINADORES
+            PREVISIONES, COORDINADORES, formatDuracion
         } from '/lib/uro-data.js';
 
         await requireAuth();
@@ -580,13 +589,28 @@
         function addMedRow(med = {}) {
             const row = document.createElement('div');
             row.className = 'med-row';
+            const u = med.duracion_u || '';
             row.innerHTML = `
-                <input type="text" placeholder="Medicamento + dosis (ej. Bladuril 200 mg)" value="${escapeAttr(med.nombre || '')}">
-                <input type="text" placeholder="Posología (ej. tomar 1 comprimido cada 8 horas)" value="${escapeAttr(med.posologia || '')}">
-                <input type="text" placeholder="Duración (ej. por 6 días)" value="${escapeAttr(med.duracion || '')}">
-                <input type="text" placeholder="Notas" value="${escapeAttr(med.notas || '')}">
+                <input type="text" data-f="nombre" placeholder="Medicamento + dosis" value="${escapeAttr(med.nombre || '')}">
+                <input type="text" data-f="posologia" placeholder="Posología" value="${escapeAttr(med.posologia || '')}">
+                <input type="number" data-f="dur_n" min="1" placeholder="N" value="${escapeAttr(med.duracion_n != null ? String(med.duracion_n) : '')}" ${u === 'permanente' ? 'disabled' : ''}>
+                <select data-f="dur_u">
+                    <option value="" ${u === '' ? 'selected' : ''}>—</option>
+                    <option value="dias" ${u === 'dias' ? 'selected' : ''}>días</option>
+                    <option value="semanas" ${u === 'semanas' ? 'selected' : ''}>semanas</option>
+                    <option value="meses" ${u === 'meses' ? 'selected' : ''}>meses</option>
+                    <option value="permanente" ${u === 'permanente' ? 'selected' : ''}>permanente</option>
+                </select>
+                <input type="text" data-f="notas" placeholder="Notas" value="${escapeAttr(med.notas || '')}">
                 <button class="remove-med" title="Quitar">×</button>
             `;
+            // El número se deshabilita cuando la unidad es 'permanente'.
+            const sel = row.querySelector('select[data-f="dur_u"]');
+            const numI = row.querySelector('input[data-f="dur_n"]');
+            sel.addEventListener('change', () => {
+                if (sel.value === 'permanente') { numI.value = ''; numI.disabled = true; }
+                else { numI.disabled = false; }
+            });
             row.querySelector('.remove-med').addEventListener('click', () => row.remove());
             document.getElementById('r-meds').appendChild(row);
         }
@@ -790,8 +814,15 @@
             const nombre = val('r-nombre'); const rut = val('r-rut'); const edad = val('r-edad');
             if (!nombre || !rut) { alert('Nombre y RUT son obligatorios.'); return; }
             const meds = Array.from(document.querySelectorAll('#r-meds .med-row')).map(row => {
-                const inputs = row.querySelectorAll('input');
-                return { nombre: inputs[0].value.trim(), posologia: inputs[1].value.trim(), duracion: inputs[2].value.trim(), notas: inputs[3].value.trim() };
+                const get = (f) => row.querySelector(`[data-f="${f}"]`).value.trim();
+                const dur_n = get('dur_n');
+                const dur_u = get('dur_u');
+                return {
+                    nombre: get('nombre'),
+                    posologia: get('posologia'),
+                    duracion: formatDuracion(dur_n, dur_u),
+                    notas: get('notas')
+                };
             }).filter(m => m.nombre);
             if (!meds.length) { alert('Agrega al menos un medicamento.'); return; }
             const data = {
