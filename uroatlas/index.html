@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0F2A47">
+    <title>UroAtlas · Segunda opinión clínica</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg: #F5F7FA;
+            --surface: #FFFFFF;
+            --surface-alt: #FAFBFC;
+            --border: #E1E5EA;
+            --border-strong: #C8CFD6;
+            --navy: #0F2A47;
+            --navy-light: #1A3A5C;
+            --primary: #0B5394;
+            --primary-hover: #094175;
+            --text: #1A2332;
+            --text-secondary: #4A5666;
+            --text-muted: #7B8794;
+            --success: #2A9D5F;
+            --warning: #C77900;
+            --danger: #B3261E;
+        }
+        html, body {
+            height: 100%;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .app {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            grid-template-rows: 56px 1fr;
+            grid-template-areas:
+                "header header"
+                "sidebar main";
+            height: 100vh;
+            height: 100dvh;
+        }
+
+        /* HEADER */
+        .header {
+            grid-area: header;
+            background: var(--navy);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            border-bottom: 1px solid var(--navy-light);
+        }
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+        }
+        .header-brand-mark {
+            width: 28px; height: 28px;
+            background: linear-gradient(135deg, #64B5F6, #2A9D5F);
+            border-radius: 6px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px; font-weight: 800;
+            color: #fff;
+        }
+        .header-meta {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 13px;
+        }
+        .header-user {
+            color: rgba(255, 255, 255, 0.85);
+        }
+        .header-btn {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            color: #fff;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 13px;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+        .header-btn:hover { background: rgba(255, 255, 255, 0.10); }
+
+        /* SIDEBAR */
+        .sidebar {
+            grid-area: sidebar;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .sidebar-header {
+            padding: 16px 18px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .sidebar-title {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+        .sidebar-new {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+        .sidebar-new:hover { background: var(--primary-hover); }
+        .sidebar-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 0;
+        }
+        .sidebar-empty {
+            padding: 32px 18px;
+            color: var(--text-muted);
+            font-size: 13px;
+            text-align: center;
+        }
+        .case-item {
+            padding: 10px 18px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+        .case-item:hover { background: var(--surface-alt); }
+        .case-item.active { background: rgba(11, 83, 148, 0.08); border-left: 3px solid var(--primary); padding-left: 15px; }
+        .case-item-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .case-item-date {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        /* MAIN */
+        .main {
+            grid-area: main;
+            overflow-y: auto;
+            padding: 24px;
+        }
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+        .panel-header {
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .panel-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: 0.2px;
+        }
+        .panel-body { padding: 18px; }
+
+        .case-input {
+            width: 100%;
+            min-height: 180px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px 14px;
+            font-family: inherit;
+            font-size: 14px;
+            line-height: 1.55;
+            color: var(--text);
+            background: var(--surface);
+            resize: vertical;
+            transition: border-color 0.15s ease;
+        }
+        .case-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(11, 83, 148, 0.10);
+        }
+
+        .image-drop {
+            border: 1px dashed var(--border-strong);
+            border-radius: 6px;
+            padding: 24px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 13px;
+            cursor: pointer;
+            transition: border-color 0.15s ease, background 0.15s ease;
+        }
+        .image-drop:hover {
+            border-color: var(--primary);
+            background: rgba(11, 83, 148, 0.03);
+        }
+        .image-drop.dragover {
+            border-color: var(--primary);
+            background: rgba(11, 83, 148, 0.06);
+        }
+        .image-list {
+            margin-top: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .image-thumb {
+            position: relative;
+            width: 80px; height: 80px;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+        .image-thumb img { width: 100%; height: 100%; object-fit: cover; }
+        .image-thumb-remove {
+            position: absolute;
+            top: 2px; right: 2px;
+            width: 18px; height: 18px;
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            font-size: 11px;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            padding: 12px 18px;
+            border-top: 1px solid var(--border);
+            background: var(--surface-alt);
+            border-radius: 0 0 8px 8px;
+        }
+        .btn {
+            padding: 8px 18px;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text);
+            cursor: pointer;
+            transition: background 0.15s ease, border-color 0.15s ease;
+        }
+        .btn:hover { background: var(--surface-alt); }
+        .btn-primary {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+        }
+        .btn-primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .response {
+            display: none;
+        }
+        .response.show { display: block; }
+        .response-body {
+            padding: 18px;
+            font-size: 14px;
+            line-height: 1.65;
+            color: var(--text);
+            white-space: pre-wrap;
+        }
+        .response-citations {
+            padding: 14px 18px;
+            background: var(--surface-alt);
+            border-top: 1px solid var(--border);
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .response-citations h4 {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+        .citation {
+            padding: 4px 0;
+            border-bottom: 1px dotted var(--border);
+        }
+        .citation:last-child { border-bottom: none; }
+
+        .loading {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            padding: 18px;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+        .loading.show { display: flex; }
+        .spinner {
+            width: 16px; height: 16px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            border-top-color: var(--primary);
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .placeholder {
+            padding: 60px 24px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        @media (max-width: 768px) {
+            .app {
+                grid-template-columns: 1fr;
+                grid-template-areas:
+                    "header"
+                    "main";
+            }
+            .sidebar { display: none; }
+            .header-meta .header-user { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <header class="header">
+            <div class="header-brand">
+                <div class="header-brand-mark">U</div>
+                UroAtlas
+            </div>
+            <div class="header-meta">
+                <span class="header-user" id="userEmail"></span>
+                <button class="header-btn" id="signOutBtn">Salir</button>
+            </div>
+        </header>
+
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <span class="sidebar-title">Casos</span>
+                <button class="sidebar-new" id="newCaseBtn">+ Nuevo</button>
+            </div>
+            <div class="sidebar-list" id="casesList">
+                <div class="sidebar-empty">Sin casos guardados aún.</div>
+            </div>
+        </aside>
+
+        <main class="main">
+            <div class="container">
+                <section class="panel">
+                    <div class="panel-header">
+                        <span class="panel-title">Caso clínico</span>
+                    </div>
+                    <div class="panel-body">
+                        <textarea
+                            class="case-input"
+                            id="caseInput"
+                            placeholder="Describe el caso: edad, motivo, antecedentes relevantes, hallazgos, exámenes, dudas específicas. Cuanto más detalle, mejor opinión.">Paciente de 65 años con PSA 8.2 ng/mL, próstata 45 cc, PI-RADS 3. ¿Conducta recomendada?</textarea>
+                    </div>
+                </section>
+
+                <section class="panel">
+                    <div class="panel-header">
+                        <span class="panel-title">Imágenes (opcional)</span>
+                    </div>
+                    <div class="panel-body">
+                        <div class="image-drop" id="imageDrop">
+                            Arrastra aquí UroTAC, RM o imágenes clínicas — o haz clic para seleccionar
+                        </div>
+                        <input type="file" id="imageInput" accept="image/*" multiple style="display:none">
+                        <div class="image-list" id="imageList"></div>
+                    </div>
+                    <div class="actions">
+                        <button class="btn" id="clearBtn">Limpiar</button>
+                        <button class="btn btn-primary" id="consultBtn">Consultar</button>
+                    </div>
+                </section>
+
+                <section class="panel response" id="responsePanel">
+                    <div class="panel-header">
+                        <span class="panel-title">Opinión de UroAtlas</span>
+                    </div>
+                    <div class="loading" id="loading">
+                        <span class="spinner"></span>
+                        <span id="loadingText">Buscando en guidelines y libros…</span>
+                    </div>
+                    <div class="response-body" id="responseBody"></div>
+                    <div class="response-citations" id="responseCitations" style="display:none">
+                        <h4>Fuentes citadas</h4>
+                        <div id="citationsList"></div>
+                    </div>
+                </section>
+
+                <div class="placeholder" id="placeholder">
+                    Escribe un caso clínico arriba y haz clic en <strong>Consultar</strong>.
+                    UroAtlas buscará en guidelines AUA, EAU y libros de urología.
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        import { requireAuth, getCurrentUser, signOut, apiFetch } from '/lib/supabase-client.js';
+
+        // 1. Verificar sesión.
+        const session = await requireAuth();
+        if (!session) { /* redirige */ }
+
+        const user = await getCurrentUser();
+        document.getElementById('userEmail').textContent = user?.email || '';
+
+        document.getElementById('signOutBtn').addEventListener('click', () => signOut());
+
+        // 2. UI de imágenes.
+        const drop = document.getElementById('imageDrop');
+        const input = document.getElementById('imageInput');
+        const list = document.getElementById('imageList');
+        const images = [];
+
+        drop.addEventListener('click', () => input.click());
+        drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('dragover'); });
+        drop.addEventListener('dragleave', () => drop.classList.remove('dragover'));
+        drop.addEventListener('drop', (e) => {
+            e.preventDefault();
+            drop.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+        input.addEventListener('change', () => handleFiles(input.files));
+
+        function handleFiles(files) {
+            for (const f of files) {
+                if (!f.type.startsWith('image/')) continue;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    images.push({ file: f, dataUrl: e.target.result });
+                    renderImages();
+                };
+                reader.readAsDataURL(f);
+            }
+        }
+        function renderImages() {
+            list.innerHTML = images.map((img, i) => `
+                <div class="image-thumb">
+                    <img src="${img.dataUrl}" alt="">
+                    <button class="image-thumb-remove" data-i="${i}">×</button>
+                </div>
+            `).join('');
+            list.querySelectorAll('.image-thumb-remove').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    images.splice(parseInt(btn.dataset.i), 1);
+                    renderImages();
+                });
+            });
+        }
+
+        // 3. Consultar (placeholder, hace falta el endpoint en Fase 3).
+        const consultBtn = document.getElementById('consultBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const caseInput = document.getElementById('caseInput');
+        const responsePanel = document.getElementById('responsePanel');
+        const loading = document.getElementById('loading');
+        const responseBody = document.getElementById('responseBody');
+        const placeholder = document.getElementById('placeholder');
+
+        consultBtn.addEventListener('click', async () => {
+            const text = caseInput.value.trim();
+            if (!text) return;
+            placeholder.style.display = 'none';
+            responsePanel.classList.add('show');
+            responseBody.textContent = '';
+            loading.classList.add('show');
+            consultBtn.disabled = true;
+            try {
+                // Endpoint pendiente de Fase 3.
+                const res = await apiFetch('/api/uroatlas/query', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ clinical_text: text })
+                });
+                if (!res.ok) {
+                    const txt = await res.text();
+                    throw new Error(`Error (${res.status}): ${txt}`);
+                }
+                const data = await res.json();
+                responseBody.textContent = data.response || 'Sin respuesta.';
+            } catch (e) {
+                responseBody.textContent = 'No se pudo consultar: ' + (e.message || e);
+            } finally {
+                loading.classList.remove('show');
+                consultBtn.disabled = false;
+            }
+        });
+
+        clearBtn.addEventListener('click', () => {
+            caseInput.value = '';
+            images.length = 0;
+            renderImages();
+            responsePanel.classList.remove('show');
+            placeholder.style.display = 'block';
+        });
+
+        document.getElementById('newCaseBtn').addEventListener('click', () => {
+            clearBtn.click();
+            caseInput.focus();
+        });
+    </script>
+</body>
+</html>

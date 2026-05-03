@@ -536,7 +536,6 @@
         @media (max-width: 640px) {
             .hero { padding: 100px 20px 40px; }
             .topbar { padding: 14px 18px; }
-            .topbar-meta { display: none; }
             .apps { padding: 40px 20px 40px; }
             .card { padding: 28px 24px 24px; min-height: 280px; }
             .card-status { top: 24px; right: 24px; }
@@ -729,7 +728,9 @@
             <span class="dot"></span>
             UroWorkNet
         </div>
-        <div class="topbar-meta">v1 · 2026</div>
+        <div class="topbar-meta" id="authBox">
+            <a href="/portal/login.html" style="color:var(--accent);text-decoration:none;font-weight:600;font-size:13px;padding:8px 16px;border:1px solid rgba(100,181,246,0.4);border-radius:8px;background:rgba(100,181,246,0.1);">Iniciar sesión →</a>
+        </div>
     </header>
 
     <section class="hero">
@@ -802,8 +803,8 @@
                 </div>
             </a>
 
-            <div class="card disabled">
-                <span class="card-status status-soon"><span class="dot"></span>Próximamente</span>
+            <a class="card" href="/uroatlas/">
+                <span class="card-status status-soon"><span class="dot"></span>Beta</span>
                 <div class="card-inner">
                     <div class="card-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="#64B5F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -813,9 +814,9 @@
                     </div>
                     <h3>UroAtlas</h3>
                     <p class="desc">IA experta con guidelines AUA y EAU. Discute casos clínicos complejos, analiza UroTAC y resonancias, y consulta literatura urológica con un toque.</p>
-                    <span class="card-cta">En desarrollo</span>
+                    <span class="card-cta">Abrir</span>
                 </div>
-            </div>
+            </a>
 
         </div>
 
@@ -906,6 +907,28 @@
         refreshBtn.addEventListener('click', () => fetchNews(true));
         modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+    </script>
+
+    <script type="module">
+        // Si hay sesión, reemplazamos el botón "Iniciar sesión" por email + Salir.
+        // Si no hay sesión o falla algo, queda el botón por defecto del HTML.
+        try {
+            const { getCurrentUser, signOut } = await import('/lib/supabase-client.js');
+            const user = await getCurrentUser();
+            if (user) {
+                const authBox = document.getElementById('authBox');
+                authBox.innerHTML = `
+                    <span style="margin-right:12px;font-size:13px;color:var(--text-secondary);">${user.email}</span>
+                    <a href="#" id="logoutLink" style="color:var(--accent);text-decoration:none;font-size:13px;padding:6px 14px;border:1px solid rgba(100,181,246,0.4);border-radius:8px;">Salir</a>
+                `;
+                document.getElementById('logoutLink').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    signOut();
+                });
+            }
+        } catch (e) {
+            console.warn('Auth check skipped:', e);
+        }
     </script>
 
     <footer>

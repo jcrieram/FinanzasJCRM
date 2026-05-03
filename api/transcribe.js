@@ -1,6 +1,8 @@
 // Recibe audio multipart/form-data y devuelve { text }.
 // El audio se reenvía a OpenAI Whisper en streaming y NO se persiste.
 
+import { authenticate } from '../lib/auth.js';
+
 export const config = {
     api: { bodyParser: false },
     maxDuration: 60
@@ -15,10 +17,8 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'OPENAI_API_KEY no configurada' });
     }
 
-    const requiredPin = process.env.CONSULTA_PIN;
-    if (requiredPin && req.headers['x-consulta-pin'] !== requiredPin) {
-        return res.status(401).json({ error: 'PIN inválido' });
-    }
+    const auth = await authenticate(req);
+    if (!auth.ok) return res.status(auth.status).json({ error: auth.error });
 
     const contentType = req.headers['content-type'];
     if (!contentType || !contentType.includes('multipart/form-data')) {
@@ -55,6 +55,11 @@ async function streamToBuffer(req) {
     return injectFields(buf, req.headers['content-type']);
 }
 
+// Vocabulario urológico para sesgar el reconocimiento (laboratorios,
+// imágenes, mediciones, diagnósticos, síntomas, medicamentos y
+// procedimientos frecuentes en la consulta del Dr. Juan Carlos Riera).
+const VOCAB_PROMPT = 'Consulta urológica entre médico urólogo (Dr. Juan Carlos Riera) y paciente, en español. Siglas que el médico pronuncia letra por letra: PSA (P-S-A), PI-RADS (PI-RADS), HPB (H-P-B), HBP, RTU, ITU, IVU, BUN, LDL, HDL, TSH, AST, ALT, TGO, TGP, INR, TP, TPT, IPSS, AUA, EAU, MIBC, NMIBC. El estudio de flujo urinario se llama SIEMPRE "uroflujometría" (no "euroflujometría", no "euroflujo", no "fluometría"). Frases típicas del médico: "uroflujometría con Qmax de", "PSA total de", "PSA libre de", "porcentaje de PSA libre", "índice PSA libre/total", "relación PSA libre sobre total", "Gleason 6", "Gleason 7", "Gleason 8", "PI-RADS 2", "PI-RADS 3", "PI-RADS 4", "volumen premiccional de", "residuo postmiccional de", "próstata de X gramos", "cistoscopía", "citoscopía". Términos frecuentes: PSA total, PSA libre, PI-RADS 1, PI-RADS 2, PI-RADS 3, PI-RADS 4, PI-RADS 5, score de Gleason, biopsia transrectal, biopsia transperineal, creatinina, BUN, urea, hemoglobina, hematocrito, glucosa, glicemia, HbA1c, testosterona, sodio, potasio, calcio, colesterol, triglicéridos, transaminasas, bilirrubinas, leucocitos, plaquetas, examen de orina, urocultivo, ecografía renal, ecografía vesical, ecografía transrectal, ecografía prostática, tomografía, uroTAC, resonancia magnética, urografía, uroflujometría, Qmax, residuo postmiccional, volumen premiccional, volumen miccional, próstata, riñón, vejiga, uréter, hiperplasia prostática benigna, HPB, nicturia, disuria, polaquiuria, urgencia miccional, hematuria, calibre miccional, retención urinaria, incontinencia urinaria, infección urinaria, prostatitis, cistitis, pielonefritis, litiasis renal, urolitiasis, cáncer de próstata, biopsia prostática, tacto rectal, cistoscopía, tamsulosina, finasteride, dutasteride, sildenafil, tadalafil, ciprofloxacino, nitrofurantoína, fosfomicina, doxazosina, oxibutinina, solifenacina, mirabegron, bicalutamida, enzalutamida, leuprolide, RTU prostática, prostatectomía, nefrectomía, ureterolitotomía, litotricia, mililitros, centímetros cúbicos, nanogramos por mililitro.';
+
 function injectFields(buf, contentType) {
     const boundaryMatch = contentType.match(/boundary=(?:"([^"]+)"|([^;]+))/);
     if (!boundaryMatch) return buf;
@@ -65,13 +70,16 @@ function injectFields(buf, contentType) {
     const extra =
         `--${boundary}\r\n` +
         `Content-Disposition: form-data; name="model"\r\n\r\n` +
-        `whisper-1\r\n` +
+        `gpt-4o-transcribe\r\n` +
         `--${boundary}\r\n` +
         `Content-Disposition: form-data; name="language"\r\n\r\n` +
         `es\r\n` +
         `--${boundary}\r\n` +
         `Content-Disposition: form-data; name="response_format"\r\n\r\n` +
-        `json\r\n`;
+        `json\r\n` +
+        `--${boundary}\r\n` +
+        `Content-Disposition: form-data; name="prompt"\r\n\r\n` +
+        `${VOCAB_PROMPT}\r\n`;
 
     const closing = `--${boundary}--`;
     const idx = text.lastIndexOf(closing);
