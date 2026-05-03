@@ -397,7 +397,7 @@
                         <textarea
                             class="case-input"
                             id="caseInput"
-                            placeholder="Describe el caso: edad, motivo, antecedentes relevantes, hallazgos, exámenes, dudas específicas. Cuanto más detalle, mejor opinión.">Paciente de 65 años con PSA 8.2 ng/mL, próstata 45 cc, PI-RADS 3. ¿Conducta recomendada?</textarea>
+                            placeholder="Describe el caso: edad, motivo, antecedentes relevantes, hallazgos, exámenes, dudas específicas. Cuanto más detalle, mejor opinión. También puedes consultar solo con una imagen."></textarea>
                     </div>
                 </section>
 
@@ -506,18 +506,27 @@
 
         consultBtn.addEventListener('click', async () => {
             const text = caseInput.value.trim();
-            if (!text) return;
+            if (!text && images.length === 0) {
+                alert('Escribe un caso o adjunta una imagen.');
+                return;
+            }
             placeholder.style.display = 'none';
             responsePanel.classList.add('show');
             responseBody.textContent = '';
             document.getElementById('responseCitations').style.display = 'none';
             loading.classList.add('show');
+            document.getElementById('loadingText').textContent = images.length
+                ? 'Analizando imagen y buscando en guidelines…'
+                : 'Buscando en guidelines y libros…';
             consultBtn.disabled = true;
             try {
                 const res = await apiFetch('/api/uroatlas/query', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ clinical_text: text })
+                    body: JSON.stringify({
+                        clinical_text: text,
+                        images: images.map(img => img.dataUrl)
+                    })
                 });
                 if (!res.ok) {
                     const txt = await res.text();

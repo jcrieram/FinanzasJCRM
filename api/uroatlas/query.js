@@ -6,38 +6,48 @@
 
 import { authenticate, getServiceClient } from '../../lib/auth.js';
 
-export const config = { maxDuration: 60 };
+export const config = {
+    maxDuration: 60,
+    api: { bodyParser: { sizeLimit: '20mb' } }
+};
 
 const VOYAGE_MODEL = 'voyage-3';
 const CLAUDE_MODEL = 'claude-sonnet-4-6';
 const TOP_K = 8;
 
-const SYSTEM_PROMPT = `Eres un asistente urológico experto que asiste al Dr. Juan Carlos Riera M. dándole una "segunda opinión" basada exclusivamente en los fragmentos de guidelines AUA, EAU y libros de urología que se te proporcionan como contexto.
+const SYSTEM_PROMPT = `Eres un asistente urológico experto que asiste al Dr. Juan Carlos Riera M. con una segunda opinión clínica basada en los fragmentos de guidelines AUA, EAU y libros de urología que se te proporcionan como contexto, y en las imágenes médicas que el médico te envíe.
 
 REGLAS INVIOLABLES:
-1. Solo usa información presente en los fragmentos del CONTEXTO. Si la información no está, dilo explícitamente con la frase "Los fragmentos disponibles no cubren este punto" — no inventes ni completes con conocimiento general.
-2. Cada afirmación clínica relevante debe llevar una cita numérica al final, formato [1], [2], etc., haciendo referencia al chunk usado. Numeración secuencial empezando en [1] para la primera fuente que cites.
-3. Responde en español, con terminología médica precisa y oraciones cortas. NO uses lenguaje narrativo ("el paciente nos cuenta", "es importante señalar"). Estilo de consola clínica, no cuento.
-4. NUNCA recomiendes medicamentos, dosis, conductas o estudios que no estén respaldados por los fragmentos.
+1. Solo usa información presente en los fragmentos del CONTEXTO. Si la información no está, dilo explícitamente. No completes con conocimiento general.
+2. Cada afirmación clínica debe llevar una cita numérica al final, formato [1], [2], etc.
+3. NUNCA recomiendes medicamentos, dosis, conductas o estudios sin respaldo en los fragmentos.
+4. Si hay imágenes, descríbelas en términos clínicos urológicos breves antes del análisis (1-2 oraciones), pero no inventes hallazgos que no veas.
 
-ESTRUCTURA DE RESPUESTA (en este orden, omitiendo secciones que no apliquen):
+FORMATO OBLIGATORIO DE LA RESPUESTA:
+- NO uses headers de markdown (nada de ###, ##, #). Para los nombres de secciones usa MAYÚSCULAS sueltas en línea propia, sin numeración ni símbolos.
+- NO uses separadores horizontales (nada de --- ni ___).
+- NO uses negritas (** **) ni cursivas.
+- Sin emojis.
+- Oraciones técnicas, terminología médica precisa, lenguaje impersonal. Evita "el paciente nos cuenta", "es importante señalar", "cabe destacar".
 
-1. ANÁLISIS DEL CASO
-Una o dos oraciones técnicas sobre el problema clínico planteado.
+ESTRUCTURA (en este orden, omitiendo secciones que no apliquen):
 
-2. EVIDENCIA RELEVANTE
-Bullet points con los hallazgos de las guidelines aplicables al caso, con citas [n].
+ANÁLISIS DEL CASO
+Un único párrafo integrando el cuadro clínico globalmente — qué problema urológico se está planteando y cómo se conectan los hallazgos entre sí. NO listes los signos y síntomas uno por uno; intégralos en un razonamiento conjunto.
 
-3. RECOMENDACIONES
-Bullet points con las conductas/estudios/tratamientos sugeridos según las guidelines, con citas [n] y precisando dosis o duración cuando los fragmentos las den.
+DESCRIPCIÓN DE IMAGEN (solo si el médico envió imagen)
+Una a dos oraciones clínicas describiendo lo que se ve y su relevancia para el caso.
 
-4. BANDERAS ROJAS (solo si los fragmentos las describen)
-Cualquier alarma o criterio de derivación urgente, con citas [n].
+EVIDENCIA Y RECOMENDACIONES
+Tres a seis bullets cortos. Cada bullet conecta una guideline con el caso e incluye la conducta sugerida con dosis o duración cuando los fragmentos las den. Cita [n].
 
-5. LIMITACIONES
-Si el caso del médico tiene aspectos que los fragmentos no cubren, dilo explícitamente. Si necesitas más datos del paciente para una opinión completa, especifica cuáles.
+BANDERAS ROJAS
+Solo si las guidelines las describen para este caso. Conciso, máximo tres bullets. Cita [n]. Si no aplican, omite la sección entera.
 
-Sé conciso y directo. El médico es urólogo, no necesita explicaciones básicas.`;
+LIMITACIONES
+Aspectos del caso que los fragmentos disponibles no cubren, y datos adicionales del paciente que harían falta para una opinión más completa. Conciso.
+
+Sé directo y técnico. El destinatario es urólogo experto, no necesita explicaciones básicas. No repitas literalmente la información que el médico ya te dio en el caso.`;
 
 async function voyageEmbedQuery(text, apiKey) {
     const res = await fetch('https://api.voyageai.com/v1/embeddings', {
@@ -56,7 +66,9 @@ async function voyageEmbedQuery(text, apiKey) {
     return data.data[0].embedding;
 }
 
-async function callClaude(systemPrompt, userMessage, apiKey) {
+// content puede ser un string (solo texto) o array de bloques
+// (texto + imágenes) según la API Messages de Anthropic.
+async function callClaude(systemPrompt, content, apiKey, opts = {}) {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
@@ -66,10 +78,10 @@ async function callClaude(systemPrompt, userMessage, apiKey) {
         },
         body: JSON.stringify({
             model: CLAUDE_MODEL,
-            max_tokens: 1500,
-            temperature: 0.2,
+            max_tokens: opts.maxTokens || 1500,
+            temperature: opts.temperature ?? 0.2,
             system: systemPrompt,
-            messages: [{ role: 'user', content: userMessage }]
+            messages: [{ role: 'user', content }]
         })
     });
     if (!res.ok) {
@@ -78,6 +90,17 @@ async function callClaude(systemPrompt, userMessage, apiKey) {
     }
     const data = await res.json();
     return data.content?.[0]?.text || '';
+}
+
+// Convierte una data URL (data:image/png;base64,...) en el bloque de
+// imagen que espera la API de Anthropic.
+function dataUrlToImageBlock(dataUrl) {
+    const m = /^data:(image\/(?:png|jpeg|jpg|webp|gif));base64,(.+)$/i.exec(dataUrl);
+    if (!m) return null;
+    return {
+        type: 'image',
+        source: { type: 'base64', media_type: m[1].toLowerCase().replace('image/jpg', 'image/jpeg'), data: m[2] }
+    };
 }
 
 export default async function handler(req, res) {
@@ -98,14 +121,43 @@ export default async function handler(req, res) {
     catch { return res.status(400).json({ error: 'JSON inválido' }); }
 
     const clinicalText = (body.clinical_text || '').trim();
-    if (!clinicalText) return res.status(400).json({ error: 'Falta clinical_text' });
+    const imagesIn = Array.isArray(body.images) ? body.images : [];
+    if (!clinicalText && imagesIn.length === 0) {
+        return res.status(400).json({ error: 'Envía un caso clínico, una imagen, o ambos' });
+    }
     if (clinicalText.length > 5000) return res.status(400).json({ error: 'Caso demasiado largo (máx 5000 chars)' });
+    if (imagesIn.length > 4) return res.status(400).json({ error: 'Máximo 4 imágenes por consulta' });
+
+    // Convertir imágenes a bloques válidos para Claude.
+    const imageBlocks = imagesIn
+        .map(dataUrlToImageBlock)
+        .filter(Boolean);
+    if (imagesIn.length && !imageBlocks.length) {
+        return res.status(400).json({ error: 'Imágenes inválidas (formato no soportado)' });
+    }
 
     try {
-        // 1) Embedding del caso
-        const queryEmbedding = await voyageEmbedQuery(clinicalText, voyageKey);
+        // 1) Determinar la query para retrieval.
+        // - Si hay texto: úsalo directo.
+        // - Si solo hay imagen: pedí a Claude que la describa en una frase corta y úsala como query.
+        let retrievalQuery = clinicalText;
+        if (!retrievalQuery && imageBlocks.length) {
+            const describeContent = [
+                ...imageBlocks,
+                { type: 'text', text: 'Describe la imagen en UNA frase corta (máx 25 palabras) en términos clínicos urológicos, mencionando órgano, modalidad y hallazgos principales. Solo la frase, sin nada más.' }
+            ];
+            retrievalQuery = (await callClaude(
+                'Eres un radiólogo urológico. Respondes con una sola frase corta.',
+                describeContent,
+                anthropicKey,
+                { maxTokens: 80, temperature: 0.1 }
+            )).trim();
+        }
 
-        // 2) Retrieval con pgvector
+        // 2) Embedding de la query
+        const queryEmbedding = await voyageEmbedQuery(retrievalQuery, voyageKey);
+
+        // 3) Retrieval con pgvector
         const supa = getServiceClient();
         const { data: chunks, error: matchError } = await supa.rpc('match_documents', {
             query_embedding: queryEmbedding,
@@ -120,17 +172,25 @@ export default async function handler(req, res) {
             });
         }
 
-        // 3) Armar contexto y citas para Claude
+        // 4) Armar contexto y prompt para Claude
         const contextBlocks = chunks.map((c, i) => {
             const tag = `[${i + 1}]`;
             const ref = `${c.source} — ${c.guideline_name || 'sin nombre'}${c.page ? `, p.${c.page}` : ''}`;
             return `${tag} ${ref}\n${c.content}`;
         }).join('\n\n────────\n\n');
 
-        const userMessage = `CONTEXTO (fragmentos recuperados de las guidelines, ordenados por relevancia):\n\n${contextBlocks}\n\n────────────────────\n\nCASO CLÍNICO DEL MÉDICO:\n\n${clinicalText}\n\n────────────────────\n\nRedacta tu opinión siguiendo la estructura indicada en el system prompt. Recuerda citar [1], [2], etc.`;
+        const caseSection = clinicalText
+            ? `CASO CLÍNICO DEL MÉDICO:\n\n${clinicalText}`
+            : `CASO CLÍNICO: el médico envió únicamente la imagen adjunta y solicita una opinión sobre lo que se observa.`;
 
-        // 4) Llamada a Claude
-        const responseText = await callClaude(SYSTEM_PROMPT, userMessage, anthropicKey);
+        const textPrompt = `CONTEXTO (fragmentos recuperados de las guidelines, ordenados por relevancia):\n\n${contextBlocks}\n\n────────────────────\n\n${caseSection}\n\n────────────────────\n\nRedacta tu opinión siguiendo la estructura del system prompt. Recuerda: sin headers de markdown, sin separadores horizontales, análisis global. Cita [1], [2], etc.`;
+
+        const messageContent = imageBlocks.length
+            ? [...imageBlocks, { type: 'text', text: textPrompt }]
+            : textPrompt;
+
+        // 5) Llamada a Claude (con o sin imágenes)
+        const responseText = await callClaude(SYSTEM_PROMPT, messageContent, anthropicKey);
 
         // 5) Construir lista de citas para la UI (todas las recuperadas, la UI puede mostrar solo las que aparezcan en el texto si quiere)
         const citations = chunks.map((c, i) => ({
