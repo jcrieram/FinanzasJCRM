@@ -350,9 +350,9 @@
             <div class="nav-item active" data-tab="informe">📄 Informe Urológico</div>
             <div class="nav-item" data-tab="cirugia">🔪 Solicitud de Cirugía</div>
             <div class="nav-item" data-tab="receta">💊 Receta</div>
-            <div class="nav-item disabled" data-tab="examenes">Solicitud de Exámenes<span class="badge">Próx.</span></div>
-            <div class="nav-item disabled" data-tab="estudios">Solicitud Estudios<span class="badge">Próx.</span></div>
-            <div class="nav-item disabled" data-tab="alta">Alta Médica<span class="badge">Próx.</span></div>
+            <div class="nav-item" data-tab="examenes">🧪 Solicitud de Exámenes</div>
+            <div class="nav-item" data-tab="estudios">🩻 Solicitud de Estudios</div>
+            <div class="nav-item" data-tab="alta">🏥 Alta Médica</div>
             <div class="nav-item disabled" data-tab="post-quir">Post Quirúrgico<span class="badge">Próx.</span></div>
             <div class="nav-item disabled" data-tab="post-holep">Post HoLEP<span class="badge">Próx.</span></div>
             <div class="sidebar-section">Archivo</div>
@@ -492,6 +492,150 @@
                     </section>
                 </div>
 
+                <!-- ════════════ SOLICITUD DE EXÁMENES ════════════ -->
+                <div class="tab-content" id="tab-examenes">
+                    <section class="panel">
+                        <div class="panel-header">
+                            <div>
+                                <span class="panel-title">Solicitud de Exámenes</span>
+                                <div class="panel-subtitle">Selecciona un paquete predefinido o agrega exámenes uno a uno.</div>
+                            </div>
+                        </div>
+                        <div class="panel-body">
+                            <div class="form-grid">
+                                <div class="form-row"><label>Nombre del paciente</label><input id="e-nombre" type="text"></div>
+                                <div class="form-row"><label>RUT</label><input id="e-rut" type="text"></div>
+                                <div class="form-row"><label>Edad</label><input id="e-edad" type="text"></div>
+                                <div class="form-row"><label>Clínica</label><select id="e-clinica" data-clinica></select></div>
+                            </div>
+
+                            <h4 style="margin-top:18px;font-size:13px;color:var(--primary);">Paquetes preconfigurados</h4>
+                            <div class="med-presets" id="e-presets" style="margin-top:8px;"></div>
+
+                            <h4 style="margin-top:14px;font-size:13px;color:var(--primary);">Exámenes solicitados</h4>
+                            <div id="e-items" style="margin-top:8px;"></div>
+                            <button class="btn btn-sm" id="e-add" style="margin-top:6px;">+ Agregar examen</button>
+
+                            <div class="form-grid" style="margin-top:18px;">
+                                <div class="form-row" style="grid-column:1 / -1;">
+                                    <label>Indicación clínica</label>
+                                    <textarea id="e-indicacion" style="min-height:80px;" placeholder="Motivo de la solicitud (ej. estudio de HPB sintomática)."></textarea>
+                                </div>
+                                <div class="form-row" style="max-width:220px;">
+                                    <label>Prioridad</label>
+                                    <select id="e-prioridad">
+                                        <option>Normal</option>
+                                        <option>Urgente</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="actions">
+                            <button class="btn" id="e-clear">Limpiar</button>
+                            <button class="btn btn-primary" id="e-generate">Generar solicitud</button>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- ════════════ SOLICITUD DE ESTUDIOS ════════════ -->
+                <div class="tab-content" id="tab-estudios">
+                    <section class="panel">
+                        <div class="panel-header">
+                            <div>
+                                <span class="panel-title">Solicitud de Estudios</span>
+                                <div class="panel-subtitle">Procedimientos diagnósticos: cistoscopía, urodinamia, biopsia de próstata, uroflujometría, etc.</div>
+                            </div>
+                        </div>
+                        <div class="panel-body">
+                            <div class="form-grid">
+                                <div class="form-row"><label>Nombre del paciente</label><input id="s-nombre" type="text"></div>
+                                <div class="form-row"><label>RUT</label><input id="s-rut" type="text"></div>
+                                <div class="form-row"><label>Edad</label><input id="s-edad" type="text"></div>
+                                <div class="form-row"><label>Clínica</label><select id="s-clinica" data-clinica></select></div>
+                            </div>
+
+                            <h4 style="margin-top:18px;font-size:13px;color:var(--primary);">Paquetes de estudios</h4>
+                            <div class="med-presets" id="s-presets" style="margin-top:8px;"></div>
+
+                            <h4 style="margin-top:14px;font-size:13px;color:var(--primary);">Estudios solicitados</h4>
+                            <div id="s-items" style="margin-top:8px;"></div>
+                            <button class="btn btn-sm" id="s-add" style="margin-top:6px;">+ Agregar estudio</button>
+
+                            <div class="form-grid" style="margin-top:18px;">
+                                <div class="form-row" style="grid-column:1 / -1;">
+                                    <label>Indicación clínica</label>
+                                    <textarea id="s-indicacion" style="min-height:80px;"></textarea>
+                                </div>
+                                <div class="form-row" style="max-width:220px;">
+                                    <label>Prioridad</label>
+                                    <select id="s-prioridad">
+                                        <option>Normal</option>
+                                        <option>Urgente</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="actions">
+                            <button class="btn" id="s-clear">Limpiar</button>
+                            <button class="btn btn-primary" id="s-generate">Generar solicitud</button>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- ════════════ ALTA MÉDICA ════════════ -->
+                <div class="tab-content" id="tab-alta">
+                    <section class="panel">
+                        <div class="panel-header">
+                            <div>
+                                <span class="panel-title">Alta Médica</span>
+                                <div class="panel-subtitle">Epicrisis post-quirúrgica con cuerpo automático para HoLEP.</div>
+                            </div>
+                        </div>
+                        <div class="panel-body">
+                            <div class="form-grid">
+                                <div class="form-row"><label>Nombre del paciente</label><input id="a-nombre" type="text"></div>
+                                <div class="form-row"><label>RUT</label><input id="a-rut" type="text"></div>
+                                <div class="form-row"><label>Edad</label><input id="a-edad" type="text"></div>
+                                <div class="form-row"><label>Clínica</label><select id="a-clinica" data-clinica></select></div>
+                                <div class="form-row"><label>Fecha de cirugía</label><input id="a-fecha" type="date"></div>
+                            </div>
+
+                            <h4 style="margin-top:18px;font-size:13px;color:var(--primary);">Diagnóstico y procedimiento</h4>
+                            <div class="form-grid" style="margin-top:8px;">
+                                <div class="form-row" style="grid-column:1 / -1;">
+                                    <label>Diagnóstico de egreso</label>
+                                    <input id="a-diagnostico" type="text" placeholder="Ej. Hiperplasia prostática benigna sintomática">
+                                </div>
+                                <div class="form-row">
+                                    <label>Código FONASA principal</label>
+                                    <input id="a-cod1" type="text" list="fonasa-list" placeholder="Código o palabra clave" autocomplete="off">
+                                </div>
+                                <div class="form-row">
+                                    <label>Código FONASA secundario (opcional)</label>
+                                    <input id="a-cod2" type="text" list="fonasa-list" placeholder="Código o palabra clave" autocomplete="off">
+                                </div>
+                            </div>
+
+                            <div class="form-row" style="margin-top:14px;">
+                                <label style="display:flex;align-items:center;gap:8px;">
+                                    Evolución clínica y hospitalaria
+                                    <button type="button" class="btn btn-sm" id="a-auto-cuerpo" style="font-size:11px;padding:3px 10px;">Generar automático</button>
+                                </label>
+                                <textarea id="a-cuerpo" style="min-height:140px;" placeholder="Texto de la evolución hospitalaria. Para HoLEP, click en Generar automático y se rellena el cuerpo estándar."></textarea>
+                            </div>
+
+                            <div class="form-row" style="margin-top:14px;">
+                                <label>Indicaciones al alta (una por línea)</label>
+                                <textarea id="a-indicaciones" style="min-height:120px;" placeholder="Reposo relativo por 7 días.&#10;Mantener catéter vesical hasta control en consulta.&#10;Beber 2-3 litros de líquido al día.&#10;Control con su urólogo en 7 días.&#10;Acudir a urgencias si fiebre, sangrado abundante, retención o dolor incoercible."></textarea>
+                            </div>
+                        </div>
+                        <div class="actions">
+                            <button class="btn" id="a-clear">Limpiar</button>
+                            <button class="btn btn-primary" id="a-generate">Generar alta</button>
+                        </div>
+                    </section>
+                </div>
+
                 <!-- ════════════ PREVIEW (compartida) ════════════ -->
                 <section class="panel preview-panel" id="previewPanel">
                     <div class="panel-header">
@@ -519,7 +663,8 @@
         import {
             FONASA_CODES, findFonasa, isHolep, HOLEP_INSUMOS,
             CLINIC_LIST, AYUDANTES, MEDICATIONS, MEDICO,
-            PREVISIONES, COORDINADORES, formatDuracion
+            PREVISIONES, COORDINADORES, formatDuracion,
+            EXAM_PACKAGES, STUDY_PACKAGES, generateEpicrisisBody
         } from '/lib/uro-data.js';
 
         await requireAuth();
@@ -910,6 +1055,199 @@
                 <h3>Prescripción farmacológica</h3>
                 <ul class="meds">${medsHtml}</ul>
                 ${data.indicaciones_generales ? `<h3>Indicaciones generales</h3><p style="text-align:justify">${escapeHtml(data.indicaciones_generales)}</p>` : ''}
+                ${firmaBlock()}
+            `;
+        }
+
+        // ─── Solicitud de Exámenes / Estudios ───────────────────────────
+        function buildItemsManager(prefix, packages) {
+            const presetsEl = document.getElementById(`${prefix}-presets`);
+            const itemsEl = document.getElementById(`${prefix}-items`);
+
+            // Render presets cards
+            Object.entries(packages).forEach(([nombre, lista]) => {
+                const card = document.createElement('div');
+                card.className = 'preset-card';
+                card.innerHTML = `<div class="preset-card-title">${nombre}</div><div class="preset-card-chips"></div>`;
+                const chips = card.querySelector('.preset-card-chips');
+                const btn = document.createElement('button');
+                btn.className = 'med-preset-btn';
+                btn.type = 'button';
+                btn.textContent = `Cargar paquete (${lista.length})`;
+                btn.title = lista.join(', ');
+                btn.addEventListener('click', () => {
+                    lista.forEach(item => addItemRow(prefix, item));
+                });
+                chips.appendChild(btn);
+                presetsEl.appendChild(card);
+            });
+
+            document.getElementById(`${prefix}-add`).addEventListener('click', () => addItemRow(prefix, ''));
+
+            document.getElementById(`${prefix}-clear`).addEventListener('click', () => {
+                ['nombre','rut','edad','indicacion'].forEach(id => {
+                    const el = document.getElementById(`${prefix}-${id}`);
+                    if (el) el.value = '';
+                });
+                document.getElementById(`${prefix}-clinica`).value = '';
+                document.getElementById(`${prefix}-prioridad`).value = 'Normal';
+                itemsEl.innerHTML = '';
+                addItemRow(prefix, '');
+                document.getElementById('previewPanel').classList.remove('show');
+                lastPayload = null;
+            });
+
+            // Empezamos con una fila vacía
+            addItemRow(prefix, '');
+        }
+
+        function addItemRow(prefix, value) {
+            const itemsEl = document.getElementById(`${prefix}-items`);
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex;gap:8px;margin-bottom:6px;align-items:center;';
+            row.innerHTML = `
+                <input type="text" placeholder="Nombre del examen / estudio" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:13px;font-family:inherit;" value="${escapeAttr(value)}">
+                <button class="remove-med" type="button" title="Quitar">×</button>
+            `;
+            row.querySelector('.remove-med').addEventListener('click', () => row.remove());
+            itemsEl.appendChild(row);
+        }
+
+        function collectItems(prefix) {
+            return Array.from(document.querySelectorAll(`#${prefix}-items input`))
+                .map(i => i.value.trim()).filter(Boolean);
+        }
+
+        buildItemsManager('e', EXAM_PACKAGES);
+        buildItemsManager('s', STUDY_PACKAGES);
+
+        document.getElementById('e-generate').addEventListener('click', () => generateExStudy('e', 'examenes'));
+        document.getElementById('s-generate').addEventListener('click', () => generateExStudy('s', 'estudios'));
+
+        function generateExStudy(prefix, doc_type) {
+            const nombre = val(`${prefix}-nombre`); const rut = val(`${prefix}-rut`); const edad = val(`${prefix}-edad`);
+            if (!nombre || !rut) { alert('Nombre y RUT son obligatorios.'); return; }
+            const items = collectItems(prefix);
+            if (!items.length) { alert('Agrega al menos un ítem.'); return; }
+            const data = {
+                items,
+                indicacion: val(`${prefix}-indicacion`),
+                prioridad: val(`${prefix}-prioridad`) || 'Normal'
+            };
+            const paciente = { nombre, rut, edad };
+            const clinica = val(`${prefix}-clinica`);
+            lastPayload = { doc_type, paciente, clinica, data };
+            showPreview();
+            renderExStudyPreview(paciente, clinica, data, doc_type);
+        }
+
+        function renderExStudyPreview(paciente, clinica, data, doc_type) {
+            const fecha = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
+            const titulo = doc_type === 'examenes' ? 'SOLICITUD DE EXÁMENES' : 'SOLICITUD DE ESTUDIOS';
+            const colHeader = doc_type === 'examenes' ? 'Examen' : 'Estudio';
+            const rows = data.items.map((it, i) => `<tr><td style="width:50px">${i + 1}</td><td>${escapeHtml(it)}</td></tr>`).join('');
+            document.getElementById('previewDoc').innerHTML = `
+                <div class="right">${escapeHtml(fecha)}</div>
+                <h2>${titulo}</h2>
+                <h3>Datos del paciente</h3>
+                <table class="patient">
+                    <tr><td>Nombre del paciente</td><td>${escapeHtml(paciente.nombre)}</td></tr>
+                    <tr><td>RUT</td><td>${escapeHtml(paciente.rut)}</td></tr>
+                    <tr><td>Edad</td><td>${escapeHtml(paciente.edad || '—')}</td></tr>
+                </table>
+                <h3>${colHeader === 'Examen' ? 'Exámenes solicitados' : 'Estudios solicitados'}</h3>
+                <table class="studies"><thead><tr><th>N°</th><th>${colHeader}</th></tr></thead><tbody>${rows}</tbody></table>
+                ${data.indicacion ? `<h3>Indicación clínica</h3><p style="text-align:justify">${escapeHtml(data.indicacion)}</p>` : ''}
+                ${data.prioridad && data.prioridad !== 'Normal' ? `<p style="margin-top:12px;color:var(--primary);font-weight:700">Prioridad: ${escapeHtml(data.prioridad)}</p>` : ''}
+                ${firmaBlock()}
+            `;
+        }
+
+        // ─── Alta Médica ────────────────────────────────────────────────
+        document.getElementById('a-clear').addEventListener('click', () => {
+            ['a-nombre','a-rut','a-edad','a-fecha','a-diagnostico','a-cod1','a-cod2','a-cuerpo','a-indicaciones'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('a-clinica').value = '';
+            document.getElementById('previewPanel').classList.remove('show');
+            lastPayload = null;
+        });
+
+        document.getElementById('a-auto-cuerpo').addEventListener('click', () => {
+            const cod1 = parseFonasaInput(val('a-cod1'));
+            const cod2 = parseFonasaInput(val('a-cod2'));
+            const cod1obj = cod1 ? findFonasa(cod1) : null;
+            const cod2obj = cod2 ? findFonasa(cod2) : null;
+            const fechaInput = val('a-fecha');
+            // Convertimos YYYY-MM-DD a "DD de mes de YYYY".
+            let fechaTxt = '';
+            if (fechaInput) {
+                const [y, m, d] = fechaInput.split('-');
+                const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+                fechaTxt = `${parseInt(d,10)} de ${meses[parseInt(m,10)-1]} de ${y}`;
+            }
+            const cuerpo = generateEpicrisisBody({
+                edad: val('a-edad'),
+                fechaCirugia: fechaTxt,
+                cod1, cod2,
+                cod1Nombre: cod1obj?.nombre || '',
+                cod2Nombre: cod2obj?.nombre || ''
+            });
+            document.getElementById('a-cuerpo').value = cuerpo;
+        });
+
+        document.getElementById('a-generate').addEventListener('click', () => {
+            const nombre = val('a-nombre'); const rut = val('a-rut'); const edad = val('a-edad');
+            if (!nombre || !rut) { alert('Nombre y RUT son obligatorios.'); return; }
+            const cod1 = parseFonasaInput(val('a-cod1'));
+            const cod1obj = cod1 ? findFonasa(cod1) : null;
+            const cod2 = parseFonasaInput(val('a-cod2'));
+            const cod2obj = cod2 ? findFonasa(cod2) : null;
+            const fechaInput = val('a-fecha');
+            let fechaTxt = '';
+            if (fechaInput) {
+                const [y, m, d] = fechaInput.split('-');
+                const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+                fechaTxt = `${parseInt(d,10)} de ${meses[parseInt(m,10)-1]} de ${y}`;
+            }
+            const data = {
+                fecha_cirugia: fechaTxt,
+                diagnostico: val('a-diagnostico'),
+                cod1_codigo: cod1, cod1_nombre: cod1obj?.nombre || '',
+                cod2_codigo: cod2, cod2_nombre: cod2obj?.nombre || '',
+                cuerpo: val('a-cuerpo'),
+                indicaciones: val('a-indicaciones')
+            };
+            const paciente = { nombre, rut, edad };
+            const clinica = val('a-clinica');
+            lastPayload = { doc_type: 'alta', paciente, clinica, data };
+            showPreview();
+            renderAltaPreview(paciente, clinica, data);
+        });
+
+        function renderAltaPreview(paciente, clinica, data) {
+            const fecha = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
+            const cod1Display = data.cod1_codigo ? `${data.cod1_codigo} — ${data.cod1_nombre}` : '—';
+            const cod2Display = (data.cod2_codigo && data.cod2_nombre) ? `${data.cod2_codigo} — ${data.cod2_nombre}` : '—';
+            const cuerpoHtml = (data.cuerpo || '').split(/\n\n+/).map(p => `<p style="text-align:justify">${escapeHtml(p)}</p>`).join('');
+            const indicaciones = (data.indicaciones || '').split('\n').filter(l => l.trim()).map(l => `<li>• ${escapeHtml(l.trim())}</li>`).join('');
+            document.getElementById('previewDoc').innerHTML = `
+                <h2>INFORME DE ALTA MÉDICA</h2>
+                <h3>Identificación del paciente</h3>
+                <table class="patient">
+                    <tr><td>Nombre del paciente</td><td>${escapeHtml(paciente.nombre)}</td></tr>
+                    <tr><td>RUT</td><td>${escapeHtml(paciente.rut)}</td></tr>
+                    <tr><td>Edad</td><td>${escapeHtml(paciente.edad || '—')}</td></tr>
+                    <tr><td>Fecha de cirugía</td><td>${escapeHtml(data.fecha_cirugia || '—')}</td></tr>
+                    <tr><td>Fecha de emisión</td><td>${escapeHtml(fecha)}</td></tr>
+                    <tr><td>Clínica / Centro</td><td>${escapeHtml(clinica || '—')}</td></tr>
+                </table>
+                <h3>Diagnóstico y procedimiento</h3>
+                <table class="patient">
+                    <tr><td>Diagnóstico de egreso</td><td>${escapeHtml(data.diagnostico || '—')}</td></tr>
+                    <tr><td>Procedimiento principal (FONASA)</td><td>${escapeHtml(cod1Display)}</td></tr>
+                    <tr><td>Procedimiento secundario (FONASA)</td><td>${escapeHtml(cod2Display)}</td></tr>
+                </table>
+                ${data.cuerpo ? `<h3>Evolución clínica y hospitalaria</h3>${cuerpoHtml}` : ''}
+                ${indicaciones ? `<h3>Indicaciones al alta</h3><ul class="meds">${indicaciones}</ul>` : ''}
                 ${firmaBlock()}
             `;
         }

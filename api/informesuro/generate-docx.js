@@ -385,6 +385,121 @@ function buildReceta({ paciente, clinica, data }) {
     return wrapDocument({ sections, title: 'RECETA MÉDICA', clinica });
 }
 
+function buildSolicitudExamenes({ paciente, clinica, data, titulo = 'SOLICITUD DE EXÁMENES' }) {
+    const sections = [];
+    sections.push(fechaParagraph());
+    sections.push(centerTitle(titulo));
+
+    sections.push(sectionTitle('DATOS DEL PACIENTE'));
+    sections.push(patientTable([
+        ['Nombre del paciente', paciente.nombre],
+        ['RUT', paciente.rut],
+        ['Edad', paciente.edad]
+    ]));
+
+    const items = Array.isArray(data.items) ? data.items.filter(Boolean) : [];
+    if (items.length) {
+        const isExamenes = (data.kind || 'examenes') === 'examenes';
+        sections.push(sectionTitle(isExamenes ? 'EXÁMENES SOLICITADOS' : 'ESTUDIOS SOLICITADOS'));
+
+        const headerRow = new TableRow({
+            children: ['N°', isExamenes ? 'Examen' : 'Estudio'].map(t => new TableCell({
+                shading: { type: ShadingType.CLEAR, fill: AZUL },
+                margins: { top: 40, bottom: 40, left: 100, right: 100 },
+                children: [new Paragraph({ children: [arial(t, { size: 10, bold: true, color: BLANCO })] })]
+            }))
+        });
+        const dataRows = items.map((item, i) => {
+            const fill = i % 2 === 0 ? 'FFFFFF' : AZUL_CLR;
+            return new TableRow({
+                children: [
+                    new TableCell({
+                        shading: { type: ShadingType.CLEAR, fill },
+                        margins: { top: 30, bottom: 30, left: 100, right: 100 },
+                        children: [new Paragraph({ children: [arial(String(i + 1), { size: 10, bold: true })] })]
+                    }),
+                    new TableCell({
+                        shading: { type: ShadingType.CLEAR, fill },
+                        margins: { top: 30, bottom: 30, left: 100, right: 100 },
+                        children: [new Paragraph({ children: [arial(item, { size: 10 })] })]
+                    })
+                ]
+            });
+        });
+        sections.push(new Table({
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            rows: [headerRow, ...dataRows]
+        }));
+    }
+
+    if (data.indicacion) {
+        sections.push(sectionTitle('INDICACIÓN CLÍNICA'));
+        sections.push(new Paragraph({ alignment: AlignmentType.JUSTIFIED, children: [arial(data.indicacion)] }));
+    }
+    if (data.prioridad && data.prioridad !== 'Normal') {
+        sections.push(new Paragraph({
+            spacing: { before: 120 },
+            children: [arial(`Prioridad: ${data.prioridad}`, { bold: true, color: AZUL })]
+        }));
+    }
+
+    buildSignature(true).forEach(p => sections.push(p));
+    return wrapDocument({ sections, title: titulo, clinica });
+}
+
+function buildAltaMedica({ paciente, clinica, data }) {
+    const sections = [];
+
+    sections.push(sectionTitle('IDENTIFICACIÓN DEL PACIENTE'));
+    sections.push(patientTable([
+        ['Nombre del paciente', paciente.nombre],
+        ['RUT', paciente.rut],
+        ['Edad', paciente.edad],
+        ['Fecha de cirugía', data.fecha_cirugia || '—'],
+        ['Fecha de emisión', fechaHoy()],
+        ['Clínica / Centro', clinica || '—']
+    ]));
+
+    sections.push(sectionTitle('DIAGNÓSTICO Y PROCEDIMIENTO'));
+    const cod1Display = data.cod1_codigo
+        ? `${data.cod1_codigo}  —  ${data.cod1_nombre || ''}`
+        : (data.cod1_nombre || '—');
+    const cod2Display = (data.cod2_codigo && data.cod2_nombre)
+        ? `${data.cod2_codigo}  —  ${data.cod2_nombre}`
+        : '—';
+    sections.push(patientTable([
+        ['Diagnóstico de egreso', data.diagnostico || '—'],
+        ['Procedimiento principal (FONASA)', cod1Display],
+        ['Procedimiento secundario (FONASA)', cod2Display]
+    ]));
+
+    if (data.cuerpo) {
+        sections.push(sectionTitle('EVOLUCIÓN CLÍNICA Y HOSPITALARIA'));
+        data.cuerpo.split(/\n\n+/).forEach(parr => {
+            sections.push(new Paragraph({
+                alignment: AlignmentType.JUSTIFIED,
+                spacing: { before: 40, after: 120 },
+                children: [arial(parr.trim())]
+            }));
+        });
+    }
+
+    if (data.indicaciones) {
+        sections.push(sectionTitle('INDICACIONES AL ALTA'));
+        data.indicaciones.split('\n').forEach(linea => {
+            const t = linea.trim();
+            if (!t) return;
+            sections.push(new Paragraph({
+                spacing: { before: 20, after: 20 },
+                children: [arial(`• ${t}`, { size: 10 })]
+            }));
+        });
+    }
+
+    buildSignature(false).forEach(p => sections.push(p));
+    return wrapDocument({ sections, title: 'INFORME DE ALTA MÉDICA', clinica });
+}
+
 // ─── Wrapper común ──────────────────────────────────────────────────────────
 
 function wrapDocument({ sections, title, clinica }) {
@@ -430,9 +545,12 @@ export default async function handler(req, res) {
 
     let docObj;
     try {
-        if (doc_type === 'informe') docObj = buildInformeUrologico({ paciente, clinica, data });
-        else if (doc_type === 'cirugia') docObj = buildSolicitudCirugia({ paciente, clinica, data });
-        else if (doc_type === 'receta') docObj = buildReceta({ paciente, clinica, data });
+        if (doc_type === 'informe')        docObj = buildInformeUrologico({ paciente, clinica, data });
+        else if (doc_type === 'cirugia')   docObj = buildSolicitudCirugia({ paciente, clinica, data });
+        else if (doc_type === 'receta')    docObj = buildReceta({ paciente, clinica, data });
+        else if (doc_type === 'examenes')  docObj = buildSolicitudExamenes({ paciente, clinica, data: { ...data, kind: 'examenes' }, titulo: 'SOLICITUD DE EXÁMENES' });
+        else if (doc_type === 'estudios')  docObj = buildSolicitudExamenes({ paciente, clinica, data: { ...data, kind: 'estudios' }, titulo: 'SOLICITUD DE ESTUDIOS' });
+        else if (doc_type === 'alta')      docObj = buildAltaMedica({ paciente, clinica, data });
         else return res.status(400).json({ error: `Tipo de documento '${doc_type}' aún no implementado` });
     } catch (e) {
         return res.status(500).json({ error: `Error armando documento: ${e.message}` });
@@ -463,6 +581,9 @@ export default async function handler(req, res) {
     const safeName = (paciente.nombre || 'paciente').replace(/[^a-z0-9]+/gi, '_').toLowerCase();
     const fileLabel = doc_type === 'cirugia' ? 'solicitud_cirugia'
                     : doc_type === 'receta' ? 'receta'
+                    : doc_type === 'examenes' ? 'solicitud_examenes'
+                    : doc_type === 'estudios' ? 'solicitud_estudios'
+                    : doc_type === 'alta' ? 'alta_medica'
                     : 'informe';
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
     res.setHeader('Content-Disposition', `attachment; filename="${fileLabel}_${safeName}.docx"`);
