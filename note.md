@@ -1,8 +1,15 @@
 # note.md — Estado actual de la sesión
 
-Fecha del corte: 2 de mayo de 2026.
+Fecha del corte: 2 de mayo de 2026 (tarde).
 Rama de desarrollo: `claude/patient-interview-app-9xB9X`.
-Último commit relevante: `509ec1b` — fix(consulta): exam format, uroflujometria, allowed verbs.
+**Mergeado a `main` y desplegado en producción** (commit `a2cb0f9`).
+
+Verificado funcionando en https://finanzas-jcrm.vercel.app:
+- Portal con login + auth box
+- /portal/login.html
+- /uroatlas/ (shell con sidebar y caja de caso)
+- /api/config, /api/uroatlas/query (placeholder)
+- ConsultaVoz con todas las mejoras de prompt + iOS audio fixes
 
 ---
 
@@ -125,9 +132,12 @@ Estructura de carpetas locales:
 - ✅ Proyecto creado: **uroworknet**
 - ✅ Project ID: `tjomuijpmujcstxcjmsz`
 - ✅ Project URL: `https://tjomuijpmujcstxcjmsz.supabase.co`
-- ⏳ **Pendiente**: que el Dr. me pase **anon public key** y **service_role key** (desde el botón "Connect" o sidebar API Keys).
-- ⏳ **Pendiente**: crear bucket `uroatlas-sources` (privado, 50 MB límite).
-- ⏳ **Pendiente**: subir los 82 PDFs en sus 4 carpetas.
+- ✅ anon key + service_role key configuradas en Vercel como env vars
+- ✅ Bucket `uroatlas-sources` creado (privado, 50 MB límite).
+- ✅ Tablas `documents` y `cases` creadas con RLS y función `match_documents`.
+- ✅ pgvector habilitado.
+- ✅ Auth con email + password habilitado, usuario `jcrieram@gmail.com` creado (UID `afe5fdd5-09f4-4c37-8c5a-4826271760fb`).
+- ⏳ **Pendiente**: subir los 82 PDFs en sus 4 carpetas (no bloqueante; se puede hacer en cualquier momento antes de Fase 2).
 
 ### 2.5 Roadmap de implementación
 **Fase 1 — Auth y scaffold** (siguiente paso, una vez tenga las credenciales):
@@ -203,10 +213,13 @@ git status
 
 ## 6. Siguiente acción concreta cuando se retome
 
-1. El Dr. me pasa las dos claves de Supabase (anon + service_role).
-2. Creo el bucket `uroatlas-sources` (o lo crea el Dr. siguiendo `UROATLAS_SETUP.md`).
-3. Configuro las variables de entorno en Vercel.
-4. Arranco con Fase 1: Supabase Auth + tablas `documents` y `cases` + shell UI de UroAtlas.
+1. El Dr. sube los 82 PDFs al bucket `uroatlas-sources` (4 carpetas, según `UROATLAS_SETUP.md`).
+2. El Dr. crea cuentas y me pasa **API key de Voyage AI** (embeddings) y **API key de Anthropic** (Claude Sonnet 4.6).
+3. Las agrego como `VOYAGE_API_KEY` y `ANTHROPIC_API_KEY` en Vercel.
+4. Arranco **Fase 2**: escribir `scripts/ingest-uroatlas.js` que lee el bucket, extrae texto de los PDFs, hace chunks, genera embeddings con Voyage, e inserta en la tabla `documents`. Una sola corrida.
+5. Verifico con queries de prueba que el retrieval funciona.
+6. Arranco **Fase 3**: implementar el endpoint real `/api/uroatlas/query` con el pipeline RAG (embedding del caso → top-k=8 chunks → Claude Sonnet con contexto + caso → respuesta con citas).
+7. **Fase 4**: subida de imágenes (UroTAC/RM) + Claude con visión + persistencia de casos en la tabla `cases` + historial en sidebar.
 
 ---
 
