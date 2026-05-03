@@ -352,6 +352,113 @@
             font-size: 13px;
         }
 
+        /* Modal genérico (paciente / informe) */
+        .modal-bg {
+            position: fixed; inset: 0;
+            background: rgba(15, 42, 71, 0.55);
+            backdrop-filter: blur(3px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            padding: 24px;
+        }
+        .modal-bg.show { display: flex; }
+        .modal-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            max-width: 720px;
+            width: 100%;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 60px rgba(15, 42, 71, 0.25);
+        }
+        .modal-header {
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h3 {
+            font-size: 14px;
+            font-weight: 700;
+        }
+        .modal-close {
+            background: transparent;
+            border: none;
+            font-size: 20px;
+            color: var(--text-muted);
+            cursor: pointer;
+            line-height: 1;
+        }
+        .modal-body {
+            padding: 18px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .modal-footer {
+            padding: 12px 18px;
+            border-top: 1px solid var(--border);
+            background: var(--surface-alt);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .form-row {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 14px;
+        }
+        .form-row label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+        .form-row input {
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-family: inherit;
+            font-size: 14px;
+            color: var(--text);
+        }
+        .form-row input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(11, 83, 148, 0.10);
+        }
+        .report-content {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.65;
+            font-size: 14px;
+            white-space: pre-wrap;
+            color: var(--text);
+        }
+
+        @media print {
+            body * { visibility: hidden; }
+            #reportModal, #reportModal * { visibility: visible; }
+            #reportModal {
+                position: absolute;
+                inset: 0;
+                background: white;
+                padding: 24px;
+                display: block;
+            }
+            #reportModal .modal-bg, #reportModal .modal-header,
+            #reportModal .modal-footer { display: none !important; }
+            #reportModal .modal-card {
+                box-shadow: none;
+                border: none;
+                max-height: none;
+                max-width: none;
+            }
+        }
+
         @media (max-width: 768px) {
             .app {
                 grid-template-columns: 1fr;
@@ -421,6 +528,7 @@
                 <section class="panel response" id="responsePanel">
                     <div class="panel-header">
                         <span class="panel-title">Opinión de UroAtlas</span>
+                        <button class="btn btn-primary" id="reportBtn" style="display:none;font-size:12px;padding:6px 14px;">Elaborar informe</button>
                     </div>
                     <div class="loading" id="loading">
                         <span class="spinner"></span>
@@ -432,6 +540,55 @@
                         <div id="citationsList"></div>
                     </div>
                 </section>
+
+                <!-- Modal: datos del paciente -->
+                <div class="modal-bg" id="patientModal">
+                    <div class="modal-card">
+                        <div class="modal-header">
+                            <h3>Datos del paciente</h3>
+                            <button class="modal-close" id="patientClose">×</button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-row">
+                                <label for="pNombre">Nombre completo</label>
+                                <input id="pNombre" type="text" autocomplete="off">
+                            </div>
+                            <div class="form-row">
+                                <label for="pEdad">Edad</label>
+                                <input id="pEdad" type="text" autocomplete="off">
+                            </div>
+                            <div class="form-row">
+                                <label for="pRut">RUT</label>
+                                <input id="pRut" type="text" placeholder="12.345.678-9" autocomplete="off">
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn" id="patientCancel">Cancelar</button>
+                            <button class="btn btn-primary" id="patientSubmit">Generar informe</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal: informe generado -->
+                <div class="modal-bg" id="reportModal">
+                    <div class="modal-card">
+                        <div class="modal-header">
+                            <h3>Informe médico</h3>
+                            <button class="modal-close" id="reportClose">×</button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="loading show" id="reportLoading">
+                                <span class="spinner"></span>
+                                <span>Generando informe…</span>
+                            </div>
+                            <div class="report-content" id="reportContent" style="display:none"></div>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn" id="reportCopy">Copiar texto</button>
+                            <button class="btn btn-primary" id="reportPrint">Imprimir / Guardar PDF</button>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="placeholder" id="placeholder">
                     Escribe un caso clínico arriba y haz clic en <strong>Consultar</strong>.
@@ -572,6 +729,11 @@
                 responseBody.textContent = header + (data.response || 'Sin respuesta.');
 
                 // Renderizar citas usadas (solo las que el modelo referencia con [n])
+                // Notificar al sistema de casos (hook al final del archivo).
+                if (typeof window._afterConsult === 'function') {
+                    window._afterConsult(data, text);
+                }
+
                 if (Array.isArray(data.citations) && data.citations.length) {
                     const usedNumbers = new Set();
                     const re = /\[(\d+)\]/g;
@@ -607,12 +769,163 @@
             renderImages();
             responsePanel.classList.remove('show');
             placeholder.style.display = 'block';
+            currentCase = null;
+            document.getElementById('reportBtn').style.display = 'none';
         });
 
         document.getElementById('newCaseBtn').addEventListener('click', () => {
             clearBtn.click();
             caseInput.focus();
         });
+
+        // ─────────────────────────────────────────────────────────────
+        // Sidebar: lista de casos persistidos
+        // ─────────────────────────────────────────────────────────────
+        let currentCase = null; // { case_text, response } del último caso visible
+
+        // Después de cada Consultar exitoso, recordar el caso para informe.
+        const origConsultHandler = consultBtn.onclick;
+        consultBtn.addEventListener('click', () => {
+            // marcamos el caso actual cuando termina la consulta — ver listener al final
+        });
+
+        async function loadCasesList() {
+            try {
+                const res = await apiFetch('/api/uroatlas/cases');
+                if (!res.ok) return;
+                const data = await res.json();
+                renderCasesList(data.cases || []);
+            } catch (e) {
+                console.warn('No se pudieron cargar los casos', e);
+            }
+        }
+
+        function renderCasesList(cases) {
+            const listEl = document.getElementById('casesList');
+            if (!cases.length) {
+                listEl.innerHTML = '<div class="sidebar-empty">Sin casos guardados aún.</div>';
+                return;
+            }
+            listEl.innerHTML = cases.map(c => {
+                const fecha = new Date(c.created_at).toLocaleString('es-CL', {
+                    day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
+                });
+                const preview = (c.clinical_text || '').slice(0, 70).replace(/\s+/g, ' ');
+                return `<div class="case-item" data-id="${c.id}">
+                    <div class="case-item-title">${escapeHtml(preview || '(solo imagen)')}</div>
+                    <div class="case-item-date">${fecha}</div>
+                </div>`;
+            }).join('');
+            listEl.querySelectorAll('.case-item').forEach(el => {
+                el.addEventListener('click', () => loadCase(el.dataset.id));
+            });
+        }
+
+        async function loadCase(id) {
+            try {
+                const res = await apiFetch(`/api/uroatlas/cases?id=${encodeURIComponent(id)}`);
+                if (!res.ok) return;
+                const { case: c } = await res.json();
+                if (!c) return;
+                caseInput.value = c.clinical_text || '';
+                images.length = 0;
+                renderImages();
+                placeholder.style.display = 'none';
+                responsePanel.classList.add('show');
+                loading.classList.remove('show');
+                responseBody.textContent = c.response || '';
+                if (Array.isArray(c.retrieved_chunks) && c.retrieved_chunks.length) {
+                    const usedNumbers = new Set();
+                    const re = /\[(\d+)\]/g; let m;
+                    while ((m = re.exec(c.response || '')) !== null) usedNumbers.add(parseInt(m[1], 10));
+                    const toShow = usedNumbers.size
+                        ? c.retrieved_chunks.filter(x => usedNumbers.has(x.n))
+                        : c.retrieved_chunks;
+                    document.getElementById('citationsList').innerHTML = toShow.map(x => {
+                        const ref = `${x.source} — ${x.guideline_name || 'sin nombre'}${x.page ? `, p.${x.page}` : ''}`;
+                        return `<div class="citation"><strong>[${x.n}]</strong> ${escapeHtml(ref)}</div>`;
+                    }).join('');
+                    document.getElementById('responseCitations').style.display = 'block';
+                }
+                currentCase = { case_text: c.clinical_text || '', response: c.response || '' };
+                document.getElementById('reportBtn').style.display = currentCase.response ? 'inline-block' : 'none';
+                document.querySelectorAll('.case-item').forEach(el => el.classList.toggle('active', el.dataset.id === id));
+            } catch (e) {
+                console.warn('No se pudo cargar el caso', e);
+            }
+        }
+
+        // Hook después de cada consulta para refrescar la lista.
+        const origAddCitation = (window._afterConsult || (() => {}));
+        window._afterConsult = (data, text) => {
+            currentCase = { case_text: text, response: data.response || '' };
+            document.getElementById('reportBtn').style.display = currentCase.response ? 'inline-block' : 'none';
+            loadCasesList();
+        };
+
+        // ─────────────────────────────────────────────────────────────
+        // Modal: pedir datos del paciente
+        // ─────────────────────────────────────────────────────────────
+        const patientModal = document.getElementById('patientModal');
+        const reportBtn = document.getElementById('reportBtn');
+        const reportModal = document.getElementById('reportModal');
+
+        reportBtn.addEventListener('click', () => {
+            if (!currentCase) return;
+            patientModal.classList.add('show');
+            document.getElementById('pNombre').focus();
+        });
+        document.getElementById('patientClose').addEventListener('click', () => patientModal.classList.remove('show'));
+        document.getElementById('patientCancel').addEventListener('click', () => patientModal.classList.remove('show'));
+        document.getElementById('patientSubmit').addEventListener('click', generateReport);
+
+        async function generateReport() {
+            const nombre = document.getElementById('pNombre').value.trim();
+            const edad = document.getElementById('pEdad').value.trim();
+            const rut = document.getElementById('pRut').value.trim();
+            if (!nombre || !rut) { alert('Nombre y RUT son obligatorios.'); return; }
+            patientModal.classList.remove('show');
+            reportModal.classList.add('show');
+            document.getElementById('reportLoading').classList.add('show');
+            document.getElementById('reportContent').style.display = 'none';
+            try {
+                const res = await apiFetch('/api/uroatlas/report', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        case_text: currentCase.case_text,
+                        response: currentCase.response,
+                        patient: { nombre, edad, rut }
+                    })
+                });
+                if (!res.ok) {
+                    const txt = await res.text();
+                    throw new Error(`Error (${res.status}): ${txt}`);
+                }
+                const data = await res.json();
+                document.getElementById('reportLoading').classList.remove('show');
+                const content = document.getElementById('reportContent');
+                content.textContent = data.text || 'Sin contenido.';
+                content.style.display = 'block';
+            } catch (e) {
+                document.getElementById('reportLoading').classList.remove('show');
+                document.getElementById('reportContent').style.display = 'block';
+                document.getElementById('reportContent').textContent = 'No se pudo generar el informe: ' + (e.message || e);
+            }
+        }
+
+        document.getElementById('reportClose').addEventListener('click', () => reportModal.classList.remove('show'));
+        document.getElementById('reportPrint').addEventListener('click', () => window.print());
+        document.getElementById('reportCopy').addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(document.getElementById('reportContent').textContent);
+                document.getElementById('reportCopy').textContent = 'Copiado';
+                setTimeout(() => { document.getElementById('reportCopy').textContent = 'Copiar texto'; }, 1500);
+            } catch {}
+        });
+
+        // Cargar la lista al inicio.
+        loadCasesList();
     </script>
 </body>
 </html>

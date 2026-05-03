@@ -192,7 +192,7 @@ export default async function handler(req, res) {
         // 5) Llamada a Claude (con o sin imágenes)
         const responseText = await callClaude(SYSTEM_PROMPT, messageContent, anthropicKey);
 
-        // 5) Construir lista de citas para la UI (todas las recuperadas, la UI puede mostrar solo las que aparezcan en el texto si quiere)
+        // 6) Construir lista de citas para la UI
         const citations = chunks.map((c, i) => ({
             n: i + 1,
             source: c.source,
@@ -203,7 +203,25 @@ export default async function handler(req, res) {
             preview: (c.content || '').slice(0, 220)
         }));
 
+        // 7) Persistir el caso en la tabla `cases` (si el usuario está autenticado vía JWT, no PIN).
+        let caseId = null;
+        if (auth.user) {
+            const { data: inserted, error: insertError } = await supa
+                .from('cases')
+                .insert({
+                    user_id: auth.user.id,
+                    clinical_text: clinicalText || '(consulta solo con imagen)',
+                    image_urls: [], // por ahora no persistimos las imágenes; solo el texto
+                    response: responseText,
+                    retrieved_chunks: citations
+                })
+                .select('id')
+                .single();
+            if (!insertError && inserted) caseId = inserted.id;
+        }
+
         return res.status(200).json({
+            id: caseId,
             response: responseText,
             citations,
             retrieved: chunks.length,
