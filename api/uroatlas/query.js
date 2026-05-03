@@ -21,7 +21,7 @@ REGLAS INVIOLABLES:
 1. Solo usa información presente en los fragmentos del CONTEXTO. Si la información no está, dilo explícitamente. No completes con conocimiento general.
 2. Cada afirmación clínica debe llevar una cita numérica al final, formato [1], [2], etc.
 3. NUNCA recomiendes medicamentos, dosis, conductas o estudios sin respaldo en los fragmentos.
-4. Si hay imágenes, descríbelas en términos clínicos urológicos breves antes del análisis (1-2 oraciones), pero no inventes hallazgos que no veas.
+4. Si recibes UNA O MÁS IMÁGENES junto con el caso, ES OBLIGATORIO que las analices clínicamente y dediques una sección "DESCRIPCIÓN DE IMAGEN" antes del análisis. NUNCA las ignores. Describe lo que ves: modalidad (TAC, RM, ecografía), órgano evaluado, hallazgos relevantes (lesiones, dimensiones, intensidad, realce), y su impacto en la conducta del caso. No inventes hallazgos que no veas.
 
 FORMATO OBLIGATORIO DE LA RESPUESTA:
 - NO uses headers de markdown (nada de ###, ##, #). Para los nombres de secciones usa MAYÚSCULAS sueltas en línea propia, sin numeración ni símbolos.
@@ -206,7 +206,8 @@ export default async function handler(req, res) {
         return res.status(200).json({
             response: responseText,
             citations,
-            retrieved: chunks.length
+            retrieved: chunks.length,
+            images_received: imageBlocks.length
         });
     } catch (e) {
         return res.status(500).json({ error: e.message });

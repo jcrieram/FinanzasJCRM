@@ -472,13 +472,41 @@
         function handleFiles(files) {
             for (const f of files) {
                 if (!f.type.startsWith('image/')) continue;
+                resizeImage(f).then(dataUrl => {
+                    images.push({ file: f, dataUrl });
+                    renderImages();
+                });
+            }
+        }
+
+        // Lleva la imagen a JPEG ≤ 1600px en el lado más largo, calidad 0.85.
+        // Esto baja una uroTAC de 8 MB a 200-400 KB y evita exceder el body
+        // limit del endpoint, sin perder detalle clínicamente útil.
+        function resizeImage(file) {
+            return new Promise((resolve) => {
                 const reader = new FileReader();
                 reader.onload = (e) => {
-                    images.push({ file: f, dataUrl: e.target.result });
-                    renderImages();
+                    const img = new Image();
+                    img.onload = () => {
+                        const MAX = 1600;
+                        let { width, height } = img;
+                        if (width > MAX || height > MAX) {
+                            const r = Math.min(MAX / width, MAX / height);
+                            width = Math.round(width * r);
+                            height = Math.round(height * r);
+                        }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', 0.85));
+                    };
+                    img.onerror = () => resolve(e.target.result); // fallback al original
+                    img.src = e.target.result;
                 };
-                reader.readAsDataURL(f);
-            }
+                reader.readAsDataURL(file);
+            });
         }
         function renderImages() {
             list.innerHTML = images.map((img, i) => `
@@ -533,7 +561,15 @@
                     throw new Error(`Error (${res.status}): ${txt}`);
                 }
                 const data = await res.json();
-                responseBody.textContent = data.response || 'Sin respuesta.';
+                let header = '';
+                if (typeof data.images_received === 'number' && images.length > 0) {
+                    if (data.images_received === 0) {
+                        header = `[ATENCIÓN] El servidor no recibió ninguna imagen aunque enviaste ${images.length}. Probablemente excedieron el tamaño permitido. Reintenta.\n\n`;
+                    } else if (data.images_received !== images.length) {
+                        header = `[Aviso] El servidor recibió ${data.images_received} de ${images.length} imágenes (algunas en formato no soportado).\n\n`;
+                    }
+                }
+                responseBody.textContent = header + (data.response || 'Sin respuesta.');
 
                 // Renderizar citas usadas (solo las que el modelo referencia con [n])
                 if (Array.isArray(data.citations) && data.citations.length) {
