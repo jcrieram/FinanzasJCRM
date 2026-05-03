@@ -93,7 +93,8 @@ function chunkText(text) {
     return chunks.filter(c => c.length > 50);
 }
 
-async function voyageEmbed(texts) {
+async function voyageEmbed(texts, attempt = 0) {
+    const MAX_ATTEMPTS = 8;
     const res = await fetch('https://api.voyageai.com/v1/embeddings', {
         method: 'POST',
         headers: {
@@ -102,6 +103,17 @@ async function voyageEmbed(texts) {
         },
         body: JSON.stringify({ input: texts, model: VOYAGE_MODEL, input_type: 'document' })
     });
+    if (res.status === 429 || res.status === 503) {
+        if (attempt >= MAX_ATTEMPTS) {
+            const err = await res.text();
+            throw new Error(`Voyage error ${res.status} (después de ${MAX_ATTEMPTS} intentos): ${err}`);
+        }
+        // Backoff exponencial: 5s, 10s, 20s, 40s, 60s, 60s, 60s, 60s
+        const wait = Math.min(5000 * Math.pow(2, attempt), 60000);
+        process.stdout.write(`\r  ⏳ rate limit (429), esperando ${wait / 1000}s y reintentando…   `);
+        await new Promise(r => setTimeout(r, wait));
+        return voyageEmbed(texts, attempt + 1);
+    }
     if (!res.ok) {
         const err = await res.text();
         throw new Error(`Voyage error ${res.status}: ${err}`);
