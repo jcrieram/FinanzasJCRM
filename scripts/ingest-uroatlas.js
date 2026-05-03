@@ -18,6 +18,7 @@ const BUCKET = 'uroatlas-sources';
 
 const FOLDERS = {
     'eau-pocket':    { source: 'EAU-Pocket',      language: 'en' },
+    'eau-full':      { source: 'EAU',              language: 'en' },
     'aua-non-onc':   { source: 'AUA-Non-Onc',     language: 'en' },
     'aua-onc':       { source: 'AUA-Onc',          language: 'en' },
     'libros':        { source: 'Libros',           language: 'en' },
