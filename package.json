@@ -8,6 +8,10 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.45.0"
+    "@supabase/supabase-js": "^2.45.0",
+    "pdf-parse": "^1.1.1"
+  },
+  "scripts": {
+    "ingest:uroatlas": "node scripts/ingest-uroatlas.js"
   }
 }
