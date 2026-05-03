@@ -74,20 +74,21 @@ async function extractPdfText(buffer) {
 
 function chunkText(text) {
     const cleaned = text.replace(/\s+/g, ' ').trim();
-    if (cleaned.length <= CHUNK_SIZE) return [cleaned];
+    if (cleaned.length <= CHUNK_SIZE) return cleaned.length > 50 ? [cleaned] : [];
     const chunks = [];
     let i = 0;
-    while (i < cleaned.length) {
+    const MAX_CHUNKS = 50000; // safety net: ningún PDF razonable produce más
+    while (i < cleaned.length && chunks.length < MAX_CHUNKS) {
         let end = Math.min(i + CHUNK_SIZE, cleaned.length);
-        // Intenta cortar en un punto, pregunta o salto de párrafo cercano.
         if (end < cleaned.length) {
             const slice = cleaned.slice(i, end);
             const lastPunct = Math.max(slice.lastIndexOf('. '), slice.lastIndexOf('? '), slice.lastIndexOf('! '));
             if (lastPunct > CHUNK_SIZE * 0.6) end = i + lastPunct + 1;
         }
         chunks.push(cleaned.slice(i, end).trim());
-        i = end - CHUNK_OVERLAP;
-        if (i < 0) i = 0;
+        if (end >= cleaned.length) break; // ya cubrimos todo el texto
+        const next = end - CHUNK_OVERLAP;
+        i = next > i ? next : end; // si el overlap nos dejaría en el mismo lugar, avanzamos sin overlap
     }
     return chunks.filter(c => c.length > 50);
 }
