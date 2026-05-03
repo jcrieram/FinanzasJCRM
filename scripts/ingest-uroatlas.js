@@ -129,10 +129,20 @@ async function listFolder(folder) {
 
 async function downloadPdf(folder, name) {
     const path = `${folder}/${name}`;
-    const { data, error } = await supa.storage.from(BUCKET).download(path);
-    if (error) throw error;
-    const buf = Buffer.from(await data.arrayBuffer());
-    return buf;
+    let data, error;
+    try {
+        ({ data, error } = await supa.storage.from(BUCKET).download(path));
+    } catch (e) {
+        throw new Error(`Storage download failed for ${path}: ${e.message}`);
+    }
+    if (error) throw new Error(`Storage error for ${path}: ${error.message || JSON.stringify(error)}`);
+    if (!data) throw new Error(`Storage returned empty data for ${path}`);
+    try {
+        const ab = await data.arrayBuffer();
+        return Buffer.from(ab);
+    } catch (e) {
+        throw new Error(`arrayBuffer conversion failed for ${path}: ${e.message}`);
+    }
 }
 
 async function processPdf(folder, fileName, meta) {
@@ -210,6 +220,10 @@ async function processPdf(folder, fileName, meta) {
             } catch (e) {
                 totalErrors++;
                 console.log(`  ✗ ERROR: ${e.message}`);
+                if (e.stack) {
+                    const trace = e.stack.split('\n').slice(0, 4).join('\n    ');
+                    console.log(`    ${trace}`);
+                }
             }
         }
     }
