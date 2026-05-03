@@ -12,9 +12,7 @@
 // (los detecta por la columna documents.metadata->>'storage_path').
 
 import { createClient } from '@supabase/supabase-js';
-import { createRequire } from 'node:module';
-const require = createRequire(import.meta.url);
-const pdfParse = require('pdf-parse');
+import { extractText, getDocumentProxy } from 'unpdf';
 
 const BUCKET = 'uroatlas-sources';
 
@@ -116,15 +114,16 @@ async function processPdf(folder, fileName, meta) {
     }
 
     const buf = await downloadPdf(folder, fileName);
-    let parsed;
+    let text = '';
     try {
-        parsed = await pdfParse(buf);
+        const pdf = await getDocumentProxy(new Uint8Array(buf));
+        const result = await extractText(pdf, { mergePages: true });
+        text = (result.text || '').trim();
     } catch (e) {
         console.log(`  ✗ no se pudo extraer texto: ${e.message}`);
         return { skipped: false, chunks: 0, error: e.message };
     }
 
-    const text = (parsed.text || '').trim();
     if (!text) {
         console.log(`  ⚠ PDF sin texto extraíble`);
         return { skipped: false, chunks: 0 };
