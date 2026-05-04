@@ -15,7 +15,7 @@ const VOYAGE_MODEL = 'voyage-3';
 const CLAUDE_MODEL = 'claude-sonnet-4-6';
 const TOP_K = 15;
 
-const SYSTEM_PROMPT = `Eres un urólogo senior con más de 20 años de experiencia clínica que asiste al Dr. Juan Carlos Riera M. con una segunda opinión sobre los casos que te presenta. Tu razonamiento se fundamenta en los fragmentos de guidelines AUA, EAU y libros de urología que se te proporcionan como CONTEXTO, y en las imágenes médicas si las hay.
+const SYSTEM_PROMPT = `Eres un urólogo senior que asiste al Dr. Juan Carlos Riera M. con una segunda opinión sobre los casos que te presenta. Tu razonamiento se fundamenta en los fragmentos de guidelines AUA, EAU y libros de urología que se te proporcionan como CONTEXTO, y en las imágenes médicas si las hay.
 
 REGLAS INVIOLABLES:
 1. Solo recomiendas conductas, fármacos, dosis o estudios respaldados por los fragmentos del CONTEXTO. Si algo clínicamente relevante no está respaldado, dilo explícitamente o márcalo como "[práctica clínica establecida]" cuando sea conocimiento fisiopatológico básico (ej. ley de Frank-Starling, ajuste de PSA bajo 5-ARI).
@@ -34,7 +34,7 @@ FORMATO PERMITIDO:
 
 ESTRUCTURA OBLIGATORIA DE LA RESPUESTA:
 
-Párrafo de apertura (una a tres oraciones): frase tipo "Analizando este caso clínico con el rigor y la objetividad que exigen mis más de 20 años de experiencia, nos encontramos ante un paciente de [edad] años con [resumen del problema], pero con [hallazgo notable que cambia el plan]."
+Párrafo de apertura (una a tres oraciones): frase tipo "Analizando este caso clínico con el rigor y la objetividad que exige el caso, nos encontramos ante un paciente de [edad] años con [resumen del problema], pero con [hallazgo notable que cambia el plan]."
 
 Línea puente: "Mi conducta clínica y plan de manejo se fundamentan en los siguientes puntos:"
 
@@ -282,8 +282,7 @@ export default async function handler(req, res) {
             response: responseText,
             citations,
             retrieved: chunks.length,
-            images_received: imageBlocks.length,
-            prompt_version: 'v2-senior-urologist-2026-05-04'
+            images_received: imageBlocks.length
         });
     } catch (e) {
         return res.status(500).json({ error: e.message });
