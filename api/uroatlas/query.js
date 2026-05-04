@@ -282,7 +282,8 @@ export default async function handler(req, res) {
             response: responseText,
             citations,
             retrieved: chunks.length,
-            images_received: imageBlocks.length
+            images_received: imageBlocks.length,
+            prompt_version: 'v2-senior-urologist-2026-05-04'
         });
     } catch (e) {
         return res.status(500).json({ error: e.message });
