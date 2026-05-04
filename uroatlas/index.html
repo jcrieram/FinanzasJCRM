@@ -1018,7 +1018,7 @@
         async function sendFeedback(rating, comment) {
             if (!currentCaseId) return;
             try {
-                await apiFetch('/api/uroatlas/feedback', {
+                await apiFetch('/api/uroatlas/cases', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ case_id: currentCaseId, rating, comment: comment || '' })
