@@ -779,7 +779,7 @@
                         header = `[Aviso] El servidor recibió ${data.images_received} de ${images.length} imágenes (algunas en formato no soportado).\n\n`;
                     }
                 }
-                responseBody.textContent = header + (data.response || 'Sin respuesta.');
+                responseBody.innerHTML = (header ? escapeHtml(header) : '') + renderClinical(data.response || 'Sin respuesta.');
 
                 // Renderizar citas usadas (solo las que el modelo referencia con [n])
                 // Notificar al sistema de casos (hook al final del archivo).
@@ -814,6 +814,14 @@
 
         function escapeHtml(s) {
             return String(s).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+
+        // Render markdown ligero: solo **negritas** y citas [n] como superscript.
+        // El resto se preserva con white-space: pre-wrap.
+        function renderClinical(text) {
+            return escapeHtml(text || '')
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\[(\d+)\]/g, '<sup style="color:var(--primary);font-weight:600">[$1]</sup>');
         }
 
         clearBtn.addEventListener('click', () => {
@@ -891,7 +899,7 @@
                 placeholder.style.display = 'none';
                 responsePanel.classList.add('show');
                 loading.classList.remove('show');
-                responseBody.textContent = c.response || '';
+                responseBody.innerHTML = renderClinical(c.response || '');
                 if (Array.isArray(c.retrieved_chunks) && c.retrieved_chunks.length) {
                     const usedNumbers = new Set();
                     const re = /\[(\d+)\]/g; let m;
