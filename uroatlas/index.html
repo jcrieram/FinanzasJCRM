@@ -914,7 +914,10 @@
                     document.getElementById('responseCitations').style.display = 'block';
                 }
                 currentCase = { case_text: c.clinical_text || '', response: c.response || '' };
+                currentCaseId = id;
                 document.getElementById('reportBtn').style.display = currentCase.response ? 'inline-block' : 'none';
+                resetFeedback();
+                document.getElementById('feedbackSection').style.display = 'block';
                 document.querySelectorAll('.case-item').forEach(el => el.classList.toggle('active', el.dataset.id === id));
             } catch (e) {
                 console.warn('No se pudo cargar el caso', e);
