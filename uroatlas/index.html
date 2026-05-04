@@ -779,7 +779,8 @@
                         header = `[Aviso] El servidor recibió ${data.images_received} de ${images.length} imágenes (algunas en formato no soportado).\n\n`;
                     }
                 }
-                responseBody.innerHTML = (header ? escapeHtml(header) : '') + renderClinical(data.response || 'Sin respuesta.');
+                const verBadge = data.prompt_version ? `<div style="background:#dcfce7;color:#166534;padding:6px 10px;border-radius:6px;font-size:12px;margin-bottom:12px;font-family:monospace">DEPLOY OK · ${data.prompt_version}</div>` : `<div style="background:#fef3c7;color:#92400e;padding:6px 10px;border-radius:6px;font-size:12px;margin-bottom:12px;font-family:monospace">DEPLOY VIEJO · sin prompt_version</div>`;
+                responseBody.innerHTML = verBadge + (header ? escapeHtml(header) : '') + renderClinical(data.response || 'Sin respuesta.');
 
                 // Renderizar citas usadas (solo las que el modelo referencia con [n])
                 // Notificar al sistema de casos (hook al final del archivo).
