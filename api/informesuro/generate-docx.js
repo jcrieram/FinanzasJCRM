@@ -453,22 +453,23 @@ function buildSolicitudExamenes({ paciente, clinica, data, titulo = 'SOLICITUD D
 
     buildSignature(true).forEach(p => sections.push(p));
 
-    // Si hay items de imagen, generamos una segunda hoja con encabezado propio.
-    if (imagenItems.length) {
+    // Una hoja independiente por cada estudio de imagen — para que cada solicitud
+    // se imprima en su propia página y se entregue por separado.
+    imagenItems.forEach(estudio => {
         sections.push(new Paragraph({
             children: [arial('')],
             pageBreakBefore: true
         }));
         sections.push(fechaParagraph());
-        sections.push(centerTitle('SOLICITUD DE ESTUDIOS DE IMAGEN'));
+        sections.push(centerTitle('SOLICITUD DE ESTUDIO DE IMAGEN'));
         sections.push(sectionTitle('DATOS DEL PACIENTE'));
         sections.push(patientTable([
             ['Nombre del paciente', paciente.nombre],
             ['RUT', paciente.rut],
             ['Edad', paciente.edad]
         ]));
-        sections.push(sectionTitle('ESTUDIOS DE IMAGEN SOLICITADOS'));
-        sections.push(buildItemsTable(imagenItems, 'Estudio'));
+        sections.push(sectionTitle('ESTUDIO SOLICITADO'));
+        sections.push(buildItemsTable([estudio], 'Estudio'));
         if (data.indicacion) {
             sections.push(sectionTitle('INDICACIÓN CLÍNICA'));
             sections.push(new Paragraph({ alignment: AlignmentType.JUSTIFIED, children: [arial(data.indicacion)] }));
@@ -480,7 +481,7 @@ function buildSolicitudExamenes({ paciente, clinica, data, titulo = 'SOLICITUD D
             }));
         }
         buildSignature(true).forEach(p => sections.push(p));
-    }
+    });
 
     return wrapDocument({ sections, title: titulo, clinica });
 }

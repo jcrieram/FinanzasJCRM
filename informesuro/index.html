@@ -1260,15 +1260,17 @@
                     ${indyPrior}
                     ${firmaBlock()}`;
             }
-            if (img.length) {
-                html += `<div style="border-top:2px dashed #ccc;margin:32px 0;text-align:center;color:#999;font-size:11px;letter-spacing:2px;text-transform:uppercase;">— Hoja 2 —</div>
+            // Cada estudio de imagen va en su propia hoja
+            img.forEach((est, idx) => {
+                const hojaNum = lab.length ? idx + 2 : idx + 1;
+                html += `<div style="border-top:2px dashed #ccc;margin:32px 0;text-align:center;color:#999;font-size:11px;letter-spacing:2px;text-transform:uppercase;">— Hoja ${hojaNum} —</div>
                     <div class="right">${escapeHtml(fecha)}</div>
-                    <h2>SOLICITUD DE ESTUDIOS DE IMAGEN</h2>
+                    <h2>SOLICITUD DE ESTUDIO DE IMAGEN</h2>
                     <h3>Datos del paciente</h3>${patientTbl}
-                    <h3>Estudios de imagen solicitados</h3>${renderTable(img, 'Estudio')}
+                    <h3>Estudio solicitado</h3>${renderTable([est], 'Estudio')}
                     ${indyPrior}
                     ${firmaBlock()}`;
-            }
+            });
             document.getElementById('previewDoc').innerHTML = html;
         }
 
