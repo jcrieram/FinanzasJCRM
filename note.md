@@ -1,15 +1,79 @@
 # note.md — Estado actual de la sesión
 
-Fecha del corte: 2 de mayo de 2026 (tarde).
-Rama de desarrollo: `claude/patient-interview-app-9xB9X`.
-**Mergeado a `main` y desplegado en producción** (commit `a2cb0f9`).
+Fecha del corte: **4 de mayo de 2026** (tarde).
+Rama: `main` (todo desplegado en producción en https://finanzas-jcrm.vercel.app).
 
-Verificado funcionando en https://finanzas-jcrm.vercel.app:
-- Portal con login + auth box
-- /portal/login.html
-- /uroatlas/ (shell con sidebar y caja de caso)
-- /api/config, /api/uroatlas/query (placeholder)
-- ConsultaVoz con todas las mejoras de prompt + iOS audio fixes
+---
+
+## 0. PUNTO ACTUAL — donde quedó la conversación (4 may 2026)
+
+### Lo que se acaba de hacer en esta sesión
+1. **InformesUro salió de beta** — badge cambiado a "Disponible" en `portal/index.html` (commit `ea2bcf5`).
+2. **UroAtlas — feedback loop + mejoras de retrieval** (commit `005dd3a`):
+   - `TOP_K` 8 → 15 en `api/uroatlas/query.js`.
+   - Traducción ES→EN automática del caso clínico antes del embedding (usa Claude Haiku 4.5; mejora retrieval contra guidelines en inglés).
+   - Nuevo endpoint `api/uroatlas/feedback.js` — guarda 👍/👎 + corrección con embedding Voyage.
+   - `query.js` inyecta correcciones previas similares (similarity > 0.75) como "CORRECCIONES DEL DOCTOR EN CASOS SIMILARES".
+   - UI: sección de feedback aparece tras cada consulta (`uroatlas/index.html`).
+3. **Nuevas carpetas de ingest** (commits `006ae46` + `a33e3d9`):
+   - `eau-full` — guidelines EAU completas (no pocket).
+   - `imagenologia` — radiología urológica.
+   - `uro-general` — libros y guías generales nuevas.
+   - Las viejas (`eau-pocket`, `aua-non-onc`, `aua-onc`, `libros`) siguen funcionando.
+
+### Lo que el Dr. está haciendo AHORA MISMO
+- Subió ~26 PDFs nuevos al bucket `uroatlas-sources` (en `eau-full`, `imagenologia`, `uro-general`).
+- Clonó el repo en su iMac (`~/Desktop/FinanzasJCRM` o similar).
+- Tiene Node v22 y `npm install` corrido.
+- **Está por correr** el ingest con este comando (claves vienen de Supabase API Keys + Voyage dashboard):
+  ```bash
+  SUPABASE_URL='https://tjomuijpmujcstxcjmsz.supabase.co' \
+  SUPABASE_SERVICE_ROLE_KEY='<service_role_key>' \
+  VOYAGE_API_KEY='<voyage_api_key>' \
+  node scripts/ingest-uroatlas.js
+  ```
+  Las claves que se usaron en esta sesión van a rotarse por seguridad (paso 1 de "lo que falta").
+- Tarda 15-30 min. Es resumible (saltea PDFs ya indexados por `storage_path`).
+
+### Lo que falta hacer apenas el ingest termine
+1. **Rotar el service_role key** que el Dr. compartió por chat:
+   - Supabase → API Keys → al lado de `service_role_new` → ⋮ → Revoke / Reset.
+   - Crear nueva, actualizar `SUPABASE_SERVICE_ROLE_KEY` en Vercel → Environment Variables.
+2. **Correr este SQL en Supabase** (SQL Editor) para activar el sistema de feedback:
+   ```sql
+   CREATE TABLE case_feedback (
+       id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+       case_id    UUID REFERENCES cases(id) ON DELETE CASCADE,
+       user_id    UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+       rating     SMALLINT CHECK (rating IN (1, -1)),
+       comment    TEXT,
+       embedding  VECTOR(1024),
+       created_at TIMESTAMPTZ DEFAULT NOW()
+   );
+   CREATE INDEX ON case_feedback
+       USING ivfflat (embedding vector_cosine_ops) WITH (lists = 50);
+   ALTER TABLE case_feedback ENABLE ROW LEVEL SECURITY;
+   CREATE POLICY "users manage own feedback"
+       ON case_feedback FOR ALL USING (auth.uid() = user_id);
+
+   CREATE OR REPLACE FUNCTION match_corrections(
+       query_embedding  VECTOR(1024),
+       target_user_id   UUID,
+       match_count      INT DEFAULT 3
+   )
+   RETURNS TABLE (case_id UUID, rating SMALLINT, comment TEXT, similarity FLOAT)
+   LANGUAGE SQL STABLE AS $$
+       SELECT case_id, rating, comment, 1 - (embedding <=> query_embedding) AS similarity
+       FROM case_feedback
+       WHERE user_id = target_user_id AND comment IS NOT NULL AND embedding IS NOT NULL
+       ORDER BY embedding <=> query_embedding LIMIT match_count;
+   $$;
+   ```
+3. **Verificar** que el bug "no aparece el feedback" está resuelto — fue por cache de browser; hard refresh.
+4. **Probar** una consulta oncológica (cáncer de próstata, vejiga, riñón, testículo) para confirmar que el retrieval ya encuentra los chunks de AUA-Onc / EAU.
+
+### Conversación filosófica que tuvimos
+Dr. preguntó si el feedback "realmente entrena la IA". Respuesta honesta: **NO entrena Claude** (no hay fine-tuning), pero crea una **memoria personalizada con RAG**: las correcciones se inyectan en el prompt cuando un caso similar reaparece. Sirve para sesgos persistentes, preferencias de estilo y errores recurrentes de retrieval. Lo que más mejora UroAtlas a futuro es: (a) más corpus, (b) mejor retrieval, (c) revisar correcciones acumuladas y pasarlas al system prompt cada cierto tiempo.
 
 ---
 
