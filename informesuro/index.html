@@ -807,33 +807,18 @@
                 CLINIC_LIST.map(c => `<option>${c}</option>`).join('');
         });
 
-        // Logo de la clínica en el borde superior izquierdo del preview.
-        // Un MutationObserver detecta cuando el preview se rerenderiza y
-        // vuelve a inyectar el logo según la clínica del tab activo.
-        let _injectingLogo = false;
-        function injectClinicLogoIntoPreview() {
-            if (_injectingLogo) return;
+        function setLogoOnPreview(clinica) {
             const previewDoc = document.getElementById('previewDoc');
             if (!previewDoc) return;
-            const activeTab = document.querySelector('.tab-content.active');
-            const sel = activeTab?.querySelector('select[data-clinica]');
-            const clinica = sel?.value;
+            previewDoc.querySelectorAll('.clinic-logo').forEach(el => el.remove());
             const logoFile = clinica && CLINIC_LOGOS[clinica];
-            if (!logoFile) {
-                previewDoc.classList.remove('has-logo');
-                return;
-            }
-            _injectingLogo = true;
+            if (!logoFile) { previewDoc.classList.remove('has-logo'); return; }
             const img = document.createElement('img');
-            img.className = 'clinic-logo';
-            img.alt = clinica;
+            img.className = 'clinic-logo'; img.alt = clinica;
             img.src = `assets/${logoFile}`;
             previewDoc.insertBefore(img, previewDoc.firstChild);
             previewDoc.classList.add('has-logo');
-            _injectingLogo = false;
         }
-        new MutationObserver(injectClinicLogoIntoPreview)
-            .observe(document.getElementById('previewDoc'), { childList: true });
 
         // FONASA: input con datalist para búsqueda libre por código o palabra.
         // El value de la opción es el código (ej. "19 02 055"), pero al
@@ -1053,6 +1038,7 @@
                 ${data.analisis ? `<h3>Análisis objetivo del caso</h3><p style="text-align:justify">${escapeHtml(data.analisis)}</p>` : ''}
                 ${firmaBlock()}
             `;
+            setLogoOnPreview(clinica);
         }
 
         // ─── Solicitud de Cirugía ───────────────────────────────────────
@@ -1138,6 +1124,7 @@
                 ${coordHtml}
                 ${firmaBlock()}
             `;
+            setLogoOnPreview(clinica);
         }
 
         // ─── Receta ─────────────────────────────────────────────────────
@@ -1202,6 +1189,7 @@
                 ${data.indicaciones_generales ? `<h3>Indicaciones generales</h3><p style="text-align:justify">${escapeHtml(data.indicaciones_generales)}</p>` : ''}
                 ${firmaBlock()}
             `;
+            setLogoOnPreview(clinica);
         }
 
         // ─── Solicitud de Exámenes ──────────────────────────────────────
@@ -1310,6 +1298,7 @@
                     ${firmaBlock()}`;
             });
             document.getElementById('previewDoc').innerHTML = html;
+            setLogoOnPreview(clinica);
         }
 
         // ─── Solicitud de Estudios (procedimientos derivados) ───────────
@@ -1383,6 +1372,7 @@
                 <div style="font-family:Arial;font-size:13px;line-height:1.55">${lines}</div>
                 ${firmaBlock()}
             `;
+            setLogoOnPreview(clinica);
         }
 
         // ─── Alta Médica ────────────────────────────────────────────────
@@ -1472,6 +1462,7 @@
                 ${indicaciones ? `<h3>Indicaciones al alta</h3><ul class="meds">${indicaciones}</ul>` : ''}
                 ${firmaBlock()}
             `;
+            setLogoOnPreview(clinica);
         }
 
         // ─── Post Quirúrgico ────────────────────────────────────────────
@@ -1580,6 +1571,7 @@
                     <p style="margin-top:12px"><strong>Indicación clínica:</strong> Control post-cirugía prostática. Realizar al momento de retirar resultado de biopsia.</p>
                     ${firmaBlock()}`;
             }
+            setLogoOnPreview(clinica);
         }
 
         // ─── Post HoLEP ─────────────────────────────────────────────────
@@ -1625,6 +1617,7 @@
                 <p style="font-size:13px;margin-top:12px"><strong>La incontinencia temporal es pasajera y tratable. Con constancia la mejoría llega.</strong></p>
                 <p style="font-size:13px;margin-top:6px"><strong>No olvide contactarme en caso de cualquier situación inesperada.</strong></p>
                 ${firmaBlock()}`;
+            setLogoOnPreview(clinica);
         });
 
         // ─── Historial ───────────────────────────────────────────────────
