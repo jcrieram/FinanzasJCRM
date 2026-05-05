@@ -63,7 +63,7 @@ Una o varias oraciones técnicas describiendo síntomas, tiempo de evolución, c
 
 3) ANTECEDENTES (solo los que se mencionaron en la transcripción):
 - "Antecedentes médicos: [enfermedades crónicas listadas]" o "Antecedentes médicos: niega" si el paciente lo negó explícitamente. Si no se preguntó, OMITE la línea.
-- "Alergias a medicamentos: [especificar]" o "niega" si fue negado. Si no se mencionó, OMITE.
+- "Alergia a fármacos: [especificar]" o "niega" si fue negado. Si no se mencionó, OMITE.
 - "Antecedentes quirúrgicos: [cirugías]" o "niega" si fue negado. Si no se mencionó, OMITE.
 - "Tabaquismo: [cigarrillos/día por años]" o "niega" si fue negado. Si no se mencionó, OMITE.
 
@@ -82,16 +82,19 @@ FORMATO B — Consulta de control / seguimiento. Estructura en este orden, con s
 
 2) EXAMEN FÍSICO (solo si fue dictado): igual que en Formato A.
 
-3) EXÁMENES (solo si fueron dictados): ver sección "CAPTURA DE EXÁMENES".
+3) EXÁMENES (solo si fueron dictados): ver sección "CAPTURA DE EXÁMENES". En el control es OBLIGATORIO incluir TODOS los exámenes con sus valores exactos si fueron dictados. No omitas ningún resultado.
 
-4) CONDUCTA:
-"Se indica continuar / ajustar / suspender [tratamiento con dosis]. Se solicita [estudios]. Se programa próximo control en [tiempo]." Solo lo dictado.
+4) IMPRESIÓN DIAGNÓSTICA (solo si fue dictada o claramente expresada):
+"Impresión diagnóstica: [diagnóstico principal]. [diagnóstico diferencial si fue mencionado]." Si el médico no expresó ningún diagnóstico, OMITE esta sección completamente.
 
-5) ANOTACIONES ESPECIALES (solo si fueron dictadas): cualquier comentario clínico adicional.
+5) PLAN DE MANEJO CLÍNICO:
+"Se indica [tratamiento con dosis exactas]. Se solicita [estudios / interconsultas]. Se programa próximo control en [tiempo]." Solo lo dictado. Si nada fue indicado, OMITE.
+
+6) ANOTACIONES ESPECIALES (solo si fueron dictadas): cualquier comentario clínico adicional.
 
 CRÍTICO para FORMATO B:
 - PROHIBIDO incluir secciones de antecedentes médicos, alergias, quirúrgicos o tabaquismo. Si la transcripción los menciona puntualmente como contexto, agrégalos en la oración de evolución, no como sección.
-- NO inventes evolución, adherencia ni conducta.
+- NO inventes evolución, adherencia, diagnóstico ni conducta.
 
 CRÍTICO — CAPTURA DE EXÁMENES Y LABORATORIOS (rigor obligatorio):
 Esta sección es la más importante de la nota. Cada estudio dictado se incluye con valor y unidad médica precisa, en su línea con guion. Reglas:
@@ -276,13 +279,13 @@ function sanitizeNote(note, transcript) {
         if (forceFormatB) {
             if (/^se trata de paciente/i.test(lower)) { firstLineDropped = true; continue; }
             if (/^antecedentes m[eé]dicos?:/i.test(lower)) continue;
-            if (/^alergias?( a medicamentos)?:/i.test(lower)) continue;
+            if (/^alergia(s)?( a f[aá]rmacos?| a medicamentos?)?:/i.test(lower)) continue;
             if (/^antecedentes quir[uú]rgicos?:/i.test(lower)) continue;
             if (/^tabaquismo:/i.test(lower)) continue;
         } else {
             // 3) En Formato A: antecedentes "niega" solo si la transcripción menciona el tema.
             if (/^antecedentes m[eé]dicos?:\s*niega\.?$/i.test(line) && !hasMedicalHistoryMention(tNorm)) continue;
-            if (/^alergias?( a medicamentos)?:\s*niega\.?$/i.test(line) && !hasAllergyMention(tNorm)) continue;
+            if (/^alergia(s)?( a f[aá]rmacos?| a medicamentos?)?:\s*niega\.?$/i.test(line) && !hasAllergyMention(tNorm)) continue;
             if (/^antecedentes quir[uú]rgicos?:\s*niega\.?$/i.test(line) && !hasSurgeryMention(tNorm)) continue;
             if (/^tabaquismo:\s*niega\.?$/i.test(line) && !hasSmokingMention(tNorm)) continue;
         }
