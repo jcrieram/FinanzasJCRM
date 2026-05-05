@@ -1,0 +1,69 @@
+{
+  "manifest_version": 3,
+  "name": "URO Copiar Paciente",
+  "version": "1.3",
+  "description": "Copia nombre, RUT y edad desde fichas clínicas y los pega en UroWorkNet",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting",
+    "tabs"
+  ],
+  "host_permissions": [
+    "*://loscarrera.masterkey.cl/*",
+    "*://mibiodata.hospitalclinico.cl/*",
+    "*://*.softwaremedilink.com/*",
+    "*://finanzas-jcrm.vercel.app/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://loscarrera.masterkey.cl/*"],
+      "js": ["content_source.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["*://mibiodata.hospitalclinico.cl/*"],
+      "js": ["content_mibiodata.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["*://*.softwaremedilink.com/*"],
+      "js": ["content_medilink.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["*://finanzas-jcrm.vercel.app/*"],
+      "js": ["content_dest.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "commands": {
+    "copy-patient": {
+      "suggested_key": { "default": "Alt+Shift+C" },
+      "description": "Copiar datos del paciente desde ficha clínica"
+    },
+    "paste-patient": {
+      "suggested_key": { "default": "Alt+Shift+V" },
+      "description": "Pegar datos del paciente en formulario"
+    },
+    "sin-ordenes": {
+      "suggested_key": { "default": "Alt+Shift+O" },
+      "description": "Macro: registrar Sin Órdenes Médicas en MasterKey"
+    },
+    "historial-riera": {
+      "suggested_key": { "default": "Alt+Shift+H" },
+      "description": "Macro: abrir historial y resaltar atenciones del Dr. Riera"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}

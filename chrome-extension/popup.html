@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<style>
+  body { font-family: Arial, sans-serif; width: 260px; padding: 12px; margin: 0; background: #f0f4f8; }
+  h3 { margin: 0 0 10px; font-size: 14px; color: #1e3a5f; text-align: center; }
+  #patient-card { background: white; border-radius: 8px; padding: 10px; margin-bottom: 10px; min-height: 60px; border: 1px solid #d5dce8; }
+  .empty { color: #999; font-size: 12px; text-align: center; padding: 10px 0; }
+  .field { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px dotted #eee; font-size: 12px; }
+  .field:last-child { border-bottom: none; }
+  .field-label { font-weight: 700; color: #555; }
+  .field-value { color: #1e3a5f; }
+  .btn-group { display: flex; flex-direction: column; gap: 6px; }
+  button { width: 100%; padding: 7px; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 700; }
+  #btn-copy  { background: #2563eb; color: white; }
+  #btn-paste { background: #059669; color: white; }
+  #btn-historial, #btn-sin-ordenes { background: #6b7280; color: white; }
+  button:hover { opacity: 0.88; }
+  #status { font-size: 11px; text-align: center; margin-top: 8px; min-height: 16px; }
+  #status.ok    { color: #059669; }
+  #status.error { color: #dc2626; }
+</style>
+</head>
+<body>
+<h3>URO Copiar Paciente</h3>
+<div id="patient-card"><div class="empty">Sin datos copiados aún</div></div>
+<div class="btn-group">
+  <button id="btn-copy">📋 Copiar desde ficha (Alt+Shift+C)</button>
+  <button id="btn-paste">📌 Pegar en InformesUro (Alt+Shift+V)</button>
+  <button id="btn-historial">📂 Historial Dr. Riera (Alt+Shift+H)</button>
+  <button id="btn-sin-ordenes">🚫 Sin Órdenes (Alt+Shift+O)</button>
+</div>
+<div id="status"></div>
+<script src="popup.js"></script>
+</body>
+</html>
