@@ -1,6 +1,6 @@
 // popup.js — lógica del popup de la extensión
 
-const SOURCE_DOMAINS = ['masterkey.cl', 'hospitalclinico.cl', 'softwaremedilink.com'];
+const SOURCE_DOMAINS = ['masterkey.cl', 'hospitalclinico.cl', 'softwaremedilink.com', 'reservo.cl', 'his.redsalud.cl'];
 const DEST_DOMAIN    = 'finanzas-jcrm.vercel.app';
 
 function renderPatient(data) {
@@ -39,7 +39,7 @@ document.getElementById('btn-copy').addEventListener('click', async () => {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   const isSource = tab && SOURCE_DOMAINS.some((d) => tab.url.includes(d));
   if (!isSource) {
-    setStatus('⚠️ Abre una ficha clínica (MasterKey, miBiodata o Medilink)', 'error');
+    setStatus('⚠️ Abre una ficha clínica (MasterKey, miBiodata, Medilink, Reservo o HIS)', 'error');
     return;
   }
   chrome.tabs.sendMessage(tab.id, { action: 'copyPatient' }, () => {

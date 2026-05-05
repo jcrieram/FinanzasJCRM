@@ -4,6 +4,8 @@ const SOURCE_DOMAINS = [
   'masterkey.cl',
   'hospitalclinico.cl',
   'softwaremedilink.com',
+  'reservo.cl',
+  'his.redsalud.cl',
 ];
 const DEST_DOMAIN = 'finanzas-jcrm.vercel.app';
 

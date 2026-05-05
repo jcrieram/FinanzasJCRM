@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "URO Copiar Paciente",
-  "version": "1.3",
-  "description": "Copia nombre, RUT y edad desde fichas clínicas y los pega en UroWorkNet",
+  "version": "1.4",
+  "description": "Copia nombre, RUT y edad desde fichas clínicas (MasterKey, miBiodata, Medilink, Reservo, HIS) y los pega en UroWorkNet",
   "permissions": [
     "activeTab",
     "storage",
@@ -13,6 +13,9 @@
     "*://loscarrera.masterkey.cl/*",
     "*://mibiodata.hospitalclinico.cl/*",
     "*://*.softwaremedilink.com/*",
+    "*://reservo.cl/*",
+    "*://*.reservo.cl/*",
+    "*://his.redsalud.cl/*",
     "*://finanzas-jcrm.vercel.app/*"
   ],
   "action": {
@@ -37,6 +40,16 @@
     {
       "matches": ["*://*.softwaremedilink.com/*"],
       "js": ["content_medilink.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["*://reservo.cl/*", "*://*.reservo.cl/*"],
+      "js": ["content_reservo.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["*://his.redsalud.cl/*"],
+      "js": ["content_his.js"],
       "run_at": "document_idle"
     },
     {
