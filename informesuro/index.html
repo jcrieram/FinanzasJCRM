@@ -180,7 +180,17 @@
             font-family: Arial, sans-serif;
             font-size: 13px;
             line-height: 1.55;
+            position: relative;
         }
+        .preview-doc .clinic-logo {
+            position: absolute;
+            top: 24px;
+            left: 32px;
+            max-height: 70px;
+            max-width: 180px;
+            object-fit: contain;
+        }
+        .preview-doc.has-logo { padding-top: 110px; }
         .preview-doc h2 {
             color: var(--primary);
             text-decoration: underline;
@@ -765,7 +775,7 @@
         import { requireAuth, getCurrentUser, signOut, apiFetch } from '/lib/supabase-client.js';
         import {
             FONASA_CODES, findFonasa, isHolep, HOLEP_INSUMOS,
-            CLINIC_LIST, AYUDANTES, MEDICATIONS, MEDICO,
+            CLINIC_LIST, CLINIC_LOGOS, AYUDANTES, MEDICATIONS, MEDICO,
             PREVISIONES, COORDINADORES, formatDuracion,
             EXAM_PACKAGES, STUDY_TEMPLATES, generateEpicrisisBody
         } from '/lib/uro-data.js';
@@ -796,6 +806,34 @@
             sel.innerHTML = '<option value="">— Seleccionar —</option>' +
                 CLINIC_LIST.map(c => `<option>${c}</option>`).join('');
         });
+
+        // Logo de la clínica en el borde superior izquierdo del preview.
+        // Un MutationObserver detecta cuando el preview se rerenderiza y
+        // vuelve a inyectar el logo según la clínica del tab activo.
+        let _injectingLogo = false;
+        function injectClinicLogoIntoPreview() {
+            if (_injectingLogo) return;
+            const previewDoc = document.getElementById('previewDoc');
+            if (!previewDoc) return;
+            const activeTab = document.querySelector('.tab-content.active');
+            const sel = activeTab?.querySelector('select[data-clinica]');
+            const clinica = sel?.value;
+            const logoFile = clinica && CLINIC_LOGOS[clinica];
+            if (!logoFile) {
+                previewDoc.classList.remove('has-logo');
+                return;
+            }
+            _injectingLogo = true;
+            const img = document.createElement('img');
+            img.className = 'clinic-logo';
+            img.alt = clinica;
+            img.src = `assets/${logoFile}`;
+            previewDoc.insertBefore(img, previewDoc.firstChild);
+            previewDoc.classList.add('has-logo');
+            _injectingLogo = false;
+        }
+        new MutationObserver(injectClinicLogoIntoPreview)
+            .observe(document.getElementById('previewDoc'), { childList: true });
 
         // FONASA: input con datalist para búsqueda libre por código o palabra.
         // El value de la opción es el código (ej. "19 02 055"), pero al
