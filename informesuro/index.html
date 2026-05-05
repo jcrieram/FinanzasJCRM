@@ -338,6 +338,15 @@
             body * { visibility: hidden; }
             .preview-doc, .preview-doc * { visibility: visible; }
             .preview-doc { position: absolute; inset: 0; border: none; margin: 0; }
+            .page-break, .preview-doc hr.page-break {
+                border: none !important; margin: 0 !important; height: 0 !important;
+                visibility: hidden;
+                page-break-before: always; break-before: page;
+            }
+        }
+        .page-break {
+            border-top: 2px dashed #ccc; margin: 32px 0; text-align: center;
+            color: #999; font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
         }
     </style>
 </head>
@@ -350,6 +359,7 @@
             </div>
             <div class="header-meta">
                 <span id="userEmail" style="opacity:0.8;"></span>
+                <button class="header-btn" id="newPatientBtn" title="Borra todos los datos del paciente en todas las pestañas">🔄 Nuevo paciente</button>
                 <a href="/portal/" class="header-btn">Portal</a>
                 <button class="header-btn" id="signOutBtn">Salir</button>
             </div>
@@ -784,6 +794,16 @@
         const user = await getCurrentUser();
         document.getElementById('userEmail').textContent = user?.email || '';
         document.getElementById('signOutBtn').addEventListener('click', () => signOut());
+
+        // ─── Nuevo paciente: limpia todas las pestañas ──────────────────
+        document.getElementById('newPatientBtn').addEventListener('click', () => {
+            if (!confirm('¿Borrar todos los datos del paciente actual en todas las pestañas?')) return;
+            ['i-clear', 'c-clear', 'r-clear', 'e-clear', 's-clear', 'a-clear', 'pq-clear', 'ph-clear']
+                .forEach(id => {
+                    const btn = document.getElementById(id);
+                    if (btn) btn.click();
+                });
+        });
 
         // ─── Sidebar tabs ───────────────────────────────────────────────
         document.querySelectorAll('.nav-item').forEach(item => {
@@ -1290,7 +1310,7 @@
             // Cada estudio de imagen va en su propia hoja
             img.forEach((est, idx) => {
                 const hojaNum = lab.length ? idx + 2 : idx + 1;
-                html += `<div style="border-top:2px dashed #ccc;margin:32px 0;text-align:center;color:#999;font-size:11px;letter-spacing:2px;text-transform:uppercase;">— Hoja ${hojaNum} —</div>
+                html += `<div class="page-break">— Hoja ${hojaNum} —</div>
                     <div class="right">${escapeHtml(fecha)}</div>
                     <h2>SOLICITUD DE ESTUDIO DE IMAGEN</h2>
                     <h3>Datos del paciente</h3>${patientTbl}
@@ -1530,7 +1550,7 @@
                     <p style="margin-top:8px"><strong>2. DEBE TENER EYACULACIONES HABITUALES DURANTE ESTE TIEMPO (1-2 semanal)</strong></p>
                     <p style="margin-top:8px"><strong>3. ESTA CIRUGÍA NO INTERFIERE CON SU ERECCIÓN, LA CUAL SEGUIRÁ SIENDO EXACTAMENTE COMO ANTES DE LA CIRUGÍA</strong></p>
                     ${firmaBlock()}
-                    <hr style="border-color:var(--primary);margin:24px 0;">
+                    <hr class="page-break" style="border-color:var(--primary);margin:24px 0;">
                     <div style="text-align:right;font-style:italic;">${escapeHtml(fecha)}</div>
                     <h2>SOLICITUD DE EXAMEN DE LABORATORIO</h2>
                     <h3>I. Datos del paciente</h3>
@@ -1556,7 +1576,7 @@
                     <p style="text-align:justify;margin-top:10px">El próximo control será cuando le entreguen el resultado de la biopsia tomada el día de la cirugía y el examen de orina y urocultivo que debe realizarse al momento de retirar la biopsia. Con esos exámenes debe acudir a la consulta control.</p>
                     <p style="text-align:justify;margin-top:10px"><strong>No olvide contactarme en caso de cualquier situación inesperada, como fiebre, dolor intenso, sangrado abundante o dificultad para orinar.</strong></p>
                     ${firmaBlock()}
-                    <hr style="border-color:var(--primary);margin:24px 0;">
+                    <hr class="page-break" style="border-color:var(--primary);margin:24px 0;">
                     <div style="text-align:right;font-style:italic;">${escapeHtml(fecha)}</div>
                     <h2>SOLICITUD DE EXÁMENES DE LABORATORIO</h2>
                     <h3>I. Datos del paciente</h3>
