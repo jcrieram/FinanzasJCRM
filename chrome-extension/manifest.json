@@ -65,10 +65,6 @@
     "sin-ordenes": {
       "suggested_key": { "default": "Alt+Shift+O" },
       "description": "Macro: registrar Sin Órdenes Médicas en MasterKey"
-    },
-    "historial-riera": {
-      "suggested_key": { "default": "Alt+Shift+H" },
-      "description": "Macro: abrir historial y resaltar atenciones del Dr. Riera"
     }
   },
   "background": {

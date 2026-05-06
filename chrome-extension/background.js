@@ -38,12 +38,6 @@ chrome.commands.onCommand.addListener(async (command) => {
       chrome.tabs.sendMessage(tab.id, { action: 'runSinOrdenes' });
     }
   }
-
-  if (command === 'historial-riera') {
-    if (tab.url.includes('masterkey.cl')) {
-      chrome.tabs.sendMessage(tab.id, { action: 'runHistorial' });
-    }
-  }
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {

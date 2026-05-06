@@ -167,12 +167,6 @@ async function runSinOrdenes() {
   }
 }
 
-// ===== Macro: Historial Riera (placeholder por ahora) =====
-async function runHistorial() {
-  showBanner('▶️ Macro Historial Riera aún no configurado.', '#f39c12');
-  console.log('[URO macro] runHistorial: implementación pendiente.');
-}
-
 chrome.runtime.onMessage.addListener((message) => {
   if (message.action === 'copyPatient') {
     const data = extractPatientData();
@@ -190,11 +184,6 @@ chrome.runtime.onMessage.addListener((message) => {
 
   if (message.action === 'runSinOrdenes') {
     runSinOrdenes();
-    return;
-  }
-
-  if (message.action === 'runHistorial') {
-    runHistorial();
     return;
   }
 });
