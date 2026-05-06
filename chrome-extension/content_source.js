@@ -110,36 +110,53 @@ async function clickByTitle(titleText, timeout = 5000) {
 async function runSinOrdenes() {
   showBanner('▶️ Ejecutando macro Sin Órdenes…', '#3498db');
   try {
-    // 1) Click en "+" de Agregar exámenes (el título del botón en MasterKey)
+    // 1) Click en "+" de Agregar exámenes
     let ok = await clickByTitle('Agregar exámenes', 6000);
     if (!ok) ok = await clickByTitle('Agregar examenes', 2000);
     if (!ok) {
       showBanner('❌ No encontré el botón "+" de exámenes.', '#e74c3c');
       return;
     }
-    await sleep(700);
+    await sleep(800);
 
-    // 2) Click en "Sin órdenes médicas"
+    // 2) Click en "Sin órdenes médicas" (categoría/sección)
     ok = await clickByText('Sin órdenes médicas', { timeout: 5000 });
     if (!ok) ok = await clickByText('Sin ordenes medicas', { timeout: 2000 });
     if (!ok) {
-      showBanner('❌ No encontré la opción "Sin órdenes médicas".', '#e74c3c');
+      showBanner('❌ No encontré categoría "Sin órdenes médicas".', '#e74c3c');
       return;
     }
-    await sleep(500);
+    await sleep(700);
 
-    // 3) Click en Guardar
+    // 3) Click en "Sin órdenes médicas" (item en la lista de exámenes)
+    ok = await clickByText('Sin órdenes médicas', { timeout: 5000 });
+    if (!ok) ok = await clickByText('Sin ordenes medicas', { timeout: 2000 });
+    if (!ok) {
+      showBanner('❌ No encontré el ítem "Sin órdenes médicas" en la lista.', '#e74c3c');
+      return;
+    }
+    await sleep(600);
+
+    // 4) Click en Guardar
     ok = await clickByText('Guardar', { timeout: 5000 });
     if (!ok) {
       showBanner('❌ No encontré el botón "Guardar".', '#e74c3c');
       return;
     }
-    await sleep(800);
+    await sleep(900);
 
-    // 4) Click en Cerrar
+    // 5) Click en "Cerrar ventana"
+    ok = await clickByText('Cerrar ventana', { timeout: 5000 });
+    if (!ok) {
+      showBanner('⚠️ Guardado, pero no encontré "Cerrar ventana".', '#f39c12');
+      return;
+    }
+    await sleep(700);
+
+    // 6) Click en "Cerrar"
     ok = await clickByText('Cerrar', { timeout: 5000 });
     if (!ok) {
-      showBanner('⚠️ Guardado, pero no encontré "Cerrar".', '#f39c12');
+      showBanner('⚠️ Casi listo, pero no encontré el "Cerrar" final.', '#f39c12');
       return;
     }
 
