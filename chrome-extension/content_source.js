@@ -84,42 +84,25 @@ async function clickByText(text, opts = {}) {
   return true;
 }
 
-// Busca específicamente el botón "+" cercano a un texto (ej: "Órdenes médicas")
-async function clickPlusNear(label, timeout = 5000) {
-  const targetLabel = normalize(label);
+// Busca un botón por su atributo title (ej: "Agregar exámenes")
+async function clickByTitle(titleText, timeout = 5000) {
+  const target = normalize(titleText);
   const start = Date.now();
   while (Date.now() - start < timeout) {
-    // Buscar todos los elementos que contengan el label
-    const candidates = Array.from(document.querySelectorAll('*')).filter((el) => {
-      if (!isVisible(el)) return false;
-      const t = normalize(el.innerText || el.textContent);
-      return t === targetLabel || (t.includes(targetLabel) && t.length < targetLabel.length + 30);
-    });
-
-    for (const labelEl of candidates) {
-      // Buscar botón "+" dentro del mismo contenedor (padre o ancestro cercano)
-      let parent = labelEl;
-      for (let i = 0; i < 5 && parent; i++) {
-        const plusBtn = Array.from(parent.querySelectorAll('button, a, i, span, [role="button"]'))
-          .find((b) => {
-            if (!isVisible(b)) return false;
-            const txt = (b.innerText || b.textContent || '').trim();
-            const title = (b.getAttribute('title') || '').toLowerCase();
-            const aria = (b.getAttribute('aria-label') || '').toLowerCase();
-            const cls = (b.className || '').toString().toLowerCase();
-            return txt === '+' || title.includes('agregar') || title.includes('añadir') || aria.includes('agregar') || aria.includes('añadir') || cls.includes('add') || cls.includes('plus') || cls.includes('fa-plus');
-          });
-        if (plusBtn) {
-          console.log(`[URO macro] Click en "+" cerca de "${label}"`, plusBtn);
-          plusBtn.click();
-          return true;
-        }
-        parent = parent.parentElement;
-      }
+    const btn = Array.from(document.querySelectorAll('button, a, [role="button"]'))
+      .find((el) => {
+        if (!isVisible(el)) return false;
+        const t = normalize(el.getAttribute('title') || '');
+        return t === target || t.includes(target);
+      });
+    if (btn) {
+      console.log(`[URO macro] Click en botón title="${titleText}"`, btn);
+      btn.click();
+      return true;
     }
     await sleep(150);
   }
-  console.warn(`[URO macro] No se encontró botón "+" cerca de "${label}"`);
+  console.warn(`[URO macro] No se encontró botón con title="${titleText}"`);
   return false;
 }
 
@@ -127,14 +110,14 @@ async function clickPlusNear(label, timeout = 5000) {
 async function runSinOrdenes() {
   showBanner('▶️ Ejecutando macro Sin Órdenes…', '#3498db');
   try {
-    // 1) Click en el "+" de Órdenes Médicas
-    let ok = await clickPlusNear('Órdenes médicas', 6000);
-    if (!ok) ok = await clickPlusNear('Ordenes medicas', 4000);
+    // 1) Click en "+" de Agregar exámenes (el título del botón en MasterKey)
+    let ok = await clickByTitle('Agregar exámenes', 6000);
+    if (!ok) ok = await clickByTitle('Agregar examenes', 2000);
     if (!ok) {
-      showBanner('❌ No encontré el botón "+" de Órdenes médicas.', '#e74c3c');
+      showBanner('❌ No encontré el botón "+" de exámenes.', '#e74c3c');
       return;
     }
-    await sleep(500);
+    await sleep(700);
 
     // 2) Click en "Sin órdenes médicas"
     ok = await clickByText('Sin órdenes médicas', { timeout: 5000 });
