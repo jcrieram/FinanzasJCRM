@@ -38,6 +38,9 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function isVisible(el) {
   if (!el) return false;
+  // offsetParent es null cuando el elemento o un ancestro tiene display:none
+  // (excepto para position:fixed, que igual tiene bounding rect)
+  if (el.offsetParent === null && window.getComputedStyle(el).position !== 'fixed') return false;
   const r = el.getBoundingClientRect();
   if (r.width === 0 || r.height === 0) return false;
   const style = window.getComputedStyle(el);
