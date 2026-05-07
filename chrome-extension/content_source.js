@@ -209,7 +209,7 @@ async function runSinOrdenes() {
     }
     await sleep(1200);
 
-    // 5) Click en "Cerrar ventana" (con fallbacks)
+    // 5) Click en "Cerrar ventana"
     ok = await clickByText('Cerrar ventana', { timeout: 5000 });
     if (!ok) ok = await clickByText('Cerrar', { timeout: 1500 });
     if (!ok) ok = await clickByText('Salir', { timeout: 1500 });
@@ -217,14 +217,15 @@ async function runSinOrdenes() {
       showBanner('⚠️ Guardado, pero no encontré "Cerrar ventana".', '#f39c12');
       return;
     }
-    await sleep(700);
+    await sleep(900);
 
-    // 6) Click en "Cerrar" final (con fallbacks)
-    ok = await clickByText('Cerrar', { timeout: 5000 });
-    if (!ok) ok = await clickByText('Aceptar', { timeout: 1500 });
-    if (!ok) ok = await clickByText('Salir', { timeout: 1500 });
+    // 6) Aparece confirmación "¿Está seguro?" → click "Aceptar"
+    ok = await clickByText('Aceptar', { timeout: 5000 });
+    if (!ok) ok = await clickByText('Sí', { timeout: 1500 });
+    if (!ok) ok = await clickByText('OK', { timeout: 1500 });
+    if (!ok) ok = await clickByText('Confirmar', { timeout: 1500 });
     if (!ok) {
-      showBanner('⚠️ Casi listo, pero no encontré el "Cerrar" final.', '#f39c12');
+      showBanner('⚠️ Casi listo, pero no encontré "Aceptar" en la confirmación.', '#f39c12');
       return;
     }
 
