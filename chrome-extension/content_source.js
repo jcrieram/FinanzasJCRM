@@ -167,30 +167,35 @@ async function runSinOrdenes() {
     await sleep(700);
 
     // 3) Click en "Sin órdenes médicas" (item <tr> en la lista de exámenes)
-    ok = await clickByText('Sin órdenes médicas', { timeout: 5000, selector: 'tr' });
-    if (!ok) ok = await clickByText('Sin ordenes medicas', { timeout: 2000, selector: 'tr' });
-    if (!ok) {
-      // Fallback: clickear directamente la fila vía SolicitudExamenesAgregar
-      const docs = getAllDocuments();
-      for (const doc of docs) {
+    // Preferimos tr con onclick="SolicitudExamenesAgregar(...)" para no confundir con el tab
+    let trClicked = false;
+    const trDeadline = Date.now() + 5000;
+    while (Date.now() < trDeadline && !trClicked) {
+      for (const doc of getAllDocuments()) {
         const tr = Array.from(doc.querySelectorAll('tr[onclick*="SolicitudExamenesAgregar"]'))
           .find(el => isVisible(el));
         if (tr) {
-          console.log('[URO macro] Click fallback tr SolicitudExamenesAgregar', tr);
+          console.log('[URO macro] Click en tr SolicitudExamenesAgregar', tr);
           tr.click();
-          ok = true;
+          trClicked = true;
           break;
         }
       }
+      if (!trClicked) await sleep(200);
     }
-    if (!ok) {
-      showBanner('❌ No encontré el ítem "Sin órdenes médicas" en la lista.', '#e74c3c');
-      return;
+    if (!trClicked) {
+      // Último fallback: por texto en tr
+      ok = await clickByText('Sin órdenes médicas', { timeout: 1500, selector: 'tr' });
+      if (!ok) ok = await clickByText('Sin ordenes medicas', { timeout: 1000, selector: 'tr' });
+      if (!ok) {
+        showBanner('❌ No encontré el ítem "Sin órdenes médicas" en la lista.', '#e74c3c');
+        return;
+      }
     }
-    await sleep(800);
+    await sleep(1500); // espera al AJAX SolicitudExamenesAgregar()
 
-    // 4) Click en Guardar (id confiable + fallbacks por texto)
-    ok = await clickById('btnGuardarExamenes', 4000);
+    // 4) Click en Guardar (id confiable + fallbacks por texto, timeout largo)
+    ok = await clickById('btnGuardarExamenes', 8000);
     if (!ok) ok = await clickByText('Guardar', { timeout: 2000 });
     if (!ok) ok = await clickByText('Guardar y cerrar', { timeout: 1500 });
     if (!ok) ok = await clickByText('Aceptar', { timeout: 1500 });
@@ -198,7 +203,7 @@ async function runSinOrdenes() {
       showBanner('❌ No encontré el botón "Guardar".', '#e74c3c');
       return;
     }
-    await sleep(900);
+    await sleep(1200);
 
     // 5) Click en "Cerrar ventana" (con fallbacks)
     ok = await clickByText('Cerrar ventana', { timeout: 5000 });
