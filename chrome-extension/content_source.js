@@ -46,7 +46,7 @@ function isVisible(el) {
 
 // Busca un elemento clickeable cuyo texto coincida (ignorando mayúsculas/acentos)
 function normalize(s) {
-  return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+  return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
 }
 
 function findClickableByText(text, opts = {}) {
@@ -117,10 +117,10 @@ async function runSinOrdenes() {
       showBanner('❌ No encontré el botón "+" de exámenes.', '#e74c3c');
       return;
     }
-    await sleep(800);
+    await sleep(1500);
 
     // 2) Click en "Sin órdenes médicas" (categoría/sección)
-    ok = await clickByText('Sin órdenes médicas', { timeout: 5000 });
+    ok = await clickByText('Sin órdenes médicas', { timeout: 6000 });
     if (!ok) ok = await clickByText('Sin ordenes medicas', { timeout: 2000 });
     if (!ok) {
       showBanner('❌ No encontré categoría "Sin órdenes médicas".', '#e74c3c');
