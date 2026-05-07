@@ -137,24 +137,31 @@ async function runSinOrdenes() {
     }
     await sleep(600);
 
-    // 4) Click en Guardar
+    // 4) Click en Guardar (con fallbacks)
     ok = await clickByText('Guardar', { timeout: 5000 });
+    if (!ok) ok = await clickByText('Guardar y cerrar', { timeout: 1500 });
+    if (!ok) ok = await clickByText('Aceptar', { timeout: 1500 });
+    if (!ok) ok = await clickByText('Confirmar', { timeout: 1500 });
     if (!ok) {
       showBanner('❌ No encontré el botón "Guardar".', '#e74c3c');
       return;
     }
     await sleep(900);
 
-    // 5) Click en "Cerrar ventana"
+    // 5) Click en "Cerrar ventana" (con fallbacks)
     ok = await clickByText('Cerrar ventana', { timeout: 5000 });
+    if (!ok) ok = await clickByText('Cerrar', { timeout: 1500 });
+    if (!ok) ok = await clickByText('Salir', { timeout: 1500 });
     if (!ok) {
       showBanner('⚠️ Guardado, pero no encontré "Cerrar ventana".', '#f39c12');
       return;
     }
     await sleep(700);
 
-    // 6) Click en "Cerrar"
+    // 6) Click en "Cerrar" final (con fallbacks)
     ok = await clickByText('Cerrar', { timeout: 5000 });
+    if (!ok) ok = await clickByText('Aceptar', { timeout: 1500 });
+    if (!ok) ok = await clickByText('Salir', { timeout: 1500 });
     if (!ok) {
       showBanner('⚠️ Casi listo, pero no encontré el "Cerrar" final.', '#f39c12');
       return;
