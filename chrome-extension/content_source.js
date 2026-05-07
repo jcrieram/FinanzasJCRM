@@ -66,7 +66,7 @@ function getAllDocuments() {
 
 function findClickableByText(text, opts = {}) {
   const target = normalize(text);
-  const selector = opts.selector || 'button, a, [role="button"], input[type="button"], input[type="submit"], span, div, i, li, td, th, label';
+  const selector = opts.selector || 'button, a, [role="button"], input[type="button"], input[type="submit"], span, div, i, li, td, th, tr, label';
   for (const doc of getAllDocuments()) {
     const all = Array.from(doc.querySelectorAll(selector));
     // Primero matches exactos
@@ -100,6 +100,24 @@ async function clickByText(text, opts = {}) {
   console.log(`[URO macro] Click en: "${text}"`, el);
   el.click();
   return true;
+}
+
+// Busca un elemento por id en todos los documents y le hace click
+async function clickById(id, timeout = 3000) {
+  const start = Date.now();
+  while (Date.now() - start < timeout) {
+    for (const doc of getAllDocuments()) {
+      const el = doc.getElementById(id);
+      if (el && isVisible(el)) {
+        console.log(`[URO macro] Click en #${id}`, el);
+        el.click();
+        return true;
+      }
+    }
+    await sleep(150);
+  }
+  console.warn(`[URO macro] No se encontró #${id}`);
+  return false;
 }
 
 // Busca un botón por su atributo title (ej: "Agregar exámenes") en todos los documents
@@ -157,11 +175,11 @@ async function runSinOrdenes() {
     }
     await sleep(600);
 
-    // 4) Click en Guardar (con fallbacks)
-    ok = await clickByText('Guardar', { timeout: 5000 });
+    // 4) Click en Guardar (id confiable + fallbacks por texto)
+    ok = await clickById('btnGuardarExamenes', 4000);
+    if (!ok) ok = await clickByText('Guardar', { timeout: 2000 });
     if (!ok) ok = await clickByText('Guardar y cerrar', { timeout: 1500 });
     if (!ok) ok = await clickByText('Aceptar', { timeout: 1500 });
-    if (!ok) ok = await clickByText('Confirmar', { timeout: 1500 });
     if (!ok) {
       showBanner('❌ No encontré el botón "Guardar".', '#e74c3c');
       return;
