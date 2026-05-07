@@ -166,14 +166,28 @@ async function runSinOrdenes() {
     }
     await sleep(700);
 
-    // 3) Click en "Sin órdenes médicas" (item en la lista de exámenes)
-    ok = await clickByText('Sin órdenes médicas', { timeout: 5000 });
-    if (!ok) ok = await clickByText('Sin ordenes medicas', { timeout: 2000 });
+    // 3) Click en "Sin órdenes médicas" (item <tr> en la lista de exámenes)
+    ok = await clickByText('Sin órdenes médicas', { timeout: 5000, selector: 'tr' });
+    if (!ok) ok = await clickByText('Sin ordenes medicas', { timeout: 2000, selector: 'tr' });
+    if (!ok) {
+      // Fallback: clickear directamente la fila vía SolicitudExamenesAgregar
+      const docs = getAllDocuments();
+      for (const doc of docs) {
+        const tr = Array.from(doc.querySelectorAll('tr[onclick*="SolicitudExamenesAgregar"]'))
+          .find(el => isVisible(el));
+        if (tr) {
+          console.log('[URO macro] Click fallback tr SolicitudExamenesAgregar', tr);
+          tr.click();
+          ok = true;
+          break;
+        }
+      }
+    }
     if (!ok) {
       showBanner('❌ No encontré el ítem "Sin órdenes médicas" en la lista.', '#e74c3c');
       return;
     }
-    await sleep(600);
+    await sleep(800);
 
     // 4) Click en Guardar (id confiable + fallbacks por texto)
     ok = await clickById('btnGuardarExamenes', 4000);
