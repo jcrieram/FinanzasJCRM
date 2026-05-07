@@ -49,18 +49,36 @@ function normalize(s) {
   return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
 }
 
+// Devuelve [document principal, ...documents de iframes accesibles same-origin]
+function getAllDocuments() {
+  const docs = [document];
+  const iframes = Array.from(document.querySelectorAll('iframe'));
+  for (const f of iframes) {
+    try {
+      const doc = f.contentDocument || (f.contentWindow && f.contentWindow.document);
+      if (doc) docs.push(doc);
+    } catch (e) {
+      // cross-origin: ignorar
+    }
+  }
+  return docs;
+}
+
 function findClickableByText(text, opts = {}) {
   const target = normalize(text);
-  const selector = opts.selector || 'button, a, [role="button"], input[type="button"], input[type="submit"], span, div, i, li';
-  const all = Array.from(document.querySelectorAll(selector));
-  // Primero matches exactos
-  let exact = all.find((el) => isVisible(el) && normalize(el.innerText || el.value || el.textContent) === target);
-  if (exact) return exact;
-  // Luego matches por inclusión, prefiriendo el de menor texto (más específico)
-  const partial = all
-    .filter((el) => isVisible(el) && normalize(el.innerText || el.value || el.textContent).includes(target))
-    .sort((a, b) => (a.innerText || a.textContent || '').length - (b.innerText || b.textContent || '').length);
-  return partial[0] || null;
+  const selector = opts.selector || 'button, a, [role="button"], input[type="button"], input[type="submit"], span, div, i, li, td, th, label';
+  for (const doc of getAllDocuments()) {
+    const all = Array.from(doc.querySelectorAll(selector));
+    // Primero matches exactos
+    let exact = all.find((el) => isVisible(el) && normalize(el.innerText || el.value || el.textContent) === target);
+    if (exact) return exact;
+    // Luego matches por inclusión, prefiriendo el de menor texto (más específico)
+    const partial = all
+      .filter((el) => isVisible(el) && normalize(el.innerText || el.value || el.textContent).includes(target))
+      .sort((a, b) => (a.innerText || a.textContent || '').length - (b.innerText || b.textContent || '').length);
+    if (partial[0]) return partial[0];
+  }
+  return null;
 }
 
 async function waitForClickable(text, timeout = 5000, opts = {}) {
@@ -84,21 +102,23 @@ async function clickByText(text, opts = {}) {
   return true;
 }
 
-// Busca un botón por su atributo title (ej: "Agregar exámenes")
+// Busca un botón por su atributo title (ej: "Agregar exámenes") en todos los documents
 async function clickByTitle(titleText, timeout = 5000) {
   const target = normalize(titleText);
   const start = Date.now();
   while (Date.now() - start < timeout) {
-    const btn = Array.from(document.querySelectorAll('button, a, [role="button"]'))
-      .find((el) => {
-        if (!isVisible(el)) return false;
-        const t = normalize(el.getAttribute('title') || '');
-        return t === target || t.includes(target);
-      });
-    if (btn) {
-      console.log(`[URO macro] Click en botón title="${titleText}"`, btn);
-      btn.click();
-      return true;
+    for (const doc of getAllDocuments()) {
+      const btn = Array.from(doc.querySelectorAll('button, a, [role="button"]'))
+        .find((el) => {
+          if (!isVisible(el)) return false;
+          const t = normalize(el.getAttribute('title') || '');
+          return t === target || t.includes(target);
+        });
+      if (btn) {
+        console.log(`[URO macro] Click en botón title="${titleText}"`, btn);
+        btn.click();
+        return true;
+      }
     }
     await sleep(150);
   }
