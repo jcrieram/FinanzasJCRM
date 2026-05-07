@@ -160,25 +160,31 @@ async function runSinOrdenes() {
     }
     await sleep(1500);
 
-    // 2) Click en "Sin órdenes médicas" (categoría/sección)
-    ok = await clickByText('Sin órdenes médicas', { timeout: 6000 });
-    if (!ok) ok = await clickByText('Sin ordenes medicas', { timeout: 2000 });
+    // 2) Click en tab "Sin Órdenes Médicas" (id confiable)
+    ok = await clickById('btn_SINEX', 6000);
+    if (!ok) ok = await clickByText('Sin órdenes médicas', { timeout: 2000 });
+    if (!ok) ok = await clickByText('Sin ordenes medicas', { timeout: 1500 });
     if (!ok) {
-      showBanner('❌ No encontré categoría "Sin órdenes médicas".', '#e74c3c');
+      showBanner('❌ No encontré tab "Sin Órdenes Médicas".', '#e74c3c');
       return;
     }
-    await sleep(700);
+    await sleep(900);
 
-    // 3) Click en "Sin órdenes médicas" (item <tr> en la lista de exámenes)
-    // Preferimos tr con onclick="SolicitudExamenesAgregar(...)" para no confundir con el tab
+    // 3) Click en "Sin órdenes médicas" (item <tr> en la lista del tab SINEX)
+    // El tr correcto tiene onclick="SolicitudExamenesAgregar(... 'SINEX' ...)" —
+    // 'SINEX' es único de esa fila, no aparece en filas de Laboratorio/Imagenología/etc.
     let trClicked = false;
     const trDeadline = Date.now() + 5000;
     while (Date.now() < trDeadline && !trClicked) {
       for (const doc of getAllDocuments()) {
         const tr = Array.from(doc.querySelectorAll('tr[onclick*="SolicitudExamenesAgregar"]'))
-          .find(el => isVisible(el));
+          .find(el => {
+            const oc = el.getAttribute('onclick') || '';
+            // Busca 'SINEX' como tipo de examen en el onclick
+            return /['"]SINEX['"]/.test(oc);
+          });
         if (tr) {
-          console.log('[URO macro] Click en tr SolicitudExamenesAgregar', tr);
+          console.log('[URO macro] Click en tr SINEX', tr);
           tr.click();
           trClicked = true;
           break;
@@ -187,13 +193,8 @@ async function runSinOrdenes() {
       if (!trClicked) await sleep(200);
     }
     if (!trClicked) {
-      // Último fallback: por texto en tr
-      ok = await clickByText('Sin órdenes médicas', { timeout: 1500, selector: 'tr' });
-      if (!ok) ok = await clickByText('Sin ordenes medicas', { timeout: 1000, selector: 'tr' });
-      if (!ok) {
-        showBanner('❌ No encontré el ítem "Sin órdenes médicas" en la lista.', '#e74c3c');
-        return;
-      }
+      showBanner('❌ No encontré la fila SINEX en la lista.', '#e74c3c');
+      return;
     }
     await sleep(1500); // espera al AJAX SolicitudExamenesAgregar()
 
