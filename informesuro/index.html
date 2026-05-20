@@ -447,7 +447,7 @@
                         <div class="panel-header">
                             <div>
                                 <span class="panel-title">Solicitud de Cirugía</span>
-                                <div class="panel-subtitle">Solicitud de intervención quirúrgica con código FONASA, ayudante, anestesia e insumos.</div>
+                                <div class="panel-subtitle">Solicitud de intervención quirúrgica con código FONASA, anestesia e insumos.</div>
                             </div>
                         </div>
                         <div class="panel-body">
@@ -473,19 +473,12 @@
                                     <label>Código FONASA secundario (opcional)</label>
                                     <input id="c-cod2" type="text" list="fonasa-list" placeholder="Escribe código o palabra clave" autocomplete="off">
                                 </div>
-                                <div class="form-row"><label>Ayudante</label><select id="c-ayudante"></select></div>
                             </div>
                             <datalist id="fonasa-list"></datalist>
 
                             <div class="form-row" style="margin-top:14px;">
                                 <label>Insumos especiales</label>
                                 <textarea id="c-insumos" style="min-height:90px;" placeholder="Lista de insumos. Si seleccionas el código de HoLEP, se autocompleta una lista que puedes editar."></textarea>
-                            </div>
-                            <div style="margin-top:8px;">
-                                <label style="display:flex;align-items:center;gap:8px;font-size:13px;">
-                                    <input type="checkbox" id="c-peso-prostata"> Solicitar peso de próstata para anatomía patológica
-                                </label>
-                                <div id="c-peso-note" style="display:none;font-size:12px;color:var(--primary);margin-top:4px;margin-left:24px;">Obligatorio para HoLEP — se incluirá automáticamente.</div>
                             </div>
 
                             <div class="form-row" style="margin-top:14px;">
@@ -881,8 +874,6 @@
         document.getElementById('c-prevision').innerHTML = '<option value="">— Seleccionar —</option>' +
             PREVISIONES.map(p => `<option>${p}</option>`).join('');
 
-        document.getElementById('c-ayudante').innerHTML = AYUDANTES.map(a => `<option>${a}</option>`).join('');
-
         // Función para extraer solo el código (ignora cualquier texto que el
         // doctor haya pegado o escrito después del código).
         function parseFonasaInput(value) {
@@ -899,17 +890,9 @@
             const cod1 = parseFonasaInput(document.getElementById('c-cod1').value);
             const cod2 = parseFonasaInput(document.getElementById('c-cod2').value);
             const insumos = document.getElementById('c-insumos');
-            const checkbox = document.getElementById('c-peso-prostata');
-            const note = document.getElementById('c-peso-note');
             const holep = isHolep(cod1, cod2);
-            if (holep) {
-                if (!insumos.value.trim()) insumos.value = HOLEP_INSUMOS;
-                checkbox.checked = true;
-                checkbox.disabled = true;
-                note.style.display = 'block';
-            } else {
-                checkbox.disabled = false;
-                note.style.display = 'none';
+            if (holep && !insumos.value.trim()) {
+                insumos.value = HOLEP_INSUMOS;
             }
         }
         document.getElementById('c-cod1').addEventListener('input', maybeFillHolep);
@@ -1096,10 +1079,6 @@
             document.getElementById('c-clinica').value = '';
             document.getElementById('c-clinica-destino').value = '';
             document.getElementById('c-prevision').value = '';
-            document.getElementById('c-ayudante').value = AYUDANTES[0];
-            document.getElementById('c-peso-prostata').checked = false;
-            document.getElementById('c-peso-prostata').disabled = false;
-            document.getElementById('c-peso-note').style.display = 'none';
             document.getElementById('c-coord').style.display = 'none';
             document.getElementById('previewPanel').classList.remove('show');
             lastPayload = null;
@@ -1119,9 +1098,8 @@
                 cod1_codigo: cod1, cod1_nombre: cod1obj.nombre,
                 cod2_codigo: cod2, cod2_nombre: cod2obj?.nombre || '',
                 tipo: 'Electiva',
-                ayudante: val('c-ayudante'),
                 insumos: val('c-insumos'),
-                peso_prostata: holep || document.getElementById('c-peso-prostata').checked,
+                peso_prostata: holep,
                 indicacion: val('c-indicacion'),
                 prevision: val('c-prevision'),
                 telefono: val('c-telefono')
@@ -1146,7 +1124,6 @@
             procRows.push(
                 ['Tipo de cirugía', data.tipo || 'Electiva'],
                 ['Cirujano', MEDICO.nombre],
-                ['Ayudante', data.ayudante || '— Sin ayudante —'],
                 ['Insumos especiales', data.insumos || '—']
             );
             if (data.peso_prostata) procRows.push(['Solicitud adicional', 'Peso de próstata para anatomía patológica']);

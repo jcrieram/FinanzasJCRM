@@ -310,11 +310,10 @@ function buildSolicitudCirugia({ paciente, clinica, clinica_destino, data }) {
     procRows.push(
         ['Tipo de cirugía', data.tipo || 'Electiva'],
         ['Cirujano', MEDICO.nombre],
-        ['Ayudante', data.ayudante || '— Sin ayudante —'],
         ['Insumos especiales', data.insumos || '—']
     );
-    // Cuando es HoLEP el peso de próstata es OBLIGATORIO (independiente del checkbox).
-    if (data.peso_prostata || holep) procRows.push(['Solicitud adicional', 'Peso de próstata para anatomía patológica']);
+    // En HoLEP el peso de próstata es OBLIGATORIO para anatomía patológica.
+    if (holep) procRows.push(['Solicitud adicional', 'Peso de próstata para anatomía patológica']);
     sections.push(patientTable(procRows));
 
     // Indicación clínica
