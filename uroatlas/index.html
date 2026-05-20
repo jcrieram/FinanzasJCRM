@@ -700,6 +700,7 @@
                         </div>
                         <div class="modal-footer">
                             <button class="btn" id="reportCopy">Copiar texto</button>
+                            <button class="btn" id="reportDocx">Descargar DOCX</button>
                             <button class="btn btn-primary" id="reportPrint">Imprimir / Guardar PDF</button>
                         </div>
                     </div>
@@ -1108,6 +1109,8 @@
         document.getElementById('patientCancel').addEventListener('click', () => patientModal.classList.remove('show'));
         document.getElementById('patientSubmit').addEventListener('click', generateReport);
 
+        let lastReport = null;
+
         async function generateReport() {
             const nombre = document.getElementById('pNombre').value.trim();
             const edad = document.getElementById('pEdad').value.trim();
@@ -1142,6 +1145,7 @@
                 const content = document.getElementById('reportContent');
                 content.textContent = data.text || 'Sin contenido.';
                 content.style.display = 'block';
+                lastReport = { text: data.text || '', patient: data.patient || { nombre, edad, rut }, fecha: data.fecha || '' };
                 showToast('✓ Informe generado');
             } catch (e) {
                 document.getElementById('reportLoading').classList.remove('show');
@@ -1152,6 +1156,43 @@
 
         document.getElementById('reportClose').addEventListener('click', () => reportModal.classList.remove('show'));
         document.getElementById('reportPrint').addEventListener('click', () => window.print());
+
+        document.getElementById('reportDocx').addEventListener('click', async () => {
+            const btn = document.getElementById('reportDocx');
+            if (!lastReport || !lastReport.text) { showToast('Genera el informe primero'); return; }
+            const original = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Generando…';
+            try {
+                const res = await apiFetch('/api/uroatlas/report-docx', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(lastReport)
+                });
+                if (!res.ok) {
+                    let msg = `Error ${res.status}`;
+                    try { const j = await res.json(); if (j.error) msg = j.error; } catch {}
+                    throw new Error(msg);
+                }
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                const safe = (lastReport.patient.nombre || 'paciente').toLowerCase().replace(/[^a-z0-9]+/g, '_');
+                a.download = `informe_uroatlas_${safe}.docx`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showToast('✓ DOCX descargado');
+            } catch (e) {
+                showToast('Error: ' + (e.message || e));
+            } finally {
+                btn.disabled = false;
+                btn.textContent = original;
+            }
+        });
+
         document.getElementById('reportCopy').addEventListener('click', async () => {
             try {
                 await navigator.clipboard.writeText(document.getElementById('reportContent').textContent);
