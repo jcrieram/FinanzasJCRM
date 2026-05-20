@@ -266,16 +266,26 @@ function studiesTable(estudios) {
     return new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: [headerRow, ...dataRows] });
 }
 
-function buildSolicitudCirugia({ paciente, clinica, data }) {
+function buildSolicitudCirugia({ paciente, clinica, clinica_destino, data }) {
     const sections = [];
     const cod1 = data.cod1_codigo || '';
     const cod2 = data.cod2_codigo || '';
     const proc1 = data.cod1_nombre || '';
     const proc2 = data.cod2_nombre || '';
     const holep = isHolep(cod1, cod2);
+    // La clínica destino es donde se opera; si no viene, caemos a la clínica origen
+    // (compatibilidad con payloads antiguos).
+    const clinicaTarget = clinica_destino || clinica;
 
     sections.push(fechaParagraph());
     sections.push(centerTitle('SOLICITUD DE INTERVENCIÓN QUIRÚRGICA'));
+    if (clinicaTarget) {
+        sections.push(new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 0, after: 200 },
+            children: [arial(`A ${clinicaTarget}`, { size: 12, bold: true, color: '4b5563' })]
+        }));
+    }
 
     // Datos del paciente
     sections.push(sectionTitle('DATOS DEL PACIENTE'));
@@ -283,6 +293,7 @@ function buildSolicitudCirugia({ paciente, clinica, data }) {
         ['Nombre del paciente', paciente.nombre],
         ['RUT', paciente.rut],
         ['Edad', paciente.edad],
+        ['Clínica de origen', clinica || '—'],
         ['Previsión', data.prevision || '—'],
         ['Teléfono', data.telefono || '—']
     ]));
@@ -315,15 +326,15 @@ function buildSolicitudCirugia({ paciente, clinica, data }) {
         }));
     }
 
-    // Coordinación quirúrgica (Miraflores / Los Carrera)
-    if (COORDINADORES[clinica]) {
-        const c = COORDINADORES[clinica];
+    // Coordinación quirúrgica (Miraflores / Los Carrera) — basada en la clínica destino
+    if (COORDINADORES[clinicaTarget]) {
+        const c = COORDINADORES[clinicaTarget];
         sections.push(sectionTitle('COORDINACIÓN QUIRÚRGICA'));
         sections.push(new Paragraph({
             children: [
                 arial('Contactar a '),
                 arial(c.nombre, { bold: true }),
-                arial(` (${clinica}) al `),
+                arial(` (${clinicaTarget}) al `),
                 arial(c.telefono, { bold: true }),
                 arial(' para coordinar fecha y confirmar la cirugía.')
             ]
@@ -332,7 +343,8 @@ function buildSolicitudCirugia({ paciente, clinica, data }) {
 
     buildSignature(true).forEach(p => sections.push(p));
 
-    return wrapDocument({ sections, title: 'SOLICITUD DE CIRUGÍA', clinica });
+    // El header/logo del documento usa la clínica destino (donde se opera).
+    return wrapDocument({ sections, title: 'SOLICITUD DE CIRUGÍA', clinica: clinicaTarget });
 }
 
 function buildReceta({ paciente, clinica, data }) {
@@ -746,7 +758,7 @@ export default async function handler(req, res) {
     try { body = req.body && typeof req.body === 'object' ? req.body : JSON.parse(req.body || '{}'); }
     catch { return res.status(400).json({ error: 'JSON inválido' }); }
 
-    const { doc_type = 'informe', paciente = {}, clinica = '', data = {}, case_text = '' } = body;
+    const { doc_type = 'informe', paciente = {}, clinica = '', clinica_destino = '', data = {}, case_text = '' } = body;
     if (!paciente.nombre || !paciente.rut) {
         return res.status(400).json({ error: 'Faltan nombre y RUT del paciente' });
     }
@@ -754,7 +766,7 @@ export default async function handler(req, res) {
     let docObj;
     try {
         if (doc_type === 'informe')           docObj = buildInformeUrologico({ paciente, clinica, data });
-        else if (doc_type === 'cirugia')      docObj = buildSolicitudCirugia({ paciente, clinica, data });
+        else if (doc_type === 'cirugia')      docObj = buildSolicitudCirugia({ paciente, clinica, clinica_destino, data });
         else if (doc_type === 'receta')       docObj = buildReceta({ paciente, clinica, data });
         else if (doc_type === 'examenes')     docObj = buildSolicitudExamenes({ paciente, clinica, data: { ...data, kind: 'examenes' }, titulo: 'SOLICITUD DE EXÁMENES' });
         else if (doc_type === 'estudios')     docObj = buildSolicitudEstudio({ paciente, clinica, data });
