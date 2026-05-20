@@ -82,6 +82,19 @@ async function handleGet(req, res, auth) {
     return res.status(200).json({ cases: data || [] });
 }
 
+async function handleDelete(req, res, auth) {
+    const { id } = req.query;
+    if (!id) return res.status(400).json({ error: 'id requerido' });
+    const supa = getServiceClient();
+    const { error } = await supa
+        .from('cases')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', auth.user.id);
+    if (error) return res.status(500).json({ error: error.message });
+    return res.status(200).json({ ok: true });
+}
+
 export default async function handler(req, res) {
     const auth = await authenticate(req);
     if (!auth.ok) return res.status(auth.status).json({ error: auth.error });
@@ -90,6 +103,7 @@ export default async function handler(req, res) {
     try {
         if (req.method === 'GET') return await handleGet(req, res, auth);
         if (req.method === 'POST') return await handleFeedback(req, res, auth);
+        if (req.method === 'DELETE') return await handleDelete(req, res, auth);
         return res.status(405).json({ error: 'Method not allowed' });
     } catch (e) {
         return res.status(500).json({ error: e.message });
