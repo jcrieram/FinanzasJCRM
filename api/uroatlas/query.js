@@ -172,6 +172,26 @@ export default async function handler(req, res) {
     }
 
     try {
+        const supa = getServiceClient();
+
+        // Rate limit: 5 consultas cada 10 min por usuario (solo JWT).
+        // Cuenta filas en la tabla `cases` (cada query inserta una).
+        if (auth.user) {
+            const tenMinAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+            const { count } = await supa
+                .from('cases')
+                .select('*', { count: 'exact', head: true })
+                .eq('user_id', auth.user.id)
+                .gte('created_at', tenMinAgo);
+            const RATE_LIMIT = 5;
+            if (count !== null && count >= RATE_LIMIT) {
+                res.setHeader('Retry-After', '600');
+                return res.status(429).json({
+                    error: `Límite alcanzado: ${RATE_LIMIT} consultas cada 10 minutos. Intenta de nuevo más tarde.`
+                });
+            }
+        }
+
         // 1) Determinar la query para retrieval.
         // - Si hay texto: úsalo directo.
         // - Si solo hay imagen: pedí a Claude que la describa en una frase corta y úsala como query.
@@ -196,7 +216,6 @@ export default async function handler(req, res) {
         const queryEmbedding = await voyageEmbedQuery(retrievalQueryEn, voyageKey);
 
         // 4) Retrieval con pgvector
-        const supa = getServiceClient();
         const { data: chunks, error: matchError } = await supa.rpc('match_documents', {
             query_embedding: queryEmbedding,
             match_count: TOP_K
