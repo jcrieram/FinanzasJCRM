@@ -861,8 +861,10 @@
                     })
                 });
                 if (!res.ok) {
-                    const txt = await res.text();
-                    throw new Error(`Error (${res.status}): ${txt}`);
+                    let msg = `Error ${res.status}`;
+                    try { const j = await res.json(); if (j.error) msg = j.error; }
+                    catch { const t = await res.text(); if (t) msg = t; }
+                    throw new Error(msg);
                 }
                 const data = await res.json();
                 let header = '';
@@ -1130,8 +1132,10 @@
                     })
                 });
                 if (!res.ok) {
-                    const txt = await res.text();
-                    throw new Error(`Error (${res.status}): ${txt}`);
+                    let msg = `Error ${res.status}`;
+                    try { const j = await res.json(); if (j.error) msg = j.error; }
+                    catch { const t = await res.text(); if (t) msg = t; }
+                    throw new Error(msg);
                 }
                 const data = await res.json();
                 document.getElementById('reportLoading').classList.remove('show');
