@@ -509,6 +509,15 @@
         }
         .case-item:hover .case-delete { opacity: 1; }
         .case-delete:hover { color: var(--danger); background: rgba(179,38,30,0.08); }
+        .case-delete.confirming {
+            background: var(--danger);
+            color: #fff !important;
+            border-radius: 4px;
+            padding: 3px 9px;
+            font-size: 11px;
+            font-weight: 600;
+            opacity: 1 !important;
+        }
 
         .inline-error {
             font-size: 12px; color: var(--danger); margin-top: 6px;
@@ -1001,7 +1010,7 @@
             listEl.querySelectorAll('.case-delete').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    deleteCase(btn.dataset.id);
+                    deleteCase(btn.dataset.id, btn);
                 });
             });
         }
@@ -1044,7 +1053,18 @@
             }
         }
 
-        async function deleteCase(id) {
+        async function deleteCase(id, btn) {
+            if (!btn.classList.contains('confirming')) {
+                btn.classList.add('confirming');
+                btn.textContent = 'Eliminar';
+                setTimeout(() => {
+                    if (btn.isConnected && btn.classList.contains('confirming')) {
+                        btn.classList.remove('confirming');
+                        btn.textContent = '×';
+                    }
+                }, 3000);
+                return;
+            }
             try {
                 const res = await apiFetch(`/api/uroatlas/cases?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
                 if (!res.ok) return;
