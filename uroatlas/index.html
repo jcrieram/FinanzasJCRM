@@ -534,6 +534,19 @@
             text-align: center;
         }
 
+        .counter {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-variant-numeric: tabular-nums;
+            font-weight: 500;
+        }
+        .case-counter {
+            text-align: right;
+            margin-top: 6px;
+        }
+        .counter.warn { color: var(--warning); }
+        .counter.over { color: var(--danger); font-weight: 600; }
+
         @media (max-width: 768px) {
             .app {
                 grid-template-columns: 1fr;
@@ -580,13 +593,16 @@
                         <textarea
                             class="case-input"
                             id="caseInput"
+                            maxlength="5000"
                             placeholder="Describe el caso: edad, motivo, antecedentes relevantes, hallazgos, exámenes, dudas específicas. Cuanto más detalle, mejor opinión. También puedes consultar solo con una imagen."></textarea>
+                        <div class="counter case-counter" id="caseCounter">0 / 5000</div>
                     </div>
                 </section>
 
                 <section class="panel">
                     <div class="panel-header">
                         <span class="panel-title">Imágenes (opcional)</span>
+                        <span class="counter" id="imageCounter">0 / 4</span>
                     </div>
                     <div class="panel-body">
                         <div class="image-drop" id="imageDrop">
@@ -716,14 +732,29 @@
         });
         input.addEventListener('change', () => handleFiles(input.files));
 
+        const MAX_IMAGES = 4;
+        const imageCounter = document.getElementById('imageCounter');
+
+        function updateImageCounter() {
+            imageCounter.textContent = `${images.length} / ${MAX_IMAGES}`;
+            imageCounter.classList.toggle('warn', images.length === MAX_IMAGES);
+        }
+
         function handleFiles(files) {
+            let rejected = 0;
             for (const f of files) {
                 if (!f.type.startsWith('image/')) continue;
+                if (images.length >= MAX_IMAGES) { rejected++; continue; }
+                // Reservamos el slot inmediatamente para no exceder con cargas en paralelo
+                const slot = { file: f, dataUrl: null };
+                images.push(slot);
+                updateImageCounter();
                 resizeImage(f).then(dataUrl => {
-                    images.push({ file: f, dataUrl });
+                    slot.dataUrl = dataUrl;
                     renderImages();
                 });
             }
+            if (rejected) showToast(`Máximo ${MAX_IMAGES} imágenes por consulta`);
         }
 
         // Lleva la imagen a JPEG ≤ 1600px en el lado más largo, calidad 0.85.
@@ -756,7 +787,9 @@
             });
         }
         function renderImages() {
-            list.innerHTML = images.map((img, i) => `
+            list.innerHTML = images
+                .filter(img => img.dataUrl)
+                .map((img, i) => `
                 <div class="image-thumb">
                     <img src="${img.dataUrl}" alt="">
                     <button class="image-thumb-remove" data-i="${i}">×</button>
@@ -766,14 +799,26 @@
                 btn.addEventListener('click', () => {
                     images.splice(parseInt(btn.dataset.i), 1);
                     renderImages();
+                    updateImageCounter();
                 });
             });
+            updateImageCounter();
         }
 
         // 3. Consultar (placeholder, hace falta el endpoint en Fase 3).
         const consultBtn = document.getElementById('consultBtn');
         const clearBtn = document.getElementById('clearBtn');
         const caseInput = document.getElementById('caseInput');
+
+        const MAX_CHARS = 5000;
+        const caseCounter = document.getElementById('caseCounter');
+        function updateCaseCounter() {
+            const len = caseInput.value.length;
+            caseCounter.textContent = `${len} / ${MAX_CHARS}`;
+            caseCounter.classList.toggle('warn', len > MAX_CHARS * 0.9 && len < MAX_CHARS);
+            caseCounter.classList.toggle('over', len >= MAX_CHARS);
+        }
+        caseInput.addEventListener('input', updateCaseCounter);
         const responsePanel = document.getElementById('responsePanel');
         const loading = document.getElementById('loading');
         const responseBody = document.getElementById('responseBody');
@@ -866,6 +911,7 @@
 
         clearBtn.addEventListener('click', () => {
             caseInput.value = '';
+            updateCaseCounter();
             images.length = 0;
             renderImages();
             responsePanel.classList.remove('show');
@@ -967,6 +1013,7 @@
                 const { case: c } = await res.json();
                 if (!c) return;
                 caseInput.value = c.clinical_text || '';
+                updateCaseCounter();
                 images.length = 0;
                 renderImages();
                 placeholder.style.display = 'none';
