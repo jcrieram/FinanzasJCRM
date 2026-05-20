@@ -191,6 +191,7 @@
             object-fit: contain;
         }
         .preview-doc.has-logo { padding-top: 140px; }
+        .preview-doc .clinic-logo[data-clinic="Clínica Miraflores"] { width: 220px; height: 220px; }
         .preview-doc h2 {
             color: var(--primary);
             text-decoration: underline;
@@ -856,6 +857,7 @@
             if (!logoFile) { previewDoc.classList.remove('has-logo'); return; }
             const img = document.createElement('img');
             img.className = 'clinic-logo'; img.alt = clinica;
+            img.dataset.clinic = clinica;
             img.src = `assets/${logoFile}`;
             previewDoc.insertBefore(img, previewDoc.firstChild);
             previewDoc.classList.add('has-logo');
