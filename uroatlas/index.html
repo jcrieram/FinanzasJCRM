@@ -500,6 +500,40 @@
         #fbComment::placeholder { color: var(--text-muted); }
         #fbThanks { font-size: 12px; color: #81C784; padding: 6px 0; }
 
+        .case-item { position: relative; padding-right: 30px; }
+        .case-delete {
+            position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+            background: transparent; border: none; color: var(--text-muted);
+            font-size: 16px; cursor: pointer; opacity: 0; transition: opacity 0.15s;
+            line-height: 1; padding: 2px 5px; border-radius: 4px;
+        }
+        .case-item:hover .case-delete { opacity: 1; }
+        .case-delete:hover { color: var(--danger); background: rgba(179,38,30,0.08); }
+
+        .inline-error {
+            font-size: 12px; color: var(--danger); margin-top: 6px;
+            min-height: 16px; font-weight: 500;
+        }
+
+        .toast {
+            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+            background: var(--success); color: #fff;
+            padding: 10px 22px; border-radius: 8px;
+            font-size: 13px; font-weight: 600;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+            opacity: 0; transition: opacity 0.25s ease;
+            pointer-events: none; z-index: 200;
+            white-space: nowrap;
+        }
+        .toast.show { opacity: 1; }
+
+        .sidebar-error {
+            padding: 16px 18px;
+            color: var(--danger);
+            font-size: 12px;
+            text-align: center;
+        }
+
         @media (max-width: 768px) {
             .app {
                 grid-template-columns: 1fr;
@@ -513,6 +547,7 @@
     </style>
 </head>
 <body>
+    <div id="toast" class="toast"></div>
     <div class="app">
         <header class="header">
             <div class="header-brand">
@@ -560,7 +595,8 @@
                         <input type="file" id="imageInput" accept="image/*" multiple style="display:none">
                         <div class="image-list" id="imageList"></div>
                     </div>
-                    <div class="actions">
+                    <div class="actions" style="flex-wrap:wrap; gap:8px;">
+                        <div id="consultError" class="inline-error" style="flex:1 1 100%; text-align:right;"></div>
                         <button class="btn" id="clearBtn">Limpiar</button>
                         <button class="btn btn-primary" id="consultBtn">Consultar</button>
                     </div>
@@ -614,6 +650,7 @@
                                 <label for="pRut">RUT</label>
                                 <input id="pRut" type="text" placeholder="12.345.678-9" autocomplete="off">
                             </div>
+                            <div id="patientError" class="inline-error"></div>
                         </div>
                         <div class="modal-footer">
                             <button class="btn" id="patientCancel">Cancelar</button>
@@ -742,12 +779,15 @@
         const responseBody = document.getElementById('responseBody');
         const placeholder = document.getElementById('placeholder');
 
+        const consultError = document.getElementById('consultError');
+
         consultBtn.addEventListener('click', async () => {
             const text = caseInput.value.trim();
             if (!text && images.length === 0) {
-                alert('Escribe un caso o adjunta una imagen.');
+                consultError.textContent = 'Escribe un caso o adjunta al menos una imagen.';
                 return;
             }
+            consultError.textContent = '';
             placeholder.style.display = 'none';
             responsePanel.classList.add('show');
             responseBody.textContent = '';
@@ -855,14 +895,37 @@
             // marcamos el caso actual cuando termina la consulta — ver listener al final
         });
 
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2500);
+        }
+
+        function validarRut(rut) {
+            const limpio = rut.replace(/[.\-\s]/g, '').toUpperCase();
+            if (!/^\d{7,8}[0-9K]$/.test(limpio)) return false;
+            const cuerpo = limpio.slice(0, -1);
+            const dv = limpio.slice(-1);
+            let suma = 0, mult = 2;
+            for (let i = cuerpo.length - 1; i >= 0; i--) {
+                suma += parseInt(cuerpo[i]) * mult;
+                mult = mult === 7 ? 2 : mult + 1;
+            }
+            const esperado = 11 - (suma % 11);
+            const dvEsp = esperado === 11 ? '0' : esperado === 10 ? 'K' : String(esperado);
+            return dv === dvEsp;
+        }
+
         async function loadCasesList() {
             try {
                 const res = await apiFetch('/api/uroatlas/cases');
-                if (!res.ok) return;
+                if (!res.ok) throw new Error('Error ' + res.status);
                 const data = await res.json();
                 renderCasesList(data.cases || []);
             } catch (e) {
-                console.warn('No se pudieron cargar los casos', e);
+                document.getElementById('casesList').innerHTML =
+                    '<div class="sidebar-error">No se pudieron cargar los casos.<br>Recarga la página.</div>';
             }
         }
 
@@ -880,10 +943,20 @@
                 return `<div class="case-item" data-id="${c.id}">
                     <div class="case-item-title">${escapeHtml(preview || '(solo imagen)')}</div>
                     <div class="case-item-date">${fecha}</div>
+                    <button class="case-delete" data-id="${c.id}" title="Eliminar caso">×</button>
                 </div>`;
             }).join('');
             listEl.querySelectorAll('.case-item').forEach(el => {
-                el.addEventListener('click', () => loadCase(el.dataset.id));
+                el.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('case-delete')) return;
+                    loadCase(el.dataset.id);
+                });
+            });
+            listEl.querySelectorAll('.case-delete').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    deleteCase(btn.dataset.id);
+                });
             });
         }
 
@@ -924,6 +997,17 @@
             }
         }
 
+        async function deleteCase(id) {
+            try {
+                const res = await apiFetch(`/api/uroatlas/cases?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+                if (!res.ok) return;
+                if (currentCaseId === id) clearBtn.click();
+                await loadCasesList();
+            } catch (e) {
+                console.warn('No se pudo eliminar el caso', e);
+            }
+        }
+
         // Hook después de cada consulta para refrescar la lista.
         const origAddCitation = (window._afterConsult || (() => {}));
         window._afterConsult = (data, text) => {
@@ -947,6 +1031,7 @@
 
         reportBtn.addEventListener('click', () => {
             if (!currentCase) return;
+            document.getElementById('patientError').textContent = '';
             patientModal.classList.add('show');
             document.getElementById('pNombre').focus();
         });
@@ -958,7 +1043,11 @@
             const nombre = document.getElementById('pNombre').value.trim();
             const edad = document.getElementById('pEdad').value.trim();
             const rut = document.getElementById('pRut').value.trim();
-            if (!nombre || !rut) { alert('Nombre y RUT son obligatorios.'); return; }
+            const pError = document.getElementById('patientError');
+            if (!nombre) { pError.textContent = 'El nombre es obligatorio.'; return; }
+            if (!rut) { pError.textContent = 'El RUT es obligatorio.'; return; }
+            if (!validarRut(rut)) { pError.textContent = 'RUT inválido. Formato: 12.345.678-9'; return; }
+            pError.textContent = '';
             patientModal.classList.remove('show');
             reportModal.classList.add('show');
             document.getElementById('reportLoading').classList.add('show');
@@ -982,6 +1071,7 @@
                 const content = document.getElementById('reportContent');
                 content.textContent = data.text || 'Sin contenido.';
                 content.style.display = 'block';
+                showToast('✓ Informe generado');
             } catch (e) {
                 document.getElementById('reportLoading').classList.remove('show');
                 document.getElementById('reportContent').style.display = 'block';
