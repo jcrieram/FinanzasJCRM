@@ -103,7 +103,7 @@ function buildHeader(clinica, titulo) {
                     borders: noBorder,
                     children: [new Paragraph({
                         children: logoBuf
-                            ? [new ImageRun({ data: logoBuf, transformation: { width: 120, height: 90 } })]
+                            ? [new ImageRun({ data: logoBuf, transformation: { width: 100, height: 100 } })]
                             : [arial(clinica || '', { size: 10, bold: true, color: AZUL })]
                     })]
                 }),
