@@ -1,4 +1,4 @@
-// content_source.js — extrae datos del paciente del header en loscarrera.masterkey.cl
+// content_source.js — extrae datos del paciente y ejecuta macros en loscarrera.masterkey.cl
 
 function extractPatientData() {
   const body = document.body.innerText;
@@ -33,16 +33,226 @@ function showBanner(message, color = '#27ae60') {
   setTimeout(() => banner.remove(), 4000);
 }
 
+// ===== Helpers para macros =====
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function isVisible(el) {
+  if (!el) return false;
+  // offsetParent es null cuando el elemento o un ancestro tiene display:none
+  // (excepto para position:fixed, que igual tiene bounding rect)
+  if (el.offsetParent === null && window.getComputedStyle(el).position !== 'fixed') return false;
+  const r = el.getBoundingClientRect();
+  if (r.width === 0 || r.height === 0) return false;
+  const style = window.getComputedStyle(el);
+  return style.visibility !== 'hidden' && style.display !== 'none' && style.opacity !== '0';
+}
+
+// Busca un elemento clickeable cuyo texto coincida (ignorando mayúsculas/acentos)
+function normalize(s) {
+  return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+}
+
+// Devuelve [document principal, ...documents de iframes accesibles same-origin]
+function getAllDocuments() {
+  const docs = [document];
+  const iframes = Array.from(document.querySelectorAll('iframe'));
+  for (const f of iframes) {
+    try {
+      const doc = f.contentDocument || (f.contentWindow && f.contentWindow.document);
+      if (doc) docs.push(doc);
+    } catch (e) {
+      // cross-origin: ignorar
+    }
+  }
+  return docs;
+}
+
+function findClickableByText(text, opts = {}) {
+  const target = normalize(text);
+  const selector = opts.selector || 'button, a, [role="button"], input[type="button"], input[type="submit"], span, div, i, li, td, th, tr, label';
+  for (const doc of getAllDocuments()) {
+    const all = Array.from(doc.querySelectorAll(selector));
+    // Primero matches exactos
+    let exact = all.find((el) => isVisible(el) && normalize(el.innerText || el.value || el.textContent) === target);
+    if (exact) return exact;
+    // Luego matches por inclusión, prefiriendo el de menor texto (más específico)
+    const partial = all
+      .filter((el) => isVisible(el) && normalize(el.innerText || el.value || el.textContent).includes(target))
+      .sort((a, b) => (a.innerText || a.textContent || '').length - (b.innerText || b.textContent || '').length);
+    if (partial[0]) return partial[0];
+  }
+  return null;
+}
+
+async function waitForClickable(text, timeout = 5000, opts = {}) {
+  const start = Date.now();
+  while (Date.now() - start < timeout) {
+    const el = findClickableByText(text, opts);
+    if (el) return el;
+    await sleep(150);
+  }
+  return null;
+}
+
+async function clickByText(text, opts = {}) {
+  const el = await waitForClickable(text, opts.timeout || 5000, opts);
+  if (!el) {
+    console.warn(`[URO macro] No se encontró: "${text}"`);
+    return false;
+  }
+  console.log(`[URO macro] Click en: "${text}"`, el);
+  el.click();
+  return true;
+}
+
+// Busca un elemento por id en todos los documents y le hace click
+async function clickById(id, timeout = 3000) {
+  const start = Date.now();
+  while (Date.now() - start < timeout) {
+    for (const doc of getAllDocuments()) {
+      const el = doc.getElementById(id);
+      if (el && isVisible(el)) {
+        console.log(`[URO macro] Click en #${id}`, el);
+        el.click();
+        return true;
+      }
+    }
+    await sleep(150);
+  }
+  console.warn(`[URO macro] No se encontró #${id}`);
+  return false;
+}
+
+// Busca un botón por su atributo title (ej: "Agregar exámenes") en todos los documents
+async function clickByTitle(titleText, timeout = 5000) {
+  const target = normalize(titleText);
+  const start = Date.now();
+  while (Date.now() - start < timeout) {
+    for (const doc of getAllDocuments()) {
+      const btn = Array.from(doc.querySelectorAll('button, a, [role="button"]'))
+        .find((el) => {
+          if (!isVisible(el)) return false;
+          const t = normalize(el.getAttribute('title') || '');
+          return t === target || t.includes(target);
+        });
+      if (btn) {
+        console.log(`[URO macro] Click en botón title="${titleText}"`, btn);
+        btn.click();
+        return true;
+      }
+    }
+    await sleep(150);
+  }
+  console.warn(`[URO macro] No se encontró botón con title="${titleText}"`);
+  return false;
+}
+
+// ===== Macro: Sin Órdenes Médicas =====
+async function runSinOrdenes() {
+  showBanner('▶️ Ejecutando macro Sin Órdenes…', '#3498db');
+  try {
+    // 1) Click en "+" de Agregar exámenes
+    let ok = await clickByTitle('Agregar exámenes', 6000);
+    if (!ok) ok = await clickByTitle('Agregar examenes', 2000);
+    if (!ok) {
+      showBanner('❌ No encontré el botón "+" de exámenes.', '#e74c3c');
+      return;
+    }
+    await sleep(1500);
+
+    // 2) Click en tab "Sin Órdenes Médicas" (id confiable)
+    ok = await clickById('btn_SINEX', 6000);
+    if (!ok) ok = await clickByText('Sin órdenes médicas', { timeout: 2000 });
+    if (!ok) ok = await clickByText('Sin ordenes medicas', { timeout: 1500 });
+    if (!ok) {
+      showBanner('❌ No encontré tab "Sin Órdenes Médicas".', '#e74c3c');
+      return;
+    }
+    await sleep(900);
+
+    // 3) Click en "Sin órdenes médicas" (item <tr> en la lista del tab SINEX)
+    // El tr correcto tiene onclick="SolicitudExamenesAgregar(... 'SINEX' ...)" —
+    // 'SINEX' es único de esa fila, no aparece en filas de Laboratorio/Imagenología/etc.
+    let trClicked = false;
+    const trDeadline = Date.now() + 5000;
+    while (Date.now() < trDeadline && !trClicked) {
+      for (const doc of getAllDocuments()) {
+        const tr = Array.from(doc.querySelectorAll('tr[onclick*="SolicitudExamenesAgregar"]'))
+          .find(el => {
+            const oc = el.getAttribute('onclick') || '';
+            // Busca 'SINEX' como tipo de examen en el onclick
+            return /['"]SINEX['"]/.test(oc);
+          });
+        if (tr) {
+          console.log('[URO macro] Click en tr SINEX', tr);
+          tr.click();
+          trClicked = true;
+          break;
+        }
+      }
+      if (!trClicked) await sleep(200);
+    }
+    if (!trClicked) {
+      showBanner('❌ No encontré la fila SINEX en la lista.', '#e74c3c');
+      return;
+    }
+    await sleep(1500); // espera al AJAX SolicitudExamenesAgregar()
+
+    // 4) Click en Guardar (id confiable + fallbacks por texto, timeout largo)
+    ok = await clickById('btnGuardarExamenes', 8000);
+    if (!ok) ok = await clickByText('Guardar', { timeout: 2000 });
+    if (!ok) ok = await clickByText('Guardar y cerrar', { timeout: 1500 });
+    if (!ok) ok = await clickByText('Aceptar', { timeout: 1500 });
+    if (!ok) {
+      showBanner('❌ No encontré el botón "Guardar".', '#e74c3c');
+      return;
+    }
+    await sleep(1200);
+
+    // 5) Click en "Cerrar ventana"
+    ok = await clickByText('Cerrar ventana', { timeout: 5000 });
+    if (!ok) ok = await clickByText('Cerrar', { timeout: 1500 });
+    if (!ok) ok = await clickByText('Salir', { timeout: 1500 });
+    if (!ok) {
+      showBanner('⚠️ Guardado, pero no encontré "Cerrar ventana".', '#f39c12');
+      return;
+    }
+    await sleep(900);
+
+    // 6) Aparece confirmación "¿Está seguro?" → click "Aceptar"
+    ok = await clickByText('Aceptar', { timeout: 5000 });
+    if (!ok) ok = await clickByText('Sí', { timeout: 1500 });
+    if (!ok) ok = await clickByText('OK', { timeout: 1500 });
+    if (!ok) ok = await clickByText('Confirmar', { timeout: 1500 });
+    if (!ok) {
+      showBanner('⚠️ Casi listo, pero no encontré "Aceptar" en la confirmación.', '#f39c12');
+      return;
+    }
+
+    showBanner('✅ Sin Órdenes Médicas registrado.');
+  } catch (err) {
+    console.error('[URO macro] Error en Sin Órdenes:', err);
+    showBanner('❌ Error en macro: ' + err.message, '#e74c3c');
+  }
+}
+
 chrome.runtime.onMessage.addListener((message) => {
-  if (message.action !== 'copyPatient') return;
-  const data = extractPatientData();
-  if (!data.nombre && !data.rut && !data.edad) {
-    showBanner('⚠️ No se encontraron datos del paciente en esta página.', '#e74c3c');
+  if (message.action === 'copyPatient') {
+    const data = extractPatientData();
+    if (!data.nombre && !data.rut && !data.edad) {
+      showBanner('⚠️ No se encontraron datos del paciente en esta página.', '#e74c3c');
+      return;
+    }
+    chrome.runtime.sendMessage({ action: 'savePatient', data }, () => {
+      showBanner(
+        `✅ Copiado (MasterKey):\n👤 ${data.nombre || '—'}\n🪪 ${data.rut || '—'}\n📅 ${data.edad ? data.edad + ' años' : '—'}`
+      );
+    });
     return;
   }
-  chrome.runtime.sendMessage({ action: 'savePatient', data }, () => {
-    showBanner(
-      `✅ Copiado (MasterKey):\n👤 ${data.nombre || '—'}\n🪪 ${data.rut || '—'}\n📅 ${data.edad ? data.edad + ' años' : '—'}`
-    );
-  });
+
+  if (message.action === 'runSinOrdenes') {
+    runSinOrdenes();
+    return;
+  }
 });

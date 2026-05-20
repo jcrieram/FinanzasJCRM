@@ -19,12 +19,7 @@
     "*://finanzas-jcrm.vercel.app/*"
   ],
   "action": {
-    "default_popup": "popup.html",
-    "default_icon": {
-      "16": "icons/icon16.png",
-      "48": "icons/icon48.png",
-      "128": "icons/icon128.png"
-    }
+    "default_popup": "popup.html"
   },
   "content_scripts": [
     {
@@ -70,10 +65,6 @@
     "sin-ordenes": {
       "suggested_key": { "default": "Alt+Shift+O" },
       "description": "Macro: registrar Sin Órdenes Médicas en MasterKey"
-    },
-    "historial-riera": {
-      "suggested_key": { "default": "Alt+Shift+H" },
-      "description": "Macro: abrir historial y resaltar atenciones del Dr. Riera"
     }
   },
   "background": {

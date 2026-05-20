@@ -70,7 +70,7 @@ function injectFields(buf, contentType) {
     const extra =
         `--${boundary}\r\n` +
         `Content-Disposition: form-data; name="model"\r\n\r\n` +
-        `gpt-4o-transcribe\r\n` +
+        `whisper-1\r\n` +
         `--${boundary}\r\n` +
         `Content-Disposition: form-data; name="language"\r\n\r\n` +
         `es\r\n` +
