@@ -377,6 +377,7 @@
             color: #999; font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.2/dist/html2pdf.bundle.min.js"></script>
 </head>
 <body>
     <div class="app">
@@ -787,7 +788,7 @@
                         <span class="panel-title">Vista previa</span>
                         <div style="display:flex;gap:8px;">
                             <button class="btn" id="printBtn">Imprimir</button>
-                            <button class="btn btn-primary" id="downloadBtn">Descargar .docx</button>
+                            <button class="btn btn-primary" id="downloadBtn">Descargar PDF</button>
                         </div>
                     </div>
                     <div class="loading" id="loading">
@@ -974,21 +975,11 @@
 
         document.getElementById('downloadBtn').addEventListener('click', async () => {
             if (!lastPayload) return;
+            const preview = document.getElementById('previewDoc');
+            if (!preview || !preview.innerHTML.trim()) return;
             const btn = document.getElementById('downloadBtn');
             btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Generando…';
             try {
-                const res = await apiFetch('/api/informesuro/generate-docx', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(lastPayload)
-                });
-                if (!res.ok) {
-                    const txt = await res.text();
-                    throw new Error(`Descarga falló (${res.status}): ${txt}`);
-                }
-                const blob = await res.blob();
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
                 const name = (lastPayload.paciente.nombre || 'paciente').replace(/[^a-z0-9]+/gi, '_').toLowerCase();
                 const label = lastPayload.doc_type === 'cirugia' ? 'solicitud_cirugia'
                             : lastPayload.doc_type === 'receta' ? 'receta'
@@ -999,11 +990,15 @@
                             : lastPayload.doc_type === 'postprostata' ? 'post_prostata'
                             : lastPayload.doc_type === 'postholep' ? 'post_holep'
                             : 'informe';
-                a.href = url;
-                a.download = `${label}_${name}.docx`;
-                document.body.appendChild(a); a.click(); a.remove();
-                URL.revokeObjectURL(url);
-            } catch (e) { alert(e.message); }
+                await html2pdf().set({
+                    margin: [10, 10, 10, 10],
+                    filename: `${label}_${name}.pdf`,
+                    image: { type: 'jpeg', quality: 0.95 },
+                    html2canvas: { scale: 2, useCORS: true, letterRendering: true, backgroundColor: '#ffffff' },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                    pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', 'li'] }
+                }).from(preview).save();
+            } catch (e) { alert('Error generando PDF: ' + e.message); }
             finally { btn.disabled = false; btn.textContent = orig; }
         });
         document.getElementById('printBtn').addEventListener('click', () => window.print());
