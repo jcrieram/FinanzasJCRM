@@ -881,8 +881,11 @@
                 });
                 if (!res.ok) {
                     let msg = `Error ${res.status}`;
-                    try { const j = await res.json(); if (j.error) msg = j.error; }
-                    catch { const t = await res.text(); if (t) msg = t; }
+                    try {
+                        const t = await res.text();
+                        try { const j = JSON.parse(t); if (j.error) msg = j.error; }
+                        catch { if (t) msg = t; }
+                    } catch {}
                     throw new Error(msg);
                 }
                 const data = await res.json();
@@ -1178,8 +1181,11 @@
                 });
                 if (!res.ok) {
                     let msg = `Error ${res.status}`;
-                    try { const j = await res.json(); if (j.error) msg = j.error; }
-                    catch { const t = await res.text(); if (t) msg = t; }
+                    try {
+                        const t = await res.text();
+                        try { const j = JSON.parse(t); if (j.error) msg = j.error; }
+                        catch { if (t) msg = t; }
+                    } catch {}
                     throw new Error(msg);
                 }
                 const data = await res.json();

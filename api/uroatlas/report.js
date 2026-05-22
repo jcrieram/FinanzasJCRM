@@ -4,7 +4,7 @@
 
 import { authenticate } from '../../lib/auth.js';
 
-export const config = { maxDuration: 30 };
+export const config = { maxDuration: 60 };
 
 const CLAUDE_MODEL = 'claude-sonnet-4-6';
 
