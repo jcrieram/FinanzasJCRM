@@ -542,6 +542,24 @@
             font-size: 12px;
             text-align: center;
         }
+        .sidebar-loadmore {
+            padding: 10px 18px;
+            text-align: center;
+        }
+        .sidebar-loadmore button {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            border-radius: 6px;
+            padding: 6px 14px;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s ease, color 0.15s ease;
+        }
+        .sidebar-loadmore button:hover { background: var(--surface-alt); color: var(--primary); }
+        .sidebar-loadmore button:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .counter {
             font-size: 11px;
@@ -975,15 +993,27 @@
             return dv === dvEsp;
         }
 
-        async function loadCasesList() {
+        const PAGE_SIZE = 20;
+        let casesLoaded = [];
+        let casesHasMore = false;
+
+        async function loadCasesList({ append = false } = {}) {
+            const offset = append ? casesLoaded.length : 0;
             try {
-                const res = await apiFetch('/api/uroatlas/cases');
+                const res = await apiFetch(`/api/uroatlas/cases?offset=${offset}&limit=${PAGE_SIZE}`);
                 if (!res.ok) throw new Error('Error ' + res.status);
                 const data = await res.json();
-                renderCasesList(data.cases || []);
+                const incoming = data.cases || [];
+                casesHasMore = !!data.has_more;
+                casesLoaded = append ? casesLoaded.concat(incoming) : incoming;
+                renderCasesList(casesLoaded);
             } catch (e) {
-                document.getElementById('casesList').innerHTML =
-                    '<div class="sidebar-error">No se pudieron cargar los casos.<br>Recarga la página.</div>';
+                if (!append) {
+                    document.getElementById('casesList').innerHTML =
+                        '<div class="sidebar-error">No se pudieron cargar los casos.<br>Recarga la página.</div>';
+                } else {
+                    showToast('No se pudo cargar más');
+                }
             }
         }
 
@@ -1016,6 +1046,17 @@
                     deleteCase(btn.dataset.id, btn);
                 });
             });
+            if (casesHasMore) {
+                const more = document.createElement('div');
+                more.className = 'sidebar-loadmore';
+                more.innerHTML = '<button id="loadMoreBtn">Cargar más</button>';
+                listEl.appendChild(more);
+                document.getElementById('loadMoreBtn').addEventListener('click', async (e) => {
+                    const b = e.currentTarget;
+                    b.disabled = true; b.textContent = 'Cargando…';
+                    await loadCasesList({ append: true });
+                });
+            }
         }
 
         async function loadCase(id) {
@@ -1072,7 +1113,8 @@
                 const res = await apiFetch(`/api/uroatlas/cases?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
                 if (!res.ok) return;
                 if (currentCaseId === id) clearBtn.click();
-                await loadCasesList();
+                casesLoaded = casesLoaded.filter(c => c.id !== id);
+                renderCasesList(casesLoaded);
             } catch (e) {
                 console.warn('No se pudo eliminar el caso', e);
             }

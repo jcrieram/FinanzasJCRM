@@ -72,14 +72,19 @@ async function handleGet(req, res, auth) {
         return res.status(200).json({ case: data });
     }
 
+    const limit = Math.min(parseInt(req.query?.limit) || 20, 50);
+    const offset = Math.max(parseInt(req.query?.offset) || 0, 0);
     const { data, error } = await supa
         .from('cases')
         .select('id, clinical_text, created_at')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
-        .limit(50);
+        .range(offset, offset + limit - 1);
     if (error) throw error;
-    return res.status(200).json({ cases: data || [] });
+    return res.status(200).json({
+        cases: data || [],
+        has_more: (data || []).length === limit
+    });
 }
 
 async function handleDelete(req, res, auth) {
