@@ -567,6 +567,7 @@
             .header-meta .header-user { display: none; }
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.2/dist/html2pdf.bundle.min.js"></script>
 </head>
 <body>
     <div id="toast" class="toast"></div>
@@ -700,8 +701,7 @@
                         </div>
                         <div class="modal-footer">
                             <button class="btn" id="reportCopy">Copiar texto</button>
-                            <button class="btn" id="reportDocx">Descargar DOCX</button>
-                            <button class="btn btn-primary" id="reportPrint">Imprimir / Guardar PDF</button>
+                            <button class="btn btn-primary" id="reportDocx">Descargar PDF</button>
                         </div>
                     </div>
                 </div>
@@ -1155,36 +1155,35 @@
         }
 
         document.getElementById('reportClose').addEventListener('click', () => reportModal.classList.remove('show'));
-        document.getElementById('reportPrint').addEventListener('click', () => window.print());
 
         document.getElementById('reportDocx').addEventListener('click', async () => {
             const btn = document.getElementById('reportDocx');
             if (!lastReport || !lastReport.text) { showToast('Genera el informe primero'); return; }
+            const content = document.getElementById('reportContent');
+            if (!content || !content.textContent.trim()) { showToast('Sin contenido para exportar'); return; }
             const original = btn.textContent;
             btn.disabled = true;
             btn.textContent = 'Generando…';
             try {
-                const res = await apiFetch('/api/uroatlas/report-docx', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(lastReport)
-                });
-                if (!res.ok) {
-                    let msg = `Error ${res.status}`;
-                    try { const j = await res.json(); if (j.error) msg = j.error; } catch {}
-                    throw new Error(msg);
-                }
-                const blob = await res.blob();
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
                 const safe = (lastReport.patient.nombre || 'paciente').toLowerCase().replace(/[^a-z0-9]+/g, '_');
-                a.download = `informe_uroatlas_${safe}.docx`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                showToast('✓ DOCX descargado');
+                // Envoltorio temporal con padding A4 para que el PDF tenga márgenes legibles
+                const wrap = document.createElement('div');
+                wrap.style.cssText = 'padding:24px;font-family:Inter,sans-serif;color:#1A2332;background:#fff;white-space:pre-wrap;line-height:1.55;font-size:13px;width:180mm;';
+                wrap.textContent = content.textContent;
+                document.body.appendChild(wrap);
+                try {
+                    await html2pdf().set({
+                        margin: [10, 10, 10, 10],
+                        filename: `informe_uroatlas_${safe}.pdf`,
+                        image: { type: 'jpeg', quality: 0.95 },
+                        html2canvas: { scale: 2, useCORS: true, letterRendering: true, backgroundColor: '#ffffff' },
+                        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                        pagebreak: { mode: ['css', 'legacy'] }
+                    }).from(wrap).save();
+                } finally {
+                    wrap.remove();
+                }
+                showToast('✓ PDF descargado');
             } catch (e) {
                 showToast('Error: ' + (e.message || e));
             } finally {
