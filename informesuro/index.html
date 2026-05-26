@@ -1241,6 +1241,59 @@
             ePresetsEl.appendChild(card);
         });
 
+        // Preset especial: RM multiparamétrica de próstata
+        // Abre formulario inline para PSA y volumen prostático (opcionales)
+        // y agrega RM (imagen) + Creatinina (lab) al pedido.
+        (function addRMPreset() {
+            const card = document.createElement('div');
+            card.className = 'preset-card';
+            card.innerHTML = `<div class="preset-card-title">RM multiparamétrica de próstata</div><div class="preset-card-chips"></div>`;
+            const btn = document.createElement('button');
+            btn.className = 'med-preset-btn';
+            btn.type = 'button';
+            btn.textContent = '+ RM con contraste + Creatinina';
+            btn.title = 'Agrega Resonancia magnética multiparamétrica de próstata con contraste (en su propia hoja) y Creatinina en la hoja de laboratorio';
+            btn.addEventListener('click', openRMDialog);
+            card.querySelector('.preset-card-chips').appendChild(btn);
+            ePresetsEl.appendChild(card);
+        })();
+
+        function openRMDialog() {
+            const existing = document.getElementById('rm-inline-form');
+            if (existing) { existing.remove(); return; }
+            const form = document.createElement('div');
+            form.id = 'rm-inline-form';
+            form.style.cssText = 'background:rgba(11,83,148,0.06);border:1px solid var(--primary);border-radius:6px;padding:14px;margin-top:10px;';
+            form.innerHTML = `
+                <div style="font-size:12px;font-weight:600;color:var(--primary);margin-bottom:10px;">Datos opcionales para la RM (se incluyen en la solicitud):</div>
+                <div class="form-grid" style="margin-bottom:10px;">
+                    <div class="form-row"><label>PSA total (ng/ml)</label><input id="rm-psa" type="text" placeholder="opcional"></div>
+                    <div class="form-row"><label>Volumen prostático (cc)</label><input id="rm-vol" type="text" placeholder="opcional"></div>
+                </div>
+                <div style="display:flex;gap:8px;justify-content:flex-end;">
+                    <button class="btn btn-sm" type="button" id="rm-cancel">Cancelar</button>
+                    <button class="btn btn-primary btn-sm" type="button" id="rm-confirm">Agregar al pedido</button>
+                </div>
+            `;
+            ePresetsEl.after(form);
+            const psaInput = document.getElementById('rm-psa');
+            psaInput.focus();
+            document.getElementById('rm-cancel').addEventListener('click', () => form.remove());
+            document.getElementById('rm-confirm').addEventListener('click', () => {
+                const psa = document.getElementById('rm-psa').value.trim();
+                const vol = document.getElementById('rm-vol').value.trim();
+                const rmRow = addExamRow('Resonancia magnética multiparamétrica de próstata con contraste', 'imagen');
+                if (psa) rmRow.dataset.psa = psa;
+                if (vol) rmRow.dataset.volumen = vol;
+                addExamRow('Creatinina', 'lab');
+                form.remove();
+            });
+            form.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') document.getElementById('rm-confirm').click();
+                if (e.key === 'Escape') form.remove();
+            });
+        }
+
         function addExamRow(name = '', type = 'lab') {
             const row = document.createElement('div');
             row.style.cssText = 'display:grid;grid-template-columns:1fr 130px 32px;gap:8px;margin-bottom:6px;align-items:center;';
@@ -1254,6 +1307,7 @@
             `;
             row.querySelector('.remove-med').addEventListener('click', () => row.remove());
             eItemsEl.appendChild(row);
+            return row;
         }
 
         document.getElementById('e-add').addEventListener('click', () => addExamRow('', 'lab'));
@@ -1274,7 +1328,10 @@
             const items = Array.from(eItemsEl.children).map(row => {
                 const inp = row.querySelector('input');
                 const sel = row.querySelector('select');
-                return { name: inp.value.trim(), type: sel.value };
+                const item = { name: inp.value.trim(), type: sel.value };
+                if (row.dataset.psa) item.psa = row.dataset.psa;
+                if (row.dataset.volumen) item.volumen = row.dataset.volumen;
+                return item;
             }).filter(it => it.name);
             if (!items.length) { alert('Agrega al menos un examen.'); return; }
             const data = {
@@ -1316,10 +1373,17 @@
             // Cada estudio de imagen va en su propia hoja
             img.forEach((est, idx) => {
                 const hojaNum = lab.length ? idx + 2 : idx + 1;
+                const datosClin = (est.psa || est.volumen) ? `
+                    <h3>Datos clínicos relevantes</h3>
+                    <table class="patient">
+                        ${est.psa ? `<tr><td>PSA total</td><td>${escapeHtml(est.psa)} ng/ml</td></tr>` : ''}
+                        ${est.volumen ? `<tr><td>Volumen prostático</td><td>${escapeHtml(est.volumen)} cc</td></tr>` : ''}
+                    </table>` : '';
                 html += `<div class="page-break">— Hoja ${hojaNum} —</div>
                     <div class="right">${escapeHtml(fecha)}</div>
                     <h2>SOLICITUD DE ESTUDIO DE IMAGEN</h2>
                     <h3>Datos del paciente</h3>${patientTbl}
+                    ${datosClin}
                     <h3>Estudio solicitado</h3>${renderTable([est], 'Estudio')}
                     ${indyPrior}
                     ${firmaBlock()}`;
