@@ -146,6 +146,18 @@ sentadas)
 
 ---
 
+## 3.bis Schema Supabase versionado (jun 2026)
+
+El proyecto Supabase `uroworknet` apareció como "Unhealthy" en el dashboard
+(síntoma típico del free tier pausado por inactividad después de 4 may → 23 jun).
+Para que el schema deje de vivir solo en el dashboard se crearon migraciones
+versionadas en `supabase/migrations/` (idempotentes). Cubren: `documents`,
+`cases`, `case_feedback`, `generated_documents`, RPCs `match_documents` y
+`match_corrections`, bucket `uroatlas-sources` y todas las policies de RLS.
+Además `scripts/supabase-health.js` diagnostica conectividad + integridad
+del schema en una corrida. Ver `supabase/README.md` para el runbook de
+recuperación si el proyecto se cae.
+
 ## 4. Próximas acciones propuestas (cuando se retome)
 
 1. ~~Cerrar el filtrado de PDFs (Non-Onc, Onc, Libros).~~ **Hecho 28 abr.**
