@@ -216,5 +216,25 @@ Tabaquismo: niega.`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+console.log('\nGRUPO 6: BUG REPORTADO — "no refiere" partía oraciones a la mitad');
+// ─────────────────────────────────────────────────────────────────────────────
+
+{
+    // Caso real: la limpieza de placeholders trataba "no refiere" como
+    // relleno y lo borraba, dejando fragmentos rotos tipo "síntomas
+    // asociados ni cambios en su estado de salud general." en vez de la
+    // oración completa "No refiere otros síntomas asociados...".
+    const note = `### FORMATO: B
+Paciente acude a consulta de control por disfunción eréctil.
+Refiere dificultad para lograr erecciones.
+No refiere otros síntomas asociados ni cambios en su estado de salud general.`;
+    const transcript = 'paciente viene a control por disfunción eréctil, dificultad para lograr erecciones';
+    const out = sanitizeNote(note, transcript);
+    check('"No refiere" se conserva completo (no se corta la oración)',
+        out.includes('No refiere otros síntomas asociados ni cambios en su estado de salud general.'));
+    check('No queda fragmento roto sin sujeto', !/^s[ií]ntomas asociados/im.test(out));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 console.log(`\n${fail === 0 ? '\x1b[32m' : '\x1b[31m'}${pass}/${pass + fail} pasaron\x1b[0m`);
 process.exit(fail === 0 ? 0 : 1);

@@ -114,6 +114,7 @@ FORMATO B — Consulta de control / seguimiento. Estructura en este orden, con s
 
 1) APERTURA + EVOLUCIÓN:
 "Paciente acude a consulta de control [del problema X si se identificó]. Refiere [evolución técnica con cuantificación: adherencia, efectos adversos, mejorías, empeoramientos, síntomas residuales, síntomas nuevos]." Si la transcripción es escueta, la oración es escueta. No inventes.
+OBLIGATORIO: si el médico pregunta sobre el tratamiento previo (p. ej. "¿mejoraste con el tratamiento?", "¿cómo te fue con la crema/medicamento?", "¿tomaste la medicación?") y el paciente responde algo — mejoró, no mejoró, mejoró parcialmente, dejó de tomarlo, etc. — esa respuesta va SIEMPRE en la evolución, aunque sea breve ("No refiere mejoría con el tratamiento previo indicado."). Es el dato central de una consulta de control; omitirlo es un fallo grave.
 
 2) EXAMEN FÍSICO (solo si fue dictado): igual que en Formato A.
 
@@ -390,9 +391,12 @@ function sanitizeNote(note, transcript) {
         }
 
         // 4) Limpieza dentro de la oración (fragmentos sueltos de placeholders).
+        // OJO: "no refiere" NO va en esta lista — es una negación clínica
+        // legítima y frecuente ("No refiere otros síntomas asociados..."),
+        // no un placeholder. Quitarla partía oraciones reales a la mitad.
         line = line
             .replace(/\s*,?\s*pero\s+no\s+consigna\b/gi, '')
-            .replace(/\bno\s+(consigna|especifica|refiere|determina)\b/gi, '')
+            .replace(/\bno\s+(consigna|especifica|determina)\b/gi, '')
             .replace(/\s{2,}/g, ' ')
             .replace(/\s+\./g, '.')
             .replace(/\(\s*\)/g, '')
