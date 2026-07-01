@@ -43,6 +43,7 @@ A) FORMATO A (PRIMERA CONSULTA) — gatillos amplios:
 B) FORMATO B (CONTROL / SEGUIMIENTO) — gatillos amplios:
    · «control», «consulta de control», «seguimiento», «consulta de seguimiento», «vengo a control», «paciente conocido», «paciente en seguimiento», «evaluado previamente», «paciente con antecedente de [estudio/tratamiento previo]».
    · El paciente dice «vengo a control», «traje los exámenes», «ya estoy tomando», «sigo con el tratamiento».
+   · Whisper a veces confunde "control" (palabra clave) con "contrato" por similitud fonética — en una consulta médica "contrato" casi nunca tiene sentido real; si aparece cerca de temas clínicos (próstata, tratamiento, evaluación), interprétalo como una deformación de "control".
 
 C) SEÑAL ESTRUCTURAL — TOMA DE HISTORIA CLÍNICA COMPLETA (se aplica ANTES del default de la regla D):
    En la consulta real, el médico NO siempre dice la palabra "primera vez" en voz alta — muchas veces simplemente empieza a levantar la historia completa del paciente. Esa acción POR SÍ SOLA ya es la señal de que es primera consulta: en un control NUNCA se vuelve a preguntar todo esto, porque ya está en la ficha del paciente.
@@ -427,9 +428,18 @@ function detectFormatTriggers(transcript) {
         || /\b(nunca\s+(antes|ha(b[ií]a)?\s+(sido\s+evaluad|venido)))/i.test(t)
         || /\b(no\s+hab[ií]a\s+(sido|venido|consultado))\b/i.test(t)
         || /\b(es\s+nuev[oa]\s+(en\s+la\s+consulta|paciente))\b/i.test(t);
-    // Control / seguimiento — variantes amplias.
+    // Control / seguimiento — variantes amplias. "Contrato" se incluye como
+    // alias porque Whisper a veces confunde "control" con "contrato" por
+    // similitud fonética (ver caso real: "no me hago un control" → "no sé
+    // nada del contrato").
     const control =
-        /\b(consulta\s+de\s+control|de\s+control|en\s+control|a\s+control)\b/i.test(t)
+        /\b(consulta\s+de\s+(control|contrato))\b/i.test(t)
+        // "control de"/"contrato de" (orden invertido) sólo cuenta si NO está
+        // negado justo antes ("nunca control de", "no me hago un contrato
+        // de" → el paciente dice que NUNCA se ha hecho un control, lo
+        // contrario de un gatillo de control).
+        || /(?<!\b(?:no|nunca|jam[aá]s|ning[uú]n|ninguna)\s{1,3})\b(control|contrato)\s+de\b/i.test(t)
+        || /\b(de|en|a)\s+(control|contrato)\b/i.test(t)
         || /\b(seguimiento|consulta\s+de\s+seguimiento)\b/i.test(t)
         || /\b(paciente\s+(conocid[oa]|en\s+seguimiento))\b/i.test(t)
         || /\b(evaluad[oa]\s+previamente|ya\s+(habia|hab[ií]a)\s+(consultad|venid))\b/i.test(t)

@@ -51,7 +51,10 @@ const controlPhrases = [
     'Vengo a control doctor.',
     'Ya estoy tomando la tamsulosina como me indicó.',
     'Traje los exámenes que me pidió.',
-    'Paciente en seguimiento.'
+    'Paciente en seguimiento.',
+    // Deformación real de Whisper: "control" → "contrato" (fonéticamente similar).
+    'Es un contrato de control, doctor.',
+    'Vengo a contrato doctor.'
 ];
 controlPhrases.forEach(p => {
     const t = detectFormatTriggers(p);
