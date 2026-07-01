@@ -44,11 +44,21 @@ B) FORMATO B (CONTROL / SEGUIMIENTO) — gatillos amplios:
    · «control», «consulta de control», «seguimiento», «consulta de seguimiento», «vengo a control», «paciente conocido», «paciente en seguimiento», «evaluado previamente», «paciente con antecedente de [estudio/tratamiento previo]».
    · El paciente dice «vengo a control», «traje los exámenes», «ya estoy tomando», «sigo con el tratamiento».
 
-C) Si no se dijo NINGUNA de las dos palabras gatillo (ni de A ni de B) → FORMATO B por defecto. NUNCA asumas Formato A si no fue clasificado explícitamente como primera vez.
+C) SEÑAL ESTRUCTURAL — TOMA DE HISTORIA CLÍNICA COMPLETA (se aplica ANTES del default de la regla D):
+   En la consulta real, el médico NO siempre dice la palabra "primera vez" en voz alta — muchas veces simplemente empieza a levantar la historia completa del paciente. Esa acción POR SÍ SOLA ya es la señal de que es primera consulta: en un control NUNCA se vuelve a preguntar todo esto, porque ya está en la ficha del paciente.
+   Si en la transcripción el médico pregunta y el paciente responde sobre 3 O MÁS de estas categorías distintas → clasifica como FORMATO A aunque no se haya dicho "primera vez" explícitamente:
+     1. Antecedentes familiares (¿alguien en la familia con [enfermedad]?).
+     2. Comorbilidades / enfermedades crónicas personales (¿sufre de hipertensión, diabetes, asma, etc.?).
+     3. Alergias a medicamentos (¿es alérgico a algún medicamento?).
+     4. Antecedentes quirúrgicos (¿lo han operado alguna vez? ¿de qué?).
+     5. Tabaquismo (¿fuma? ¿cuánto?).
+   Esta señal estructural tiene PRIORIDAD sobre el default de la regla D (Formato B por defecto). Solo si NO hay ni gatillo de palabra clave NI esta señal estructural, aplica la regla D.
 
-REGLA DE ORO: el gatillo del MÉDICO manda. Si el médico dijo "primera vez" en cualquier forma → A, aunque haya otras pistas. Si dijo "control" → B, aunque haya edad o motivo extenso.
+D) Si no se dijo NINGUNA de las dos palabras gatillo (ni de A ni de B) Y tampoco hay señal estructural de historia completa (regla C) → FORMATO B por defecto.
 
-REGLA DE BÚSQUEDA: si encontraste un gatillo de A → emite "### FORMATO: A". Si encontraste solo gatillo de B (o ninguno) → emite "### FORMATO: B". La presencia de un gatillo de A en cualquier parte de la transcripción del médico tiene prioridad sobre la ausencia de gatillo.
+REGLA DE ORO: el gatillo EXPLÍCITO del MÉDICO manda sobre todo lo demás. Si el médico dijo "primera vez" en cualquier forma → A. Si dijo "control" → B, aunque haya edad o motivo extenso, aunque haya tocado varias categorías de antecedentes (un médico puede repasar antecedentes conocidos en un control sin que eso lo convierta en primera consulta si él mismo la etiquetó como control). La señal estructural (regla C) sólo decide cuando NO hay gatillo de palabra explícito.
+
+REGLA DE BÚSQUEDA: si encontraste un gatillo de palabra de A, O no hay gatillo de palabra de B pero sí señal estructural de historia completa (regla C) → emite "### FORMATO: A". Si encontraste gatillo de palabra de B, o no hay ninguna señal → emite "### FORMATO: B". La presencia de un gatillo de palabra de A en cualquier parte de la transcripción del médico tiene prioridad sobre la ausencia de gatillo.
 
 PROHIBICIONES ABSOLUTAS:
 - NUNCA escribas placeholders ("no consigna", "no especifica", "sin datos", "[edad]", "edad no especificada", "edad no consigna"). Si un dato falta, OMITE la oración.
@@ -313,7 +323,19 @@ function sanitizeNote(note, transcript) {
     let format;
     if (formatFromMarker) {
         format = formatFromMarker;
+        if (format === 'B' && !triggers.control && triggers.comprehensiveHistory) {
+            // El modelo marcó B, pero el médico no dijo ninguna palabra de
+            // control explícita Y sí se levantó historia clínica completa
+            // (familiares + comorbilidades + alergias + quirúrgicos +
+            // tabaquismo). Eso es evidencia fuerte de primera consulta mal
+            // clasificada por el modelo. No confiamos ciegamente en el
+            // marcador: corregimos a A para no destruir antecedentes que el
+            // modelo sí haya escrito en la nota.
+            format = 'A';
+        }
     } else if (triggers.firstVisit) {
+        format = 'A';
+    } else if (triggers.comprehensiveHistory && !triggers.control) {
         format = 'A';
     } else if (triggers.control) {
         format = 'B';
@@ -412,9 +434,24 @@ function detectFormatTriggers(transcript) {
         || /\b(paciente\s+(conocid[oa]|en\s+seguimiento))\b/i.test(t)
         || /\b(evaluad[oa]\s+previamente|ya\s+(habia|hab[ií]a)\s+(consultad|venid))\b/i.test(t)
         || /\b(traje\s+los\s+ex[aá]menes|ya\s+(estoy\s+tomando|sigo\s+con\s+el\s+tratamiento))\b/i.test(t);
-    return { firstVisit, control };
+    // Señal estructural: toma de historia clínica completa. Un control NO
+    // vuelve a levantar antecedentes familiares + comorbilidades + alergias +
+    // quirúrgicos + tabaquismo — eso solo pasa en primera consulta, aunque el
+    // médico nunca diga la frase "primera vez" en voz alta.
+    const historyCategoriesHit = [
+        hasFamilyHistoryMention(t),
+        hasMedicalHistoryMention(t),
+        hasAllergyMention(t),
+        hasSurgeryMention(t),
+        hasSmokingMention(t)
+    ].filter(Boolean).length;
+    const comprehensiveHistory = historyCategoriesHit >= 3;
+    return { firstVisit, control, comprehensiveHistory };
 }
 
+function hasFamilyHistoryMention(t) {
+    return /\b(familia|abuel|padre|madre|pap[aá]|mam[aá]|herman|antecedente\s+familiar)/i.test(t);
+}
 function hasMedicalHistoryMention(t) {
     return /\b(diabetes|hipertensi|presi[oó]n alta|colesterol|tiroid|asma|epoc|cardiac|coraz[oó]n|c[aá]ncer|tumor|enfermedad|cr[oó]nic|antecedent|padec)/i.test(t);
 }

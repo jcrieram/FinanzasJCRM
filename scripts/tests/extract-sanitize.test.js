@@ -136,6 +136,36 @@ Exámenes:
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+console.log('\nGRUPO 3.bis: BUG REPORTADO — historia clínica completa sin decir "primera vez"');
+// ─────────────────────────────────────────────────────────────────────────────
+
+{
+    // Caso real: el médico jamás dice "primera vez" ni "control", pero
+    // levanta antecedentes familiares + comorbilidades + alergias +
+    // quirúrgicos + tabaquismo — patrón que solo ocurre en primera consulta.
+    const transcript = 'tiene 63 años. no se ha hecho nunca control de la próstata. algún antecedente en la familia de alguien que haya sufrido de problemas prostáticos, mi abuelo con 60 años. y usted sufre de alguna enfermedad, no, hasta el momento no, como hipertensión, diabetes, asma, nada de eso. alérgico a algún medicamento, no. lo han operado alguna vez, sí, una fractura de cadera. y fuma, sí, tres al día.';
+    const triggers = detectFormatTriggers(transcript);
+    check('Detecta historia clínica completa (>=3 categorías)', triggers.comprehensiveHistory);
+    check('No detecta gatillo de control explícito', !triggers.control);
+}
+
+{
+    const transcript = 'tiene 63 años. algún antecedente en la familia de problemas prostáticos, mi abuelo con 60 años. sufre de alguna enfermedad, no, hipertensión, diabetes, asma, nada. alérgico a algún medicamento, no. lo han operado alguna vez, sí, fractura de cadera. y fuma, tres al día.';
+    // Modelo se confunde y marca B (sin haber escuchado "control" explícito).
+    const note = `### FORMATO: B
+Paciente acude a consulta de control.
+Antecedentes médicos: niega hipertensión, diabetes, asma.
+Alergia a fármacos: niega.
+Antecedentes quirúrgicos: fractura de cadera operada.
+Tabaquismo: 3 cig/día.`;
+    const out = sanitizeNote(note, transcript);
+    check('Marcador B corregido a A por historia completa: conserva antecedentes médicos', /Antecedentes m[eé]dicos:/i.test(out));
+    check('Marcador B corregido a A por historia completa: conserva alergias', /Alergia a f[aá]rmacos:/i.test(out));
+    check('Marcador B corregido a A por historia completa: conserva quirúrgicos', /Antecedentes quir[uú]rgicos:/i.test(out));
+    check('Marcador B corregido a A por historia completa: conserva tabaquismo', /Tabaquismo:/i.test(out));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 console.log('\nGRUPO 4: fallback sin marcador');
 // ─────────────────────────────────────────────────────────────────────────────
 
