@@ -13,6 +13,8 @@
     "pdfjs-dist": "^4.7.76"
   },
   "scripts": {
-    "ingest:uroatlas": "node scripts/ingest-uroatlas.js"
+    "ingest:uroatlas": "node scripts/ingest-uroatlas.js",
+    "supabase:health": "node scripts/supabase-health.js",
+    "test": "node scripts/tests/extract-sanitize.test.js"
   }
 }

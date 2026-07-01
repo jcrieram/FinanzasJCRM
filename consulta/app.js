@@ -180,8 +180,7 @@ async function startRecording() {
             audio: {
                 echoCancellation: true,
                 noiseSuppression: true,
-                channelCount: 1,
-                sampleRate: 16000
+                channelCount: 1
             }
         });
     } catch (e) {
@@ -191,7 +190,7 @@ async function startRecording() {
 
     const mimeType = pickMimeType();
     try {
-        mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType, audioBitsPerSecond: 24000 } : { audioBitsPerSecond: 24000 });
+        mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType, audioBitsPerSecond: 48000 } : { audioBitsPerSecond: 48000 });
     } catch (e) {
         mediaRecorder = new MediaRecorder(stream);
     }
@@ -249,18 +248,25 @@ async function handleStop() {
         setUI('idle');
         return;
     }
-    if (blob.size > 24 * 1024 * 1024) {
-        showError(`Audio muy largo (${sizeMB} MB). El límite es 25 MB.`);
+    if (blob.size > 4 * 1024 * 1024) {
+        showError(`El audio pesa ${sizeMB} MB y supera el límite de la plataforma (4 MB). Para consultas largas, graba en dos sesiones de máximo 15 minutos cada una.`);
         setUI('idle');
         return;
     }
 
     processingPanel.classList.remove('hidden');
-    processingText.textContent = `Transcribiendo (${sizeMB} MB)…`;
+    processingText.textContent = `Transcribiendo audio (${sizeMB} MB)…`;
 
+    let transcript = '';
     try {
-        const transcript = await transcribe(blob, mime);
-        processingText.textContent = 'Extrayendo datos clínicos…';
+        transcript = await transcribe(blob, mime);
+        if (!transcript || !transcript.trim()) {
+            processingPanel.classList.add('hidden');
+            showError('La transcripción llegó vacía. Asegúrate de hablar cerca del micrófono y en un ambiente sin ruido excesivo. Intenta de nuevo.');
+            setUI('idle');
+            return;
+        }
+        processingText.textContent = 'Generando nota clínica…';
         const note = await extract(transcript);
         processingPanel.classList.add('hidden');
         rawTranscript.textContent = transcript;
@@ -269,7 +275,9 @@ async function handleStop() {
         setUI('idle');
     } catch (e) {
         processingPanel.classList.add('hidden');
-        showError('Error: ' + (e.message || e));
+        rawTranscript.textContent = transcript;
+        showError('Error al procesar: ' + (e.message || e));
+        if (transcript) resultPanel.classList.remove('hidden');
         setUI('idle');
     }
 }

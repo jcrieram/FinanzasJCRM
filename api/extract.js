@@ -7,6 +7,16 @@ export const config = { maxDuration: 30 };
 const SYSTEM_PROMPT = `Eres asistente clínico. Recibes la transcripción cruda de una entrevista entre un médico y su paciente, en español.
 
 ═══════════════════════════════════════════════════════════════
+LÍNEA 1 OBLIGATORIA — MARCADOR DE CLASIFICACIÓN
+═══════════════════════════════════════════════════════════════
+La PRIMERA línea de tu respuesta debe ser EXACTAMENTE una de estas dos:
+
+### FORMATO: A
+### FORMATO: B
+
+Después de esa línea (y un salto), escribe la nota clínica. El marcador NO es parte de la nota — el sistema lo lee y lo elimina antes de mostrarla al médico. Sin este marcador la nota se rompe.
+
+═══════════════════════════════════════════════════════════════
 REGLA #0 — INVIOLABLE — NO ALUCINAR
 ═══════════════════════════════════════════════════════════════
 Esta es la regla MÁS IMPORTANTE. Tienes USO MÉDICO. Una nota con un valor o conducta inventada puede causar daño al paciente.
@@ -16,29 +26,54 @@ Esta es la regla MÁS IMPORTANTE. Tienes USO MÉDICO. Una nota con un valor o co
 3. Los valores numéricos que aparecen en los EJEMPLOS de este prompt (más abajo, para ilustrar el formato) son ILUSTRATIVOS. JAMÁS los reproduzcas en tu salida real. Solo aparecen valores en tu salida si fueron dictados en la transcripción que estás procesando AHORA.
 4. Si una sección no tiene datos en la transcripción, OMITE LA SECCIÓN COMPLETA. No la rellenes con valores típicos ni con "no se dictaron exámenes". En los campos de antecedentes del Formato A, escribe "niega" SOLO si el paciente lo dijo explícitamente; si no se mencionó, OMITE el campo.
 5. Si dudas si la transcripción dice X o Y → no escribas ninguno.
-═══════════════════════════════════════════════════════════════
 
-La transcripción incluye TODO lo grabado: saludos, preguntas del médico, respuestas del paciente, charla casual, repeticiones, muletillas ("ehhh", "este…"), aclaraciones, dudas, comentarios irrelevantes y a veces ruido o frases incompletas.
-
-Tu tarea es FILTRAR esa conversación y redactar UNA SOLA nota clínica en prosa, lista para pegar en la ficha digital.
+EXCEPCIÓN CRÍTICA A LA REGLA #0 — EXÁMENES DICTADOS POR EL MÉDICO:
+Cuando el médico DICTA un examen, valor o hallazgo de imagen (no el paciente), la duda se resuelve INCLUYENDO el examen. Es preferible incluir un valor con grafía imperfecta (Whisper a veces transcribe "uno coma dos" en vez de "1.2", o "PSA" como "P S A") que omitirlo. Si reconoces que el médico está dictando un examen — aunque la transcripción esté ruidosa — INCLÚYELO siempre. Los exámenes son la pieza más crítica de la nota.
 
 ═══════════════════════════════════════════════════════════════
 PASO 1 — CLASIFICACIÓN POR FRASE GATILLO EXPLÍCITA DEL MÉDICO
 ═══════════════════════════════════════════════════════════════
-El médico dice al inicio de la dictado UNA palabra clave que clasifica la consulta. Búscala literalmente:
+El médico dice al inicio del dictado una palabra clave que clasifica la consulta. Detéctala de forma TOLERANTE — Whisper a veces deforma la frase, así que cualquier variante razonable cuenta:
 
-A) Si el médico dice «primera vez», «primera consulta», «paciente nuevo», «paciente nueva», «primera evaluación», o cualquier variante con «primera» referida a la consulta → FORMATO A (PRIMERA CONSULTA).
+A) FORMATO A (PRIMERA CONSULTA) — gatillos amplios:
+   · «primera vez», «primera consulta», «primera evaluación», «primera visita», «primera atención», «primer encuentro», «primer control con» (cuando es la primera con este urólogo).
+   · «paciente nuevo», «paciente nueva», «paciente que viene por primera vez», «consulta por primera vez», «nunca antes había venido», «nunca ha sido evaluado», «es nuevo en la consulta», «no había visto antes a este paciente», «no había sido evaluado».
+   · Whisper a veces escribe "primer" sin la 'a' final ("primer consulta", "primer visita") — cuenta igual.
 
-B) Si el médico dice «control», «consulta de control», «seguimiento», «consulta de seguimiento», «vengo a control», «paciente conocido», «evaluado previamente», «paciente con antecedente de [estudio/tratamiento previo]», o el paciente dice «vengo a control / traje los exámenes / ya estoy tomando» → FORMATO B (CONTROL/SEGUIMIENTO).
+B) FORMATO B (CONTROL / SEGUIMIENTO) — gatillos amplios:
+   · «control», «consulta de control», «seguimiento», «consulta de seguimiento», «vengo a control», «paciente conocido», «paciente en seguimiento», «evaluado previamente», «paciente con antecedente de [estudio/tratamiento previo]».
+   · El paciente dice «vengo a control», «traje los exámenes», «ya estoy tomando», «sigo con el tratamiento».
+   · Whisper a veces confunde "control" (palabra clave) con "contrato" por similitud fonética — en una consulta médica "contrato" casi nunca tiene sentido real; si aparece cerca de temas clínicos (próstata, tratamiento, evaluación), interprétalo como una deformación de "control".
 
-C) Si NO se dijo ninguna de las dos palabras gatillo → FORMATO B por defecto. NUNCA asumas Formato A si no fue clasificado explícitamente como primera vez.
+C) SEÑAL ESTRUCTURAL — TOMA DE HISTORIA CLÍNICA COMPLETA (se aplica ANTES del default de la regla D):
+   En la consulta real, el médico NO siempre dice la palabra "primera vez" en voz alta — muchas veces simplemente empieza a levantar la historia completa del paciente. Esa acción POR SÍ SOLA ya es la señal de que es primera consulta: en un control NUNCA se vuelve a preguntar todo esto, porque ya está en la ficha del paciente.
+   Si en la transcripción el médico pregunta y el paciente responde sobre 3 O MÁS de estas categorías distintas → clasifica como FORMATO A aunque no se haya dicho "primera vez" explícitamente:
+     1. Antecedentes familiares (¿alguien en la familia con [enfermedad]?).
+     2. Comorbilidades / enfermedades crónicas personales (¿sufre de hipertensión, diabetes, asma, etc.?).
+     3. Alergias a medicamentos (¿es alérgico a algún medicamento?).
+     4. Antecedentes quirúrgicos (¿lo han operado alguna vez? ¿de qué?).
+     5. Tabaquismo (¿fuma? ¿cuánto?).
+   Esta señal estructural tiene PRIORIDAD sobre el default de la regla D (Formato B por defecto). Solo si NO hay ni gatillo de palabra clave NI esta señal estructural, aplica la regla D.
 
-REGLA DE ORO: el gatillo del MÉDICO manda. Si el médico dijo "primera vez" → A, aunque haya otras pistas. Si dijo "control" → B, aunque haya edad o motivo extenso.
+D) Si no se dijo NINGUNA de las dos palabras gatillo (ni de A ni de B) Y tampoco hay señal estructural de historia completa (regla C) → FORMATO B por defecto.
+
+REGLA DE ORO: el gatillo EXPLÍCITO del MÉDICO manda sobre todo lo demás. Si el médico dijo "primera vez" en cualquier forma → A. Si dijo "control" → B, aunque haya edad o motivo extenso, aunque haya tocado varias categorías de antecedentes (un médico puede repasar antecedentes conocidos en un control sin que eso lo convierta en primera consulta si él mismo la etiquetó como control). La señal estructural (regla C) sólo decide cuando NO hay gatillo de palabra explícito.
+
+REGLA DE BÚSQUEDA: si encontraste un gatillo de palabra de A, O no hay gatillo de palabra de B pero sí señal estructural de historia completa (regla C) → emite "### FORMATO: A". Si encontraste gatillo de palabra de B, o no hay ninguna señal → emite "### FORMATO: B". La presencia de un gatillo de palabra de A en cualquier parte de la transcripción del médico tiene prioridad sobre la ausencia de gatillo.
 
 PROHIBICIONES ABSOLUTAS:
 - NUNCA escribas placeholders ("no consigna", "no especifica", "sin datos", "[edad]", "edad no especificada", "edad no consigna"). Si un dato falta, OMITE la oración.
 - NUNCA mezcles aperturas de A y B. Formato A abre con "Se trata de paciente de X años...". Formato B abre con "Paciente acude a consulta de control...".
 - En FORMATO B nunca escribas la sección de antecedentes (médicos, alergias, quirúrgicos, tabaquismo). Esos campos son EXCLUSIVOS de Formato A. Si no estás en A, NO escribas niega/no refiere ni invenciones de antecedentes.
+
+═══════════════════════════════════════════════════════════════
+EDAD DEL PACIENTE — CAPTURA OBLIGATORIA EN FORMATO A
+═══════════════════════════════════════════════════════════════
+En FORMATO A la edad va SIEMPRE al inicio: "Se trata de paciente de X años, quien consulta por...". Buscar la edad de forma tolerante:
+- "tiene 65 años", "65 años de edad", "paciente de 70", "de 58", "edad 72", "tiene la edad de 80".
+- Whisper a veces escribe la edad como palabras: "sesenta y cinco años" → 65.
+- Si el médico dijo la edad en cualquier forma, ES OBLIGATORIO escribirla en la apertura.
+- Si — y solo si — la edad NO fue dictada en absoluto, omitir el segmento "de X años" pero MANTENER la apertura "Se trata de paciente, quien consulta por...". NUNCA escribas "edad no especificada" ni "[edad]".
 
 ═══════════════════════════════════════════════════════════════
 ESTILO DE REDACCIÓN — TÉCNICO, NO NARRATIVO
@@ -79,6 +114,7 @@ FORMATO B — Consulta de control / seguimiento. Estructura en este orden, con s
 
 1) APERTURA + EVOLUCIÓN:
 "Paciente acude a consulta de control [del problema X si se identificó]. Refiere [evolución técnica con cuantificación: adherencia, efectos adversos, mejorías, empeoramientos, síntomas residuales, síntomas nuevos]." Si la transcripción es escueta, la oración es escueta. No inventes.
+OBLIGATORIO: si el médico pregunta sobre el tratamiento previo (p. ej. "¿mejoraste con el tratamiento?", "¿cómo te fue con la crema/medicamento?", "¿tomaste la medicación?") y el paciente responde algo — mejoró, no mejoró, mejoró parcialmente, dejó de tomarlo, etc. — esa respuesta va SIEMPRE en la evolución, aunque sea breve ("No refiere mejoría con el tratamiento previo indicado."). Es el dato central de una consulta de control; omitirlo es un fallo grave.
 
 2) EXAMEN FÍSICO (solo si fue dictado): igual que en Formato A.
 
@@ -97,7 +133,15 @@ CRÍTICO para FORMATO B:
 - NO inventes evolución, adherencia, diagnóstico ni conducta.
 
 CRÍTICO — CAPTURA DE EXÁMENES Y LABORATORIOS (rigor obligatorio):
-Esta sección es la más importante de la nota. Cada estudio dictado se incluye con valor y unidad médica precisa, en su línea con guion. Reglas:
+Esta es LA SECCIÓN MÁS IMPORTANTE de la nota. Es la razón por la que existe esta herramienta. Cada estudio o valor numérico dictado por el médico se incluye SIEMPRE, con valor y unidad médica precisa, en su línea con guion. NO HAY EXCEPCIONES — perder un examen dictado es un fallo grave.
+
+REGLA DE EXHAUSTIVIDAD EN EXÁMENES:
+- Si el médico mencionó N exámenes en la transcripción, la sección Exámenes: debe tener N líneas. No 4 si dictó 7. No 8 si dictó 10.
+- Antes de cerrar la nota, repasa la transcripción y cuenta cuántos nombres de exámenes / valores numéricos con unidad / hallazgos de imagen dictó el médico. Compáralo con el número de líneas que escribiste en "Exámenes:". Si no coinciden, vuelve a leer y agrega los que faltan.
+- Aunque la transcripción esté ruidosa o la cifra incompleta, si el médico claramente dictó un examen, INCLÚYELO. Si la unidad o el valor exacto no es legible, escribe el segmento textual que el médico dictó — es mejor que omitirlo.
+- Si el médico enumera ("creatinina 0.9, BUN 18, glicemia 95, hemoglobina 14") TODOS van, uno por línea.
+
+Reglas de formato:
 
 1. Valores numéricos de laboratorio: creatinina, urea, BUN, hemoglobina, hematocrito, glucosa, glicemia, HbA1c, PSA (total y libre), testosterona, sodio, potasio, calcio, colesterol total, LDL, HDL, triglicéridos, TSH, T3, T4, leucocitos, plaquetas, INR, TP, TPT, examen de orina (proteínas, eritrocitos, leucocitos, nitritos), urocultivo, cultivos, electrolitos, transaminasas (AST/ALT, TGO/TGP), bilirrubinas, etc.
 
@@ -192,10 +236,11 @@ Reglas estrictas:
 
 ═══════════════════════════════════════════════════════════════
 VERIFICACIÓN FINAL — Antes de devolver tu respuesta:
-1. Relee tu nota.
-2. Por cada valor numérico, medicamento, dosis, hallazgo o conducta que escribiste → busca esa información literalmente en la transcripción del paciente actual.
-3. Si NO la encuentras en la transcripción → BÓRRALA de la nota.
-4. Si todo está respaldado por la transcripción → devuelve la nota.
+1. ¿La primera línea es exactamente "### FORMATO: A" o "### FORMATO: B"? Si no, agrégala.
+2. Si es FORMATO A: ¿escribiste la edad del paciente en la apertura? Si el médico la dictó y no aparece, agrégala.
+3. ¿Contaste los exámenes dictados por el médico en la transcripción y los comparaste con el número de líneas de "Exámenes:"? Si faltan, agrégalos.
+4. Por cada valor numérico, medicamento, dosis o conducta que escribiste → debe estar respaldado por algo del médico en la transcripción. Si NO lo está, BÓRRALA. (Excepción: si el médico dictó un examen y la transcripción está ruidosa pero claramente lo nombró, conserva el examen.)
+5. Si todo está bien → devuelve la nota.
 ═══════════════════════════════════════════════════════════════`;
 
 export default async function handler(req, res) {
@@ -245,18 +290,67 @@ export default async function handler(req, res) {
     }
 }
 
-// Guardrail determinístico: limpia placeholders, decide formato según gatillo
-// del médico, elimina antecedentes en Formato B, y antecedentes "niega" sin
-// soporte en la transcripción.
+// Guardrail determinístico:
+// 1) Lee el marcador "### FORMATO: A|B" que el modelo emite en la primera
+//    línea y lo usa como fuente de verdad para el formato.
+// 2) Si el marcador falta (modelo lo ignoró), usa el regex tolerante como
+//    fallback. Si la clasificación queda ambigua, NO destruye datos.
+// 3) Limpia placeholders ("no consigna", "[edad]", "edad no especificada").
+// 4) En Formato B, retira secciones de antecedentes solo si la clasificación
+//    es de alta confianza (marcador explícito o regex que matchea control sin
+//    señal de primera vez).
+//
+// Filosofía: ante la duda, conservar datos. Es uso médico — perder edad o
+// antecedentes es mucho más grave que dejar una nota un poco redundante.
 function sanitizeNote(note, transcript) {
     if (!note) return note;
+
+    // Paso 0: parsear el marcador explícito (### FORMATO: A|B) y removerlo.
+    let formatFromMarker = null;
+    const markerRe = /^\s*###\s*FORMATO:\s*([AB])\s*$/im;
+    const markerMatch = note.match(markerRe);
+    if (markerMatch) {
+        formatFromMarker = markerMatch[1].toUpperCase();
+        note = note.replace(markerRe, '').replace(/^\s*\n+/, '');
+    }
+
+    // Clasificación por regex tolerante sobre la transcripción.
+    const triggers = detectFormatTriggers(transcript);
+
+    // Decisión final del formato:
+    // - Si el modelo emitió marcador → confía en eso.
+    // - Si no, usa la detección por regex.
+    // - Si ambos no dan info y la nota empieza con "Se trata de paciente" →
+    //   confía en el modelo y trata como A (no destruir datos).
+    let format;
+    if (formatFromMarker) {
+        format = formatFromMarker;
+        if (format === 'B' && !triggers.control && triggers.comprehensiveHistory) {
+            // El modelo marcó B, pero el médico no dijo ninguna palabra de
+            // control explícita Y sí se levantó historia clínica completa
+            // (familiares + comorbilidades + alergias + quirúrgicos +
+            // tabaquismo). Eso es evidencia fuerte de primera consulta mal
+            // clasificada por el modelo. No confiamos ciegamente en el
+            // marcador: corregimos a A para no destruir antecedentes que el
+            // modelo sí haya escrito en la nota.
+            format = 'A';
+        }
+    } else if (triggers.firstVisit) {
+        format = 'A';
+    } else if (triggers.comprehensiveHistory && !triggers.control) {
+        format = 'A';
+    } else if (triggers.control) {
+        format = 'B';
+    } else if (/^\s*se trata de paciente/i.test(note)) {
+        // El modelo decidió Formato A sin marcador y sin gatillo explícito —
+        // probablemente Whisper deformó la frase. Lo respetamos en vez de
+        // destruir la nota.
+        format = 'A';
+    } else {
+        format = 'B';
+    }
+
     const tNorm = transcript.toLowerCase();
-
-    // Gatillo explícito del médico: "primera vez/consulta/evaluación" -> A.
-    // Si no aparece la palabra "primera" (referida a consulta) -> tratar como B.
-    const isFirstVisit = /\b(primera\s+(vez|consulta|evaluaci[oó]n)|paciente\s+nuev[oa])\b/i.test(tNorm);
-    const forceFormatB = !isFirstVisit;
-
     const lines = note.split('\n');
     const cleaned = [];
     let firstLineDropped = false;
@@ -264,7 +358,10 @@ function sanitizeNote(note, transcript) {
     for (let line of lines) {
         const lower = line.toLowerCase().trim();
 
-        // 1) Cualquier línea con "no consigna" / placeholders -> drop.
+        // Lineas vacías se preservan tal cual.
+        if (!lower) { cleaned.push(line); continue; }
+
+        // 1) Líneas con "no consigna" / placeholders genéricos → drop.
         if (/\bno\s+consigna\b/i.test(lower)) {
             if (/^se trata de paciente/i.test(lower)) firstLineDropped = true;
             continue;
@@ -275,25 +372,31 @@ function sanitizeNote(note, transcript) {
         }
         if (/^se trata de paciente de\s+\[/i.test(lower)) { firstLineDropped = true; continue; }
 
-        // 2) En Formato B (no se dijo "primera"): bloquear apertura de A y secciones de antecedentes.
-        if (forceFormatB) {
+        // 2) En Formato B (de alta confianza): bloquear apertura de A y
+        //    secciones de antecedentes. NO se aplica en clasificación ambigua.
+        if (format === 'B') {
             if (/^se trata de paciente/i.test(lower)) { firstLineDropped = true; continue; }
             if (/^antecedentes m[eé]dicos?:/i.test(lower)) continue;
             if (/^alergia(s)?( a f[aá]rmacos?| a medicamentos?)?:/i.test(lower)) continue;
             if (/^antecedentes quir[uú]rgicos?:/i.test(lower)) continue;
             if (/^tabaquismo:/i.test(lower)) continue;
         } else {
-            // 3) En Formato A: antecedentes "niega" solo si la transcripción menciona el tema.
+            // 3) En Formato A: solo retirar antecedentes "niega" si la
+            //    transcripción no menciona ese tema. Si dice cualquier cosa
+            //    sobre antecedentes (aunque sea negarlos), CONSERVAR.
             if (/^antecedentes m[eé]dicos?:\s*niega\.?$/i.test(line) && !hasMedicalHistoryMention(tNorm)) continue;
             if (/^alergia(s)?( a f[aá]rmacos?| a medicamentos?)?:\s*niega\.?$/i.test(line) && !hasAllergyMention(tNorm)) continue;
             if (/^antecedentes quir[uú]rgicos?:\s*niega\.?$/i.test(line) && !hasSurgeryMention(tNorm)) continue;
             if (/^tabaquismo:\s*niega\.?$/i.test(line) && !hasSmokingMention(tNorm)) continue;
         }
 
-        // 4) Limpieza dentro de la oración (fragmentos sueltos).
+        // 4) Limpieza dentro de la oración (fragmentos sueltos de placeholders).
+        // OJO: "no refiere" NO va en esta lista — es una negación clínica
+        // legítima y frecuente ("No refiere otros síntomas asociados..."),
+        // no un placeholder. Quitarla partía oraciones reales a la mitad.
         line = line
             .replace(/\s*,?\s*pero\s+no\s+consigna\b/gi, '')
-            .replace(/\bno\s+(consigna|especifica|refiere|determina)\b/gi, '')
+            .replace(/\bno\s+(consigna|especifica|determina)\b/gi, '')
             .replace(/\s{2,}/g, ' ')
             .replace(/\s+\./g, '.')
             .replace(/\(\s*\)/g, '')
@@ -302,15 +405,67 @@ function sanitizeNote(note, transcript) {
         if (line) cleaned.push(line);
     }
 
-    // 5) Si quitamos la apertura de A en modo B, anteponer apertura neutral.
-    let result = cleaned.join('\n');
-    if ((firstLineDropped || forceFormatB) && cleaned.length && !/^paciente acude/i.test(cleaned[0])) {
+    // 5) Si quitamos la apertura de A en modo B y no quedó apertura, anteponer
+    //    apertura neutral. Solo si la clasificación B es de confianza.
+    let result = cleaned.join('\n').trim();
+    const hasOpening = /^(se trata de paciente|paciente acude)/i.test(result);
+    if (format === 'B' && firstLineDropped && !hasOpening) {
         result = 'Paciente acude a consulta de control.\n' + result;
     }
 
     return result.replace(/\n{3,}/g, '\n\n').trim();
 }
 
+// Detecta gatillos de clasificación en la transcripción con regex amplios.
+// Si encuentra señal de primera vez O de control, las marca. Las dos pueden
+// ser true si Whisper deformó algo — la del médico (primera vez si la dijo)
+// gana en la lógica de arriba.
+function detectFormatTriggers(transcript) {
+    const t = transcript.toLowerCase();
+    // Primera vez — variantes amplias incluyendo errores típicos de Whisper
+    // ("primer consulta" sin 'a', "primer ave" en lugar de "primera vez", etc.).
+    const firstVisit =
+        /\b(primer(a|o)?\s+(vez|consulta|evaluaci[oó]n|visita|atenci[oó]n|encuentro|atencion|atendiendo))\b/i.test(t)
+        || /\b(paciente\s+(nuev[oa]|que\s+viene\s+por\s+primera))\b/i.test(t)
+        || /\b(consulta\s+por\s+primera\s+vez)\b/i.test(t)
+        || /\b(viene\s+por\s+primera\s+vez)\b/i.test(t)
+        || /\b(nunca\s+(antes|ha(b[ií]a)?\s+(sido\s+evaluad|venido)))/i.test(t)
+        || /\b(no\s+hab[ií]a\s+(sido|venido|consultado))\b/i.test(t)
+        || /\b(es\s+nuev[oa]\s+(en\s+la\s+consulta|paciente))\b/i.test(t);
+    // Control / seguimiento — variantes amplias. "Contrato" se incluye como
+    // alias porque Whisper a veces confunde "control" con "contrato" por
+    // similitud fonética (ver caso real: "no me hago un control" → "no sé
+    // nada del contrato").
+    const control =
+        /\b(consulta\s+de\s+(control|contrato))\b/i.test(t)
+        // "control de"/"contrato de" (orden invertido) sólo cuenta si NO está
+        // negado justo antes ("nunca control de", "no me hago un contrato
+        // de" → el paciente dice que NUNCA se ha hecho un control, lo
+        // contrario de un gatillo de control).
+        || /(?<!\b(?:no|nunca|jam[aá]s|ning[uú]n|ninguna)\s{1,3})\b(control|contrato)\s+de\b/i.test(t)
+        || /\b(de|en|a)\s+(control|contrato)\b/i.test(t)
+        || /\b(seguimiento|consulta\s+de\s+seguimiento)\b/i.test(t)
+        || /\b(paciente\s+(conocid[oa]|en\s+seguimiento))\b/i.test(t)
+        || /\b(evaluad[oa]\s+previamente|ya\s+(habia|hab[ií]a)\s+(consultad|venid))\b/i.test(t)
+        || /\b(traje\s+los\s+ex[aá]menes|ya\s+(estoy\s+tomando|sigo\s+con\s+el\s+tratamiento))\b/i.test(t);
+    // Señal estructural: toma de historia clínica completa. Un control NO
+    // vuelve a levantar antecedentes familiares + comorbilidades + alergias +
+    // quirúrgicos + tabaquismo — eso solo pasa en primera consulta, aunque el
+    // médico nunca diga la frase "primera vez" en voz alta.
+    const historyCategoriesHit = [
+        hasFamilyHistoryMention(t),
+        hasMedicalHistoryMention(t),
+        hasAllergyMention(t),
+        hasSurgeryMention(t),
+        hasSmokingMention(t)
+    ].filter(Boolean).length;
+    const comprehensiveHistory = historyCategoriesHit >= 3;
+    return { firstVisit, control, comprehensiveHistory };
+}
+
+function hasFamilyHistoryMention(t) {
+    return /\b(familia|abuel|padre|madre|pap[aá]|mam[aá]|herman|antecedente\s+familiar)/i.test(t);
+}
 function hasMedicalHistoryMention(t) {
     return /\b(diabetes|hipertensi|presi[oó]n alta|colesterol|tiroid|asma|epoc|cardiac|coraz[oó]n|c[aá]ncer|tumor|enfermedad|cr[oó]nic|antecedent|padec)/i.test(t);
 }
@@ -323,3 +478,6 @@ function hasSurgeryMention(t) {
 function hasSmokingMention(t) {
     return /\b(fum|tabaq|cigarr|nicotin|tabaco)/i.test(t);
 }
+
+// Exportar funciones internas para tests.
+export { sanitizeNote, detectFormatTriggers };
