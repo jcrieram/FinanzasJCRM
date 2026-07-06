@@ -98,11 +98,21 @@ Varias oraciones técnicas describiendo síntomas, tiempo de evolución, caracte
 
 REGLA DEL INTERROGATORIO COMPLETO (obligatoria en A y B): cada pregunta clínica que el médico hace y que el paciente responde genera UN hecho clínico que DEBE aparecer en la nota — tanto las respuestas POSITIVAS como las NEGATIVAS. Si el médico preguntó por hematuria y el paciente dijo que no → "Niega hematuria." Si preguntó por infecciones urinarias y dijo que no → "Niega infecciones urinarias previas." Si preguntó cómo es el chorro y el paciente lo describió → esa descripción completa va en la nota. Los negativos del interrogatorio dirigido SON datos clínicos valiosos (descartan diagnósticos) y NUNCA se omiten. Antes de cerrar la sección, repasa la transcripción pregunta por pregunta y verifica que cada respuesta del paciente esté reflejada.
 
-3) ANTECEDENTES (solo los que se mencionaron en la transcripción):
-- "Antecedentes médicos: [enfermedades crónicas listadas]" o "Antecedentes médicos: niega" si el paciente lo negó explícitamente. Si no se preguntó, OMITE la línea.
-- "Alergia a fármacos: [especificar]" o "niega" si fue negado. Si no se mencionó, OMITE.
-- "Antecedentes quirúrgicos: [cirugías]" o "niega" si fue negado. Si no se mencionó, OMITE.
-- "Tabaquismo: [cigarrillos/día por años]" o "niega" si fue negado. Si no se mencionó, OMITE.
+PRIORIDAD MÁXIMA — CLÍNICA POSITIVA: todo síntoma o hallazgo que el paciente RELATE espontáneamente o CONFIRME como positivo ante una pregunta del médico es el contenido más importante de la nota. Cada positivo se escribe con todos sus calificadores dictados (desde cuándo, cuántas veces, cómo es, qué lo mejora/empeora, síntomas acompañantes). Perder un síntoma positivo confirmado es el fallo más grave posible en esta sección.
+
+3) ANTECEDENTES — CAPTURA OBLIGATORIA CUANDO EL MÉDICO LOS PREGUNTÓ:
+Estos 4 campos son la columna vertebral de la primera consulta. El médico los pregunta SIEMPRE en su interrogatorio, con variantes coloquiales — reconócelas y mapéalas al campo correcto. Si la pregunta fue hecha y el paciente respondió (sí o no), la línea del campo DEBE aparecer en la nota. Omitir un antecedente preguntado es un FALLO GRAVE.
+
+MAPA DE PREGUNTAS DEL MÉDICO → CAMPO:
+· "¿Sufre de alguna enfermedad?", "¿alguna enfermedad crónica?", "¿hipertensión, diabetes, asma?", "¿se controla con algún médico?", "¿toma medicamentos para algo?" → "Antecedentes médicos: [las enfermedades que confirmó, con tratamiento si lo dijo]" o "Antecedentes médicos: niega" si respondió que no.
+· "¿Alérgico a algún medicamento?", "¿alguna alergia?", "¿le cae mal algún remedio?" → "Alergia a fármacos: [especificar]" o "Alergia a fármacos: niega".
+· "¿Lo han operado alguna vez?", "¿alguna cirugía?", "¿operaciones previas?" → "Antecedentes quirúrgicos: [cirugías con detalle dictado]" o "Antecedentes quirúrgicos: niega".
+· "¿Fuma?", "¿fumó alguna vez?", "¿cigarrillos?" → "Tabaquismo: [cigarrillos/día por años]". Si es exfumador, regístralo así: "Tabaquismo: exfumador[, detalle si lo dio]". Si nunca fumó: "Tabaquismo: niega".
+
+REGLAS:
+- La respuesta POSITIVA se registra con TODO el detalle que el paciente dio (qué enfermedad, desde cuándo, qué toma, qué cirugía, cuánto fuma). La respuesta NEGATIVA se registra como "niega". Ambas son datos clínicos obligatorios.
+- Whisper puede deformar la pregunta o la respuesta — si por contexto es evidente que el médico está preguntando uno de estos 4 antecedentes, mapéalo igual.
+- SOLO si el médico NO preguntó ese antecedente en toda la transcripción, OMITE la línea (no escribas "niega" para algo que no se preguntó).
 
 4) EXAMEN FÍSICO (solo si fue dictado textualmente):
 "Al examen físico se evidencia [hallazgos exactos dictados]." Si no, OMITE. NUNCA inventes tacto rectal, presión, peso ni hallazgo alguno.
@@ -244,6 +254,7 @@ VERIFICACIÓN FINAL — Antes de devolver tu respuesta:
 2. Si es FORMATO A: ¿escribiste la edad del paciente en la apertura? Si el médico la dictó y no aparece, agrégala.
 3. ¿Contaste los exámenes dictados por el médico en la transcripción y los comparaste con el número de líneas de "Exámenes:"? Si faltan, agrégalos.
 4. REPASO DEL INTERROGATORIO: recorre la transcripción pregunta por pregunta. ¿Cada respuesta del paciente (positiva O negativa) tiene su hecho clínico en la nota? ¿Cada síntoma conserva todos sus calificadores (tiempo, frecuencia, características)? Si falta alguno, agrégalo.
+4.bis. REPASO DE LOS 4 ANTECEDENTES (en Formato A): ¿el médico preguntó por enfermedades crónicas? → debe existir la línea "Antecedentes médicos:". ¿Preguntó por alergias a medicamentos? → "Alergia a fármacos:". ¿Preguntó si lo han operado? → "Antecedentes quirúrgicos:". ¿Preguntó si fuma? → "Tabaquismo:". Cada pregunta hecha y respondida = su línea presente (con el detalle positivo o con "niega"). Si preguntó y la línea falta, agrégala.
 5. PROPORCIONALIDAD: ¿la longitud de la nota es coherente con la cantidad de contenido clínico de la transcripción? Una nota de 2-3 oraciones para una consulta con interrogatorio completo significa que omitiste datos.
 6. Por cada valor numérico, medicamento, dosis o conducta que escribiste → debe estar respaldado por algo del médico en la transcripción. Si NO lo está, BÓRRALA. (Excepción: si el médico dictó un examen y la transcripción está ruidosa pero claramente lo nombró, conserva el examen.)
 7. Si todo está bien → devuelve la nota.
