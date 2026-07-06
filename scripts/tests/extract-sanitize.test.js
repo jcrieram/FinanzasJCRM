@@ -12,7 +12,7 @@
 // (No usa framework de tests — un assert simple. Suficiente para tests
 // unitarios de una función determinística.)
 
-import { sanitizeNote, detectFormatTriggers } from '../../api/extract.js';
+import { sanitizeNote, detectFormatTriggers, formatExamList } from '../../api/extract.js';
 
 let pass = 0, fail = 0;
 function check(name, cond, detail = '') {
@@ -233,6 +233,35 @@ No refiere otros síntomas asociados ni cambios en su estado de salud general.`;
     check('"No refiere" se conserva completo (no se corta la oración)',
         out.includes('No refiere otros síntomas asociados ni cambios en su estado de salud general.'));
     check('No queda fragmento roto sin sujeto', !/^s[ií]ntomas asociados/im.test(out));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+console.log('\nGRUPO 7: modo exámenes — formatExamList');
+// ─────────────────────────────────────────────────────────────────────────────
+
+{
+    // El modelo a veces agrega guiones, numeración o viñetas pese al prompt.
+    // formatExamList debe dejarlas como líneas planas, una debajo de la otra.
+    const raw = `- Glicemia: 120 mg/dL
+1. Creatinina: 0.9 mg/dL
+• PSA total: 4.5 ng/mL
+2) Hemoglobina: 14 g/dL
+
+Uroflujometría: Qmax 15 mL/s`;
+    const out = formatExamList(raw);
+    const lines = out.split('\n');
+    check('Quita guion inicial', lines[0] === 'Glicemia: 120 mg/dL');
+    check('Quita numeración "1."', lines[1] === 'Creatinina: 0.9 mg/dL');
+    check('Quita viñeta "•"', lines[2] === 'PSA total: 4.5 ng/mL');
+    check('Quita numeración "2)"', lines[3] === 'Hemoglobina: 14 g/dL');
+    check('Colapsa líneas vacías', lines.length === 5);
+    check('Última línea sin cambios', lines[4] === 'Uroflujometría: Qmax 15 mL/s');
+}
+
+{
+    // Lista ya limpia → pasa intacta.
+    const raw = 'Glicemia: 120 mg/dL\nCreatinina: 0.9 mg/dL';
+    check('Lista limpia pasa intacta', formatExamList(raw) === raw);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -94,7 +94,9 @@ FORMATO A — Primera consulta. Estructura en este orden, con saltos de línea e
 "Se trata de paciente de [edad explícita] años, quien consulta por [motivo principal en términos técnicos]." Si la edad no fue dictada, OMITE el "[edad] años" o cambia a Formato B.
 
 2) ENFERMEDAD ACTUAL / INTERROGATORIO:
-Una o varias oraciones técnicas describiendo síntomas, tiempo de evolución, características, factores agravantes/atenuantes, síntomas asociados. Cuantifica todo. Ejemplo de estilo: "Refiere cuadro de [meses] de evolución caracterizado por nicturia 3 episodios, disuria intermitente y disminución del calibre miccional. Niega hematuria. Sin fiebre asociada."
+Varias oraciones técnicas describiendo síntomas, tiempo de evolución, características, factores agravantes/atenuantes, síntomas asociados. Cuantifica todo. Ejemplo de estilo: "Refiere cuadro de [meses] de evolución caracterizado por nicturia 3 episodios, disuria intermitente y disminución del calibre miccional. Niega hematuria. Sin fiebre asociada."
+
+REGLA DEL INTERROGATORIO COMPLETO (obligatoria en A y B): cada pregunta clínica que el médico hace y que el paciente responde genera UN hecho clínico que DEBE aparecer en la nota — tanto las respuestas POSITIVAS como las NEGATIVAS. Si el médico preguntó por hematuria y el paciente dijo que no → "Niega hematuria." Si preguntó por infecciones urinarias y dijo que no → "Niega infecciones urinarias previas." Si preguntó cómo es el chorro y el paciente lo describió → esa descripción completa va en la nota. Los negativos del interrogatorio dirigido SON datos clínicos valiosos (descartan diagnósticos) y NUNCA se omiten. Antes de cerrar la sección, repasa la transcripción pregunta por pregunta y verifica que cada respuesta del paciente esté reflejada.
 
 3) ANTECEDENTES (solo los que se mencionaron en la transcripción):
 - "Antecedentes médicos: [enfermedades crónicas listadas]" o "Antecedentes médicos: niega" si el paciente lo negó explícitamente. Si no se preguntó, OMITE la línea.
@@ -185,6 +187,8 @@ Tu sesgo por defecto es CONSERVAR información clínica, no eliminarla. La nota 
 Solo eliminas charla NO clínica (saludos, comentarios sobre el clima, familia, agradecimientos, despedidas, muletillas, ruido). TODO lo demás que aporte al caso se conserva, aunque parezca menor: una molestia ocasional, un síntoma que el paciente minimizó, una dosis previa, una marca de medicamento, una hora del día en que aparece el síntoma, una observación sobre el estilo de vida — todo va a la nota si tiene relación con el caso.
 
 NO resumas, NO condenses, NO simplifiques con sinónimos genéricos. Si el paciente dijo "me levanto 4 veces en la noche y dos de esas no logro llegar al baño", la nota dice eso, no "nicturia con incontinencia ocasional".
+
+PRUEBA DE PROPORCIONALIDAD (aplícala antes de entregar): una consulta de varios minutos con interrogatorio dirigido NUNCA produce una nota de 2-3 oraciones. Si tu nota quedó corta respecto a la cantidad de intercambios clínicos de la transcripción, es señal de que omitiste hechos — vuelve a leer la transcripción y agrega lo que falta. Cada síntoma con TODOS sus calificadores (cuándo, cuánto, cómo, desde cuándo, qué lo modifica), cada negativo del interrogatorio, cada dato de contexto clínico. Está PROHIBIDO fusionar varios síntomas distintos en un solo término genérico: "chorro intermitente, a veces corto y a veces largo, con sensación de vaciamiento incompleto" son DOS hallazgos (intermitencia del chorro + tenesmo vesical/vaciamiento incompleto) y ambos se escriben.
 ═══════════════════════════════════════════════════════════════
 
 - Las preguntas del médico son sólo guía para identificar qué dato extraer; NO las incluyas en la nota.
@@ -239,8 +243,10 @@ VERIFICACIÓN FINAL — Antes de devolver tu respuesta:
 1. ¿La primera línea es exactamente "### FORMATO: A" o "### FORMATO: B"? Si no, agrégala.
 2. Si es FORMATO A: ¿escribiste la edad del paciente en la apertura? Si el médico la dictó y no aparece, agrégala.
 3. ¿Contaste los exámenes dictados por el médico en la transcripción y los comparaste con el número de líneas de "Exámenes:"? Si faltan, agrégalos.
-4. Por cada valor numérico, medicamento, dosis o conducta que escribiste → debe estar respaldado por algo del médico en la transcripción. Si NO lo está, BÓRRALA. (Excepción: si el médico dictó un examen y la transcripción está ruidosa pero claramente lo nombró, conserva el examen.)
-5. Si todo está bien → devuelve la nota.
+4. REPASO DEL INTERROGATORIO: recorre la transcripción pregunta por pregunta. ¿Cada respuesta del paciente (positiva O negativa) tiene su hecho clínico en la nota? ¿Cada síntoma conserva todos sus calificadores (tiempo, frecuencia, características)? Si falta alguno, agrégalo.
+5. PROPORCIONALIDAD: ¿la longitud de la nota es coherente con la cantidad de contenido clínico de la transcripción? Una nota de 2-3 oraciones para una consulta con interrogatorio completo significa que omitiste datos.
+6. Por cada valor numérico, medicamento, dosis o conducta que escribiste → debe estar respaldado por algo del médico en la transcripción. Si NO lo está, BÓRRALA. (Excepción: si el médico dictó un examen y la transcripción está ruidosa pero claramente lo nombró, conserva el examen.)
+7. Si todo está bien → devuelve la nota.
 ═══════════════════════════════════════════════════════════════`;
 
 export default async function handler(req, res) {
@@ -262,6 +268,11 @@ export default async function handler(req, res) {
     const transcript = (body.transcript || '').trim();
     if (!transcript) return res.status(400).json({ error: 'Falta transcript' });
 
+    // Modo de operación: 'consulta' (nota clínica completa, default) o
+    // 'examenes' (dictado de resultados de laboratorio/imágenes → lista).
+    const mode = (body.mode || 'consulta').toLowerCase();
+    const isExamMode = mode === 'examenes';
+
     try {
         const upstream = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
@@ -273,8 +284,10 @@ export default async function handler(req, res) {
                 model: 'gpt-4o',
                 temperature: 0,
                 messages: [
-                    { role: 'system', content: SYSTEM_PROMPT },
-                    { role: 'user', content: `Transcripción de la entrevista:\n\n${transcript}` }
+                    { role: 'system', content: isExamMode ? EXAMS_SYSTEM_PROMPT : SYSTEM_PROMPT },
+                    { role: 'user', content: isExamMode
+                        ? `Dictado de exámenes:\n\n${transcript}`
+                        : `Transcripción de la entrevista:\n\n${transcript}` }
                 ]
             })
         });
@@ -283,11 +296,62 @@ export default async function handler(req, res) {
             return res.status(upstream.status).json({ error: data.error?.message || 'Error de OpenAI' });
         }
         const rawNote = data.choices?.[0]?.message?.content?.trim() || '';
-        const note = sanitizeNote(rawNote, transcript);
+        const note = isExamMode ? formatExamList(rawNote) : sanitizeNote(rawNote, transcript);
         return res.status(200).json({ note });
     } catch (e) {
         return res.status(500).json({ error: e.message });
     }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MODO EXÁMENES — dictado de laboratorios e imágenes → lista limpia
+// ═══════════════════════════════════════════════════════════════
+const EXAMS_SYSTEM_PROMPT = `Eres un asistente que estructura dictados de resultados de exámenes de laboratorio e imágenes de un médico urólogo (Dr. Juan Carlos Riera), en español.
+
+Recibes la transcripción cruda del dictado. El médico dice el nombre del examen y el valor, muchas veces SIN la unidad ("glicemia 120", "creatinina cero punto nueve", "PSA cuatro coma cinco").
+
+SALIDA: una línea por examen, en el MISMO ORDEN en que fueron dictados, con este formato exacto:
+Nombre del examen: valor unidad
+
+Ejemplo de estilo (NO copies estos valores — son solo formato):
+Glicemia: 120 mg/dL
+Creatinina: 0.9 mg/dL
+PSA total: 4.5 ng/mL
+
+REGLAS ESTRICTAS:
+1. SIN numeración, SIN guiones, SIN viñetas, SIN encabezados — solo una línea debajo de la otra.
+2. Nombre del examen capitalizado y en su forma médica estándar: "psa" → "PSA total" (o "PSA libre" si lo especificó), "glicemia"/"glucosa" → "Glicemia", "hb"/"hemoglobina" → "Hemoglobina".
+3. Cifras dictadas en palabras se escriben en números: "ciento veinte" → 120; "cero punto nueve" o "cero coma nueve" → 0.9; "cuatro coma cinco" → 4.5.
+4. Si el médico NO dictó la unidad, agrega la unidad estándar SOLO si es inequívoca para ese examen:
+   · Glicemia, creatinina, urea, BUN, ácido úrico, colesterol total, LDL, HDL, triglicéridos, calcio: mg/dL
+   · PSA total y PSA libre: ng/mL — Índice PSA libre/total: %
+   · Hemoglobina: g/dL — Hematocrito: % — HbA1c: %
+   · Testosterona total: ng/dL
+   · Sodio, potasio, cloro: mEq/L
+   · TSH: µUI/mL — T4 libre: ng/dL
+   · Leucocitos, plaquetas: /mm³ ("diez mil" → 10,000/mm³; "doscientos cincuenta mil" → 250,000/mm³)
+   · Volumen premiccional, postmiccional, miccional y residuo: mL — Qmax de uroflujometría: mL/s
+   · Volumen o peso prostático: gr (o cc si el médico dijo "cc" o "centímetros cúbicos")
+   Si el examen no está en esta lista o la unidad no es inequívoca, escribe el valor TAL CUAL fue dictado, sin inventar unidad.
+5. Si el médico dictó volumen premiccional Y postmiccional, agrega al final de la línea del postmiccional el porcentaje calculado: (postmiccional ÷ premiccional × 100), redondeado a un decimal, entre paréntesis: "(X.X% del premiccional)".
+6. Hallazgos de imagen van también uno por línea: "Ecografía renal: [hallazgo dictado]", "Uroflujometría: Qmax X mL/s", "RM de próstata: PI-RADS X", "Urocultivo: [resultado]", "Examen de orina: [hallazgos]".
+7. NUNCA inventes exámenes, valores ni unidades que no correspondan. Si un fragmento es ininteligible, omítelo. Si el nombre del examen se entiende pero la cifra es dudosa, escribe el fragmento textual dictado.
+8. Corrige deformaciones fonéticas obvias del reconocimiento de voz: "acetosterona" → Testosterona, "criatinina" → Creatinina, "euroflujometría" → Uroflujometría, "P S A" → PSA.
+9. Ignora muletillas, saludos y cualquier comentario que no sea un examen.
+10. Devuelve SOLO las líneas de exámenes. Sin texto extra antes ni después.`;
+
+// Limpieza determinística de la lista de exámenes: quita numeración,
+// guiones o viñetas que el modelo pueda haber agregado pese al prompt,
+// y colapsa líneas vacías. El formato final es una línea por examen.
+function formatExamList(note) {
+    if (!note) return note;
+    return note
+        .split('\n')
+        .map(line => line
+            .replace(/^\s*(?:[-–—•*]|\d+[.)]\s?)\s*/, '')
+            .trim())
+        .filter(line => line.length > 0)
+        .join('\n');
 }
 
 // Guardrail determinístico:
@@ -480,4 +544,4 @@ function hasSmokingMention(t) {
 }
 
 // Exportar funciones internas para tests.
-export { sanitizeNote, detectFormatTriggers };
+export { sanitizeNote, detectFormatTriggers, formatExamList };
