@@ -88,6 +88,7 @@ async function withAuthHeaders(extra = {}) {
 
 const primaryBtn = document.getElementById('primaryBtn');
 const finishBtn = document.getElementById('finishBtn');
+const examBtn = document.getElementById('examBtn');
 const timerEl = document.getElementById('timer');
 const statusEl = document.getElementById('status');
 const processingPanel = document.getElementById('processingPanel');
@@ -104,6 +105,9 @@ let mediaRecorder = null;
 let chunks = [];
 let stream = null;
 let state = 'idle';
+// 'consulta' = entrevista completa → nota clínica.
+// 'examenes' = dictado de laboratorios/imágenes → lista de resultados.
+let recordMode = 'consulta';
 let elapsedMs = 0;
 let segmentStart = 0;
 let timerInterval = null;
@@ -151,25 +155,31 @@ function pickMimeType() {
 function setUI(newState) {
     state = newState;
     primaryBtn.dataset.state = newState === 'processing' ? 'idle' : newState;
+    const isExam = recordMode === 'examenes';
     if (newState === 'idle') {
         primaryBtn.textContent = 'Grabar';
         primaryBtn.disabled = false;
         finishBtn.classList.add('hidden');
+        examBtn.classList.remove('hidden');
+        examBtn.disabled = false;
         setStatus('Listo para grabar');
     } else if (newState === 'recording') {
         primaryBtn.textContent = 'Pausar';
         primaryBtn.disabled = false;
         finishBtn.classList.remove('hidden');
-        setStatus('Grabando…');
+        examBtn.classList.add('hidden');
+        setStatus(isExam ? 'Dictando exámenes…' : 'Grabando…');
     } else if (newState === 'paused') {
         primaryBtn.textContent = 'Reanudar';
         primaryBtn.disabled = false;
         finishBtn.classList.remove('hidden');
+        examBtn.classList.add('hidden');
         setStatus('En pausa');
     } else if (newState === 'processing') {
         primaryBtn.textContent = 'Grabar';
         primaryBtn.disabled = true;
         finishBtn.classList.add('hidden');
+        examBtn.classList.add('hidden');
     }
 }
 
@@ -267,11 +277,13 @@ async function handleStop() {
             setUI('idle');
             return;
         }
-        processingText.textContent = 'Generando nota clínica…';
+        processingText.textContent = recordMode === 'examenes' ? 'Estructurando exámenes…' : 'Generando nota clínica…';
         const note = await extract(transcript);
         processingPanel.classList.add('hidden');
         rawTranscript.textContent = transcript;
         noteText.value = note;
+        const titleEl = resultPanel.querySelector('.result-title');
+        if (titleEl) titleEl.textContent = recordMode === 'examenes' ? 'Exámenes' : 'Nota clínica';
         resultPanel.classList.remove('hidden');
         setUI('idle');
     } catch (e) {
@@ -306,7 +318,7 @@ async function extract(transcript) {
     const res = await fetch('/api/extract', {
         method: 'POST',
         headers: await withAuthHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ transcript })
+        body: JSON.stringify({ transcript, mode: recordMode })
     });
     if (res.status === 401) { clearPin(); throw new Error('Sesión expirada. Vuelve a abrir la app.'); }
     if (!res.ok) {
@@ -318,9 +330,15 @@ async function extract(transcript) {
 }
 
 primaryBtn.addEventListener('click', () => {
-    if (state === 'idle') startRecording();
+    if (state === 'idle') { recordMode = 'consulta'; startRecording(); }
     else if (state === 'recording') pauseRecording();
     else if (state === 'paused') resumeRecording();
+});
+
+examBtn.addEventListener('click', () => {
+    if (state !== 'idle') return;
+    recordMode = 'examenes';
+    startRecording();
 });
 
 finishBtn.addEventListener('click', finishRecording);
