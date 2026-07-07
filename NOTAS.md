@@ -31,13 +31,22 @@ aquí, en CLAUDE.md o en git).
     (`gpt-4o-mini-search-preview`, cache CDN 1h).
 
 ### API serverless (`/api/*.js`)
-- `transcribe.js` — Whisper-style transcripción. PIN required.
-- `extract.js` — Prompt clínico robusto. Detecta primera consulta vs
-  control. Captura obligatoria de laboratorios e imágenes en sección
-  "Exámenes:" (uno por línea con guion). Calcula automáticamente el %
-  de residuo postmiccional cuando se dictan ambos volúmenes
-  (premiccional y postmiccional). Traduce lenguaje coloquial a términos
-  médicos (disuria, nicturia, etc.).
+- `transcribe.js` — Cascada de transcripción con timeout por intento
+  (jul 2026): 1) Gemini 2.5 Flash contextual (solo si `GEMINI_API_KEY`
+  está en Vercel — entiende que es consulta urológica al escuchar),
+  2) `gpt-4o-transcribe`, 3) `gpt-4o-mini-transcribe`, 4) `whisper-1`
+  (con prompt corto: solo usa ~224 tokens). Después una pasada de
+  corrección fonética con gpt-4o ("prórroga"→"próstata",
+  "contrato"→"control", etc.) para los modelos acústicos; Gemini la
+  salta porque ya corrige por contexto. PIN/JWT required.
+- `extract.js` — Dos modos: `mode: 'consulta'` (nota clínica con
+  marcador `### FORMATO: A|B`, sanitizer determinístico + señal
+  estructural de historia completa, captura obligatoria de los 4
+  antecedentes cuando se preguntan, regla del interrogatorio completo,
+  cálculo automático del % postmiccional) y `mode: 'examenes'` (dictado
+  de laboratorios → lista "Nombre: valor unidad", una por línea, sin
+  numeración, unidades estándar automáticas). Tests en
+  `scripts/tests/extract-sanitize.test.js` (58) — correr con `npm test`.
 - `send-email.js` — Resend. Destinatario en minúsculas (bug fix:
   Resend compara case-sensitive contra el correo verificado).
 - `verify-pin.js` — Valida PIN contra env `CONSULTA_PIN`.
@@ -45,12 +54,16 @@ aquí, en CLAUDE.md o en git).
 
 ### Configuración relevante
 - Rama de desarrollo: `claude/patient-interview-app-9xB9X`. Todos los
-  PRs (1–14+) ya mergeados a `main`.
-- Service worker `consulta/sw.js` en estrategia network-first para
-  evitar que cache viejo bloquee actualizaciones (cache `consulta-v5`).
+  PRs (1–19) ya mergeados a `main`. IMPORTANTE: Vercel despliega desde
+  `main` — un push a la rama de desarrollo NO llega a producción hasta
+  hacer PR + merge.
+- Service worker `consulta/sw.js` en estrategia network-first (cache
+  `consulta-v9`); bumpear la versión en cada cambio de frontend.
 - Vars de entorno en Vercel: `OPENAI_API_KEY`, `RESEND_API_KEY`,
-  `CONSULTA_PIN`.
-- `vercel.json` configura `maxDuration` por endpoint.
+  `CONSULTA_PIN`, `GEMINI_API_KEY` (agregada jul 2026 — activa la
+  transcripción contextual con Gemini).
+- `vercel.json` configura `maxDuration` por endpoint (transcribe 60s,
+  extract 45s).
 
 ---
 
