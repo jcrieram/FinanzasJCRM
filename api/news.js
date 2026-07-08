@@ -1,6 +1,14 @@
 // Devuelve un resumen de 2-3 líneas de una noticia urológica reciente,
 // usando el modelo de OpenAI con búsqueda web. Cacheado en CDN una hora
 // para evitar llamadas repetidas.
+//
+// Anti-abuso: la vista por defecto (sin ?force) se sirve cacheada en el
+// edge — a lo sumo 1 llamada real a OpenAI por hora en todo el CDN, sea
+// quien sea el visitante. El bypass de cache (?force, botón "Otra") es el
+// único camino que genera una llamada por request, así que EXIGE sesión de
+// Supabase: sin token válido no se puede forzar gasto.
+
+import { authenticate } from '../lib/auth.js';
 
 export const config = { maxDuration: 30 };
 
@@ -19,6 +27,11 @@ export default async function handler(req, res) {
         // Cache en el edge de Vercel: 1 hora fresco, 10 min stale-while-revalidate.
         res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=600');
     } else {
+        // El bypass de cache solo para usuarios autenticados (no PIN).
+        const auth = await authenticate(req);
+        if (!auth.ok) {
+            return res.status(auth.status).json({ error: 'Inicia sesión para ver más novedades' });
+        }
         res.setHeader('Cache-Control', 'no-store');
     }
 

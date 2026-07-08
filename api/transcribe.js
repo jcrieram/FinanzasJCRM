@@ -40,7 +40,7 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'OPENAI_API_KEY no configurada' });
     }
 
-    const auth = await authenticate(req);
+    const auth = await authenticate(req, { allowPin: true });
     if (!auth.ok) return res.status(auth.status).json({ error: auth.error });
 
     const contentType = req.headers['content-type'];

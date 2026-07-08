@@ -198,6 +198,18 @@
             errorMsg.classList.remove('show');
         }
 
+        // Solo acepta rutas internas absolutas ("/algo"). Rechaza URLs
+        // externas ("https://...", "//evil.com") y esquemas peligrosos
+        // ("javascript:") para evitar open redirect / XSS vía el parámetro next.
+        function safeNext() {
+            const raw = new URLSearchParams(location.search).get('next') || '/portal/';
+            // Debe empezar por una sola barra, no por "//" (protocol-relative)
+            // y no contener "\" (algunos navegadores lo normalizan a "/", lo
+            // que convertiría "/\evil.com" en "//evil.com").
+            if (/^\/(?!\/)/.test(raw) && !raw.includes('\\')) return raw;
+            return '/portal/';
+        }
+
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             clearError();
@@ -211,8 +223,7 @@
                 const { data, error } = await supabase.auth.signInWithPassword({ email, password });
                 if (error) throw error;
                 // Sesión guardada por Supabase JS en localStorage automáticamente.
-                const next = new URLSearchParams(location.search).get('next') || '/portal/';
-                location.href = next;
+                location.href = safeNext();
             } catch (e) {
                 showError(e.message || 'Credenciales inválidas');
                 submitBtn.disabled = false;
@@ -226,8 +237,7 @@
                 await initSupabase();
                 const { data } = await supabase.auth.getSession();
                 if (data?.session) {
-                    const next = new URLSearchParams(location.search).get('next') || '/portal/';
-                    location.href = next;
+                    location.href = safeNext();
                 }
             } catch {}
         })();

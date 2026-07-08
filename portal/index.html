@@ -887,7 +887,20 @@
             showLoading();
             try {
                 const url = '/api/news' + (force ? '?force=' + Date.now() : '');
-                const res = await fetch(url);
+                // "Otra" (force) requiere sesión: adjuntamos el token si existe.
+                const headers = {};
+                if (force) {
+                    try {
+                        const mod = await import('/lib/supabase-client.js');
+                        const token = await mod.getAccessToken();
+                        if (token) headers['Authorization'] = 'Bearer ' + token;
+                    } catch {}
+                }
+                const res = await fetch(url, { headers });
+                if (res.status === 401) {
+                    showError('Inicia sesión para ver más novedades.');
+                    return;
+                }
                 if (!res.ok) throw new Error('Servicio no disponible');
                 const data = await res.json();
                 showNews(data.news || 'Sin resultados.');

@@ -1,0 +1,14 @@
+# Archivos que NO deben publicarse en el deployment estático de Vercel.
+# El código de /api y /lib sí se despliega; esto excluye material interno
+# (esquema de BD, scripts de mantenimiento, documentación, tests) que antes
+# quedaba descargable públicamente desde el dominio.
+
+scripts/
+supabase/
+chrome-extension/
+NOTAS.md
+note.md
+README.md
+UROATLAS_DESIGN.md
+UROATLAS_SETUP.md
+.env.example
