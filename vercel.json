@@ -1,9 +1,29 @@
 {
+  "redirects": [
+    { "source": "/", "destination": "/portal/", "permanent": false }
+  ],
   "functions": {
     "api/transcribe.js": { "maxDuration": 60 },
     "api/extract.js": { "maxDuration": 45 },
     "api/send-email.js": { "maxDuration": 15 },
     "api/verify-pin.js": { "maxDuration": 5 },
-    "api/news.js": { "maxDuration": 30 }
-  }
+    "api/news.js": { "maxDuration": 30 },
+    "api/uroatlas/query.js": { "maxDuration": 60 },
+    "api/uroatlas/report.js": { "maxDuration": 60 },
+    "api/uroatlas/cases.js": { "maxDuration": 15 },
+    "api/informesuro/extract.js": { "maxDuration": 30 },
+    "api/informesuro/historial.js": { "maxDuration": 15 }
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" },
+        { "key": "Content-Security-Policy", "value": "frame-ancestors 'none'" }
+      ]
+    }
+  ]
 }

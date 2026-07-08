@@ -15,6 +15,6 @@
   "scripts": {
     "ingest:uroatlas": "node scripts/ingest-uroatlas.js",
     "supabase:health": "node scripts/supabase-health.js",
-    "test": "node scripts/tests/extract-sanitize.test.js"
+    "test": "node scripts/tests/extract-sanitize.test.js && node scripts/tests/auth-security.test.js"
   }
 }
