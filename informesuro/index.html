@@ -388,8 +388,10 @@
                             </div>
                         </div>
                         <div class="actions">
+                            <button class="btn" id="i-dictar" type="button">🎤 Dictar</button>
                             <button class="btn" id="i-clear">Limpiar</button>
                             <button class="btn btn-primary" id="i-generate">Generar informe</button>
+                            <div id="i-dictado-status" style="width:100%;font-size:12px;color:var(--muted,#667);margin-top:6px;"></div>
                         </div>
                     </section>
                 </div>
@@ -763,6 +765,7 @@
 
     <script type="module">
         import { requireAuth, getCurrentUser, signOut, apiFetch } from '/lib/supabase-client.js';
+        import { attachDictado } from '/lib/dictado-client.js';
         import {
             FONASA_CODES, findFonasa, isHolep, HOLEP_INSUMOS,
             CLINIC_LIST, AYUDANTES, MEDICATIONS, MEDICO,
@@ -982,6 +985,24 @@
             } catch (e) {
                 document.getElementById('previewDoc').innerHTML = `<div style="color:var(--danger)">Error: ${escapeHtml(e.message)}</div>`;
             } finally { setLoading(false); }
+        });
+
+        attachDictado({
+            button: document.getElementById('i-dictar'),
+            setStatus: (msg) => { document.getElementById('i-dictado-status').textContent = msg; },
+            onTranscript: async (text) => {
+                document.getElementById('i-text').value = text;
+                const res = await apiFetch('/api/parse-basics', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text })
+                });
+                if (!res.ok) return; // degradación elegante: el caso ya quedó en #i-text
+                const { data } = await res.json();
+                if (data.nombre) document.getElementById('i-nombre').value = data.nombre;
+                if (data.rut) document.getElementById('i-rut').value = data.rut;
+                if (data.edad) document.getElementById('i-edad').value = data.edad;
+            }
         });
 
         function renderInformePreview(paciente, clinica, data) {
