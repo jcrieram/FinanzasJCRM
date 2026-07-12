@@ -3,10 +3,30 @@
 // de la app Streamlit, pero con Claude.
 
 import { authenticate } from '../../lib/auth.js';
+import { formatRut } from '../../lib/rut.js';
 
 export const config = { maxDuration: 30 };
 
 const CLAUDE_MODEL = 'claude-sonnet-4-6';
+
+// Modo "basics": extrae solo datos básicos del paciente (nombre, RUT, edad)
+// para el dictado por voz de informesuro y uroatlas. Reconoce el RUT por su
+// formato numérico, no por la palabra hablada.
+const BASICS_SYSTEM_PROMPT = `Eres un asistente que extrae los datos básicos del paciente del texto libre que dicta un médico urólogo en Chile.
+
+Devuelve SOLO un JSON válido (sin markdown, sin comentarios, sin texto alrededor) con esta estructura exacta:
+
+{
+  "nombre": "string — nombre completo del paciente si se menciona; '' si no.",
+  "rut": "string — el número de identificación del paciente (RUT/cédula) tal como aparezca; '' si no se menciona.",
+  "edad": "string — edad en años como número (ej. '65'); '' si no se menciona."
+}
+
+REGLAS:
+1. Devuelve EXCLUSIVAMENTE el JSON, parseable directamente con JSON.parse().
+2. El RUT/cédula: reconócelo por su FORMATO (un número de 7 a 8 dígitos seguido de un dígito verificador que puede ser 0-9 o la letra K). El médico puede llamarlo "RUT", "run", "carnet", "cédula", "rol", "identificación", o incluso la transcripción puede escribir "Ruth" — todos significan lo mismo. Extrae el número aunque la palabra esté mal transcrita. Si no hay ningún número con forma de RUT, usa ''.
+3. NO inventes datos. Si algo no se menciona, usa ''.
+4. La edad es solo el número de años (sin la palabra "años").`;
 
 const SYSTEM_PROMPT = `Eres un asistente que extrae datos clínicos estructurados del texto libre que dicta el Dr. Juan Carlos Riera M. (urólogo) para generar un INFORME UROLÓGICO formal en formato chileno.
 
@@ -58,6 +78,13 @@ export default async function handler(req, res) {
     if (!text) return res.status(400).json({ error: 'Falta el texto clínico' });
     if (text.length > 8000) return res.status(400).json({ error: 'Texto demasiado largo (máx 8000 chars)' });
 
+    const isBasics = body.mode === 'basics';
+    const systemPrompt = isBasics ? BASICS_SYSTEM_PROMPT : SYSTEM_PROMPT;
+    const maxTokens = isBasics ? 500 : 2000;
+    const userContent = isBasics
+        ? `Texto dictado:\n\n${text}\n\nDevuelve solo el JSON.`
+        : `Texto clínico del médico:\n\n${text}\n\nDevuelve solo el JSON.`;
+
     try {
         const apiRes = await fetch('https://api.anthropic.com/v1/messages', {
             method: 'POST',
@@ -68,10 +95,10 @@ export default async function handler(req, res) {
             },
             body: JSON.stringify({
                 model: CLAUDE_MODEL,
-                max_tokens: 2000,
+                max_tokens: maxTokens,
                 temperature: 0,
-                system: SYSTEM_PROMPT,
-                messages: [{ role: 'user', content: `Texto clínico del médico:\n\n${text}\n\nDevuelve solo el JSON.` }]
+                system: systemPrompt,
+                messages: [{ role: 'user', content: userContent }]
             })
         });
         if (!apiRes.ok) {
@@ -85,7 +112,17 @@ export default async function handler(req, res) {
         let parsed;
         try { parsed = JSON.parse(raw); }
         catch (e) {
+            if (isBasics) return res.status(200).json({ data: { nombre: '', rut: '', edad: '' } });
             return res.status(500).json({ error: 'Claude devolvió JSON inválido', raw });
+        }
+        if (isBasics) {
+            return res.status(200).json({
+                data: {
+                    nombre: String(parsed.nombre || '').trim(),
+                    rut: formatRut(String(parsed.rut || '')),
+                    edad: String(parsed.edad || '').replace(/[^0-9]/g, '')
+                }
+            });
         }
         return res.status(200).json({ data: parsed });
     } catch (e) {

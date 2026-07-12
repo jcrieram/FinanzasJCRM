@@ -591,12 +591,13 @@
     <div id="toast" class="toast"></div>
     <div class="app">
         <header class="header">
-            <div class="header-brand">
+            <a href="/portal/" class="header-brand" title="Volver al portal" style="text-decoration:none;color:inherit;cursor:pointer;">
                 <div class="header-brand-mark">U</div>
                 UroAtlas
-            </div>
+            </a>
             <div class="header-meta">
                 <span class="header-user" id="userEmail"></span>
+                <a href="/portal/" class="header-btn">Portal</a>
                 <button class="header-btn" id="signOutBtn">Salir</button>
             </div>
         </header>
@@ -623,6 +624,8 @@
                             id="caseInput"
                             maxlength="5000"
                             placeholder="Describe el caso: edad, motivo, antecedentes relevantes, hallazgos, exámenes, dudas específicas. Cuanto más detalle, mejor opinión. También puedes consultar solo con una imagen."></textarea>
+                        <button class="btn" id="ua-dictar" type="button" style="margin-top:8px;">🎤 Dictar</button>
+                        <div id="ua-dictado-status" style="font-size:12px;color:var(--muted,#667);margin-top:6px;"></div>
                         <div class="counter case-counter" id="caseCounter">0 / 5000</div>
                     </div>
                 </section>
@@ -734,6 +737,7 @@
 
     <script type="module">
         import { requireAuth, getCurrentUser, signOut, apiFetch } from '/lib/supabase-client.js';
+        import { attachDictado } from '/lib/dictado-client.js';
 
         // 1. Verificar sesión.
         const session = await requireAuth();
@@ -743,6 +747,25 @@
         document.getElementById('userEmail').textContent = user?.email || '';
 
         document.getElementById('signOutBtn').addEventListener('click', () => signOut());
+
+        // Dictado por voz: graba, transcribe y autocompleta datos del paciente.
+        attachDictado({
+            button: document.getElementById('ua-dictar'),
+            setStatus: (msg) => { document.getElementById('ua-dictado-status').textContent = msg; },
+            onTranscript: async (text) => {
+                document.getElementById('caseInput').value = text;
+                const res = await apiFetch('/api/informesuro/extract', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text, mode: 'basics' })
+                });
+                if (!res.ok) return;
+                const { data } = await res.json();
+                if (data.nombre) document.getElementById('pNombre').value = data.nombre;
+                if (data.rut) document.getElementById('pRut').value = data.rut;
+                if (data.edad) document.getElementById('pEdad').value = data.edad;
+            }
+        });
 
         // 2. UI de imágenes.
         const drop = document.getElementById('imageDrop');

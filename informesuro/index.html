@@ -332,6 +332,13 @@
 
         @media (max-width: 768px) {
             .app { grid-template-columns: 1fr; grid-template-areas: "header" "sidebar" "main"; }
+            /* En celular el email + botones empujaban "Portal"/"Salir" fuera de
+               la pantalla. Ocultamos el email y compactamos; además el logo de
+               arriba-izquierda siempre lleva al portal (salida garantizada). */
+            .header { padding: 0 12px; }
+            .header-meta { gap: 8px; }
+            .header-meta #userEmail { display: none; }
+            .header-meta .header-btn { padding: 6px 10px; font-size: 12px; }
             .sidebar {
                 grid-area: sidebar;
                 border-right: none;
@@ -382,10 +389,10 @@
 <body>
     <div class="app">
         <header class="header">
-            <div class="header-brand">
+            <a href="/portal/" class="header-brand" title="Volver al portal" style="text-decoration:none;color:inherit;cursor:pointer;">
                 <div class="header-brand-mark">I</div>
                 InformesUro
-            </div>
+            </a>
             <div class="header-meta">
                 <span id="userEmail" style="opacity:0.8;"></span>
                 <button class="header-btn" id="newPatientBtn" title="Borra todos los datos del paciente en todas las pestañas">🔄 Nuevo paciente</button>
@@ -437,8 +444,10 @@
                             </div>
                         </div>
                         <div class="actions">
+                            <button class="btn" id="i-dictar" type="button">🎤 Dictar</button>
                             <button class="btn" id="i-clear">Limpiar</button>
                             <button class="btn btn-primary" id="i-generate">Generar informe</button>
+                            <div id="i-dictado-status" style="width:100%;font-size:12px;color:var(--muted,#667);margin-top:6px;"></div>
                         </div>
                     </section>
                 </div>
@@ -806,6 +815,7 @@
 
     <script type="module">
         import { requireAuth, getCurrentUser, signOut, apiFetch } from '/lib/supabase-client.js';
+        import { attachDictado } from '/lib/dictado-client.js';
         import {
             FONASA_CODES, findFonasa, isHolep, HOLEP_INSUMOS,
             CLINIC_LIST, CLINIC_LOGOS, AYUDANTES, MEDICATIONS, MEDICO,
@@ -817,6 +827,25 @@
         const user = await getCurrentUser();
         document.getElementById('userEmail').textContent = user?.email || '';
         document.getElementById('signOutBtn').addEventListener('click', () => signOut());
+
+        // ─── Dictado por voz: graba, transcribe y autocompleta paciente ─────
+        attachDictado({
+            button: document.getElementById('i-dictar'),
+            setStatus: (msg) => { document.getElementById('i-dictado-status').textContent = msg; },
+            onTranscript: async (text) => {
+                document.getElementById('i-text').value = text;
+                const res = await apiFetch('/api/informesuro/extract', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text, mode: 'basics' })
+                });
+                if (!res.ok) return; // degradación elegante: el caso ya quedó en #i-text
+                const { data } = await res.json();
+                if (data.nombre) document.getElementById('i-nombre').value = data.nombre;
+                if (data.rut) document.getElementById('i-rut').value = data.rut;
+                if (data.edad) document.getElementById('i-edad').value = data.edad;
+            }
+        });
 
         // ─── Nuevo paciente: limpia todas las pestañas ──────────────────
         document.getElementById('newPatientBtn').addEventListener('click', () => {
