@@ -64,7 +64,9 @@ export default async function handler(req, res) {
             return res.status(apiRes.status).json({ error: `Claude error ${apiRes.status}: ${err}` });
         }
         const payload = await apiRes.json();
-        const raw = payload.content?.[0]?.text || '{}';
+        let raw = payload.content?.[0]?.text || '{}';
+        // Igual que extract.js: quita fences markdown antes de parsear.
+        raw = raw.trim().replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/```$/, '').trim();
         let data;
         try { data = JSON.parse(raw); }
         catch { return res.status(200).json({ data: { nombre: '', rut: '', edad: '' } }); }
