@@ -546,6 +546,8 @@
                             class="case-input"
                             id="caseInput"
                             placeholder="Describe el caso: edad, motivo, antecedentes relevantes, hallazgos, exámenes, dudas específicas. Cuanto más detalle, mejor opinión. También puedes consultar solo con una imagen."></textarea>
+                        <button class="btn" id="ua-dictar" type="button" style="margin-top:8px;">🎤 Dictar</button>
+                        <div id="ua-dictado-status" style="font-size:12px;color:var(--muted,#667);margin-top:6px;"></div>
                     </div>
                 </section>
 
@@ -653,6 +655,7 @@
 
     <script type="module">
         import { requireAuth, getCurrentUser, signOut, apiFetch } from '/lib/supabase-client.js';
+        import { attachDictado } from '/lib/dictado-client.js';
 
         // 1. Verificar sesión.
         const session = await requireAuth();
@@ -1054,6 +1057,24 @@
             document.getElementById('fbCommentBox').style.display = 'none';
             document.getElementById('fbThanks').textContent = '✓ Corrección guardada. UroAtlas la usará en casos similares futuros.';
             document.getElementById('fbThanks').style.display = 'block';
+        });
+
+        attachDictado({
+            button: document.getElementById('ua-dictar'),
+            setStatus: (msg) => { document.getElementById('ua-dictado-status').textContent = msg; },
+            onTranscript: async (text) => {
+                document.getElementById('caseInput').value = text;
+                const res = await apiFetch('/api/parse-basics', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text })
+                });
+                if (!res.ok) return;
+                const { data } = await res.json();
+                if (data.nombre) document.getElementById('pNombre').value = data.nombre;
+                if (data.rut) document.getElementById('pRut').value = data.rut;
+                if (data.edad) document.getElementById('pEdad').value = data.edad;
+            }
         });
     </script>
 </body>
