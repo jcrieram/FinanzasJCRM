@@ -343,26 +343,29 @@
                 grid-area: sidebar;
                 border-right: none;
                 border-bottom: 1px solid var(--border);
+                /* Pestañas en varias filas (chips): todas visibles a la vez, sin
+                   necesidad de deslizar de lado (el scroll horizontal táctil no
+                   es confiable en el celular). */
                 display: flex;
-                overflow-x: auto;
-                overflow-y: hidden;
-                white-space: nowrap;
-                padding: 4px 8px;
+                flex-wrap: wrap;
+                gap: 6px;
+                overflow: visible;
+                padding: 8px;
                 position: sticky; top: 0; z-index: 50;
-                -webkit-overflow-scrolling: touch;
             }
             .sidebar-section { display: none; }
             .nav-item {
                 flex: 0 0 auto;
-                padding: 10px 14px;
-                border-left: none;
-                border-bottom: 3px solid transparent;
+                padding: 8px 12px;
+                border: 1px solid var(--border);
+                border-left: 1px solid var(--border);
+                border-radius: 8px;
                 font-size: 12px;
             }
             .nav-item.active {
                 background: rgba(31, 78, 121, 0.07);
-                border-left-color: transparent;
-                border-bottom-color: var(--primary);
+                border-color: var(--primary);
+                font-weight: 600;
             }
             .header-brand { font-size: 14px; }
             .header-btn { padding: 6px 8px; font-size: 11px; }
