@@ -9,6 +9,20 @@ export const config = { maxDuration: 30 };
 
 const CLAUDE_MODEL = 'claude-sonnet-4-6';
 
+// Extrae un RUT chileno directamente del texto transcrito, de forma
+// determinista (no depende de que la IA lo separe). Un RUT tiene formato
+// fijo: cuerpo de dígitos (con o sin puntos) + guion + dígito verificador
+// (0-9 o K). Más fiable que el LLM para este dato puntual.
+function extractRutFromText(text) {
+    const re = /(\d[\d.\s]{5,11}\d)\s*-\s*([\dkK])/gi;
+    let m;
+    while ((m = re.exec(String(text || ''))) !== null) {
+        const candidate = formatRut(m[1] + m[2]);
+        if (candidate) return candidate;
+    }
+    return '';
+}
+
 // Modo "basics": extrae solo datos básicos del paciente (nombre, RUT, edad)
 // para el dictado por voz de informesuro y uroatlas. Reconoce el RUT por su
 // formato numérico, no por la palabra hablada.
@@ -119,7 +133,9 @@ export default async function handler(req, res) {
             return res.status(200).json({
                 data: {
                     nombre: String(parsed.nombre || '').trim(),
-                    rut: formatRut(String(parsed.rut || '')),
+                    // El RUT por regla determinista sobre el texto (más fiable); si
+                    // no aparece con formato claro, se usa lo que devolvió la IA.
+                    rut: extractRutFromText(text) || formatRut(String(parsed.rut || '')),
                     edad: String(parsed.edad || '').replace(/[^0-9]/g, '')
                 }
             });
