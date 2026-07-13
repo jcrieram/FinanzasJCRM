@@ -351,8 +351,9 @@ REGLAS ESTRICTAS:
    Si el examen no está en esta lista o la unidad no es inequívoca, escribe el valor TAL CUAL fue dictado, sin inventar unidad.
 5. Si el médico dictó volumen premiccional Y postmiccional, agrega al final de la línea del postmiccional el porcentaje calculado: (postmiccional ÷ premiccional × 100), redondeado a un decimal, entre paréntesis: "(X.X% del premiccional)".
 6. Hallazgos de imagen van también uno por línea: "Ecografía renal: [hallazgo dictado]", "Uroflujometría: Qmax X mL/s", "RM de próstata: PI-RADS X", "Urocultivo: [resultado]", "Examen de orina: [hallazgos]".
+6.bis. Qmax (flujo máximo urinario) — CAPTURA OBLIGATORIA: si el médico dicta "Qmax" (o cualquier variante fonética) seguido de un número, aunque NO diga la palabra "uroflujometría", SIEMPRE inclúyelo en su propia línea como "Uroflujometría: Qmax <valor> mL/s". Es un examen que el médico dicta con frecuencia; NUNCA lo omitas ni lo fusiones con otra línea.
 7. NUNCA inventes exámenes, valores ni unidades que no correspondan. Si un fragmento es ininteligible, omítelo. Si el nombre del examen se entiende pero la cifra es dudosa, escribe el fragmento textual dictado.
-8. Corrige deformaciones fonéticas obvias del reconocimiento de voz: "acetosterona" → Testosterona, "criatinina" → Creatinina, "euroflujometría" → Uroflujometría, "P S A" → PSA.
+8. Corrige deformaciones fonéticas obvias del reconocimiento de voz: "acetosterona" → Testosterona, "criatinina" → Creatinina, "euroflujometría" → Uroflujometría, "P S A" → PSA. Para "Qmax" (se pronuncia "cu-max"): reconoce y corrige "cumax", "cu max", "ku max", "q max", "qué máx", "qué máximo", "q máximo", "flujo máximo", "cumáx" → Qmax.
 9. Ignora muletillas, saludos y cualquier comentario que no sea un examen.
 10. Devuelve SOLO las líneas de exámenes. Sin texto extra antes ni después.`;
 
