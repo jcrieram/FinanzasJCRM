@@ -4,6 +4,9 @@ import { authenticate } from '../lib/auth.js';
 
 export const config = { maxDuration: 30 };
 
+// Mismo modelo que InformesUro (ya configurado y funcionando con ANTHROPIC_API_KEY).
+const CLAUDE_MODEL = 'claude-sonnet-4-6';
+
 const SYSTEM_PROMPT = `Eres asistente clínico. Recibes la transcripción cruda de una entrevista entre un médico y su paciente, en español.
 
 ═══════════════════════════════════════════════════════════════
@@ -264,9 +267,9 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
-    const apiKey = process.env.OPENAI_API_KEY;
+    const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
-        return res.status(500).json({ error: 'OPENAI_API_KEY no configurada' });
+        return res.status(500).json({ error: 'ANTHROPIC_API_KEY no configurada' });
     }
 
     const auth = await authenticate(req, { allowPin: true });
@@ -285,17 +288,19 @@ export default async function handler(req, res) {
     const isExamMode = mode === 'examenes';
 
     try {
-        const upstream = await fetch('https://api.openai.com/v1/chat/completions', {
+        const upstream = await fetch('https://api.anthropic.com/v1/messages', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'application/json'
+                'x-api-key': apiKey,
+                'anthropic-version': '2023-06-01',
+                'content-type': 'application/json'
             },
             body: JSON.stringify({
-                model: 'gpt-4o',
+                model: CLAUDE_MODEL,
+                max_tokens: 4096,
                 temperature: 0,
+                system: isExamMode ? EXAMS_SYSTEM_PROMPT : SYSTEM_PROMPT,
                 messages: [
-                    { role: 'system', content: isExamMode ? EXAMS_SYSTEM_PROMPT : SYSTEM_PROMPT },
                     { role: 'user', content: isExamMode
                         ? `Dictado de exámenes:\n\n${transcript}`
                         : `Transcripción de la entrevista:\n\n${transcript}` }
@@ -304,9 +309,9 @@ export default async function handler(req, res) {
         });
         const data = await upstream.json();
         if (!upstream.ok) {
-            return res.status(upstream.status).json({ error: data.error?.message || 'Error de OpenAI' });
+            return res.status(upstream.status).json({ error: data.error?.message || 'Error de Claude' });
         }
-        const rawNote = data.choices?.[0]?.message?.content?.trim() || '';
+        const rawNote = (data.content?.[0]?.text || '').trim();
         const note = isExamMode ? formatExamList(rawNote) : sanitizeNote(rawNote, transcript);
         return res.status(200).json({ note });
     } catch (e) {
