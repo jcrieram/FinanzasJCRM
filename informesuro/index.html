@@ -441,13 +441,17 @@
                                 <div class="form-row"><label>Edad</label><input id="i-edad" type="text"></div>
                                 <div class="form-row"><label>Clínica</label><select id="i-clinica" data-clinica></select></div>
                             </div>
+                            <div style="margin-top:12px;">
+                                <button class="btn" id="i-dictar-datos" type="button">🎤 Dictar datos del paciente</button>
+                                <div id="i-datos-status" style="font-size:12px;color:var(--muted,#667);margin-top:6px;"></div>
+                            </div>
                             <div class="form-row" style="margin-top:18px;">
                                 <label>Caso clínico (texto libre)</label>
                                 <textarea id="i-text" placeholder="Dicta el caso completo: motivo, antecedentes, síntomas con tiempo de evolución, hallazgos al examen físico si los hay, exámenes con valores, diagnósticos y conducta propuesta. Cuanto más detalle, mejor el informe."></textarea>
                             </div>
                         </div>
                         <div class="actions">
-                            <button class="btn" id="i-dictar" type="button">🎤 Dictar</button>
+                            <button class="btn" id="i-dictar" type="button">🎤 Dictar caso</button>
                             <button class="btn" id="i-clear">Limpiar</button>
                             <button class="btn btn-primary" id="i-generate">Generar informe</button>
                             <div id="i-dictado-status" style="width:100%;font-size:12px;color:var(--muted,#667);margin-top:6px;"></div>
@@ -473,6 +477,10 @@
                                 <div class="form-row"><label>Clínica destino (donde se operará)</label><select id="c-clinica-destino" data-clinica></select></div>
                                 <div class="form-row"><label>Previsión</label><select id="c-prevision"></select></div>
                                 <div class="form-row"><label>Teléfono</label><input id="c-telefono" type="text"></div>
+                            </div>
+                            <div style="margin-top:12px;">
+                                <button class="btn" id="c-dictar-datos" type="button">🎤 Dictar datos del paciente</button>
+                                <div id="c-datos-status" style="font-size:12px;color:var(--muted,#667);margin-top:6px;"></div>
                             </div>
 
                             <div id="c-coord" class="coord-info" style="display:none;"></div>
@@ -523,6 +531,10 @@
                                 <div class="form-row"><label>Edad</label><input id="r-edad" type="text"></div>
                                 <div class="form-row"><label>Clínica</label><select id="r-clinica" data-clinica></select></div>
                             </div>
+                            <div style="margin-top:12px;">
+                                <button class="btn" id="r-dictar-datos" type="button">🎤 Dictar datos del paciente</button>
+                                <div id="r-datos-status" style="font-size:12px;color:var(--muted,#667);margin-top:6px;"></div>
+                            </div>
                             <div class="form-row" style="margin-top:14px;">
                                 <label>Diagnóstico (opcional)</label>
                                 <input id="r-diagnostico" type="text" placeholder="Ej. Hiperplasia prostática benigna">
@@ -562,6 +574,10 @@
                                 <div class="form-row"><label>RUT</label><input id="e-rut" type="text"></div>
                                 <div class="form-row"><label>Edad</label><input id="e-edad" type="text"></div>
                                 <div class="form-row"><label>Clínica</label><select id="e-clinica" data-clinica></select></div>
+                            </div>
+                            <div style="margin-top:12px;">
+                                <button class="btn" id="e-dictar-datos" type="button">🎤 Dictar datos del paciente</button>
+                                <div id="e-datos-status" style="font-size:12px;color:var(--muted,#667);margin-top:6px;"></div>
                             </div>
 
                             <h4 style="margin-top:18px;font-size:13px;color:var(--primary);">Paquetes preconfigurados</h4>
@@ -608,6 +624,10 @@
                                 <div class="form-row"><label>Edad</label><input id="s-edad" type="text"></div>
                                 <div class="form-row"><label>Clínica</label><select id="s-clinica" data-clinica></select></div>
                             </div>
+                            <div style="margin-top:12px;">
+                                <button class="btn" id="s-dictar-datos" type="button">🎤 Dictar datos del paciente</button>
+                                <div id="s-datos-status" style="font-size:12px;color:var(--muted,#667);margin-top:6px;"></div>
+                            </div>
 
                             <div class="form-row" style="margin-top:14px;">
                                 <label>Tipo de estudio</label>
@@ -645,6 +665,10 @@
                                 <div class="form-row"><label>Edad</label><input id="a-edad" type="text"></div>
                                 <div class="form-row"><label>Clínica</label><select id="a-clinica" data-clinica></select></div>
                                 <div class="form-row"><label>Fecha de cirugía</label><input id="a-fecha" type="date"></div>
+                            </div>
+                            <div style="margin-top:12px;">
+                                <button class="btn" id="a-dictar-datos" type="button">🎤 Dictar datos del paciente</button>
+                                <div id="a-datos-status" style="font-size:12px;color:var(--muted,#667);margin-top:6px;"></div>
                             </div>
 
                             <h4 style="margin-top:18px;font-size:13px;color:var(--primary);">Diagnóstico y procedimiento</h4>
@@ -706,6 +730,10 @@
                                 <div class="form-row"><label>Edad</label><input id="pq-edad" type="text"></div>
                                 <div class="form-row"><label>Clínica</label><select id="pq-clinica" data-clinica></select></div>
                             </div>
+                            <div style="margin-top:12px;">
+                                <button class="btn" id="pq-dictar-datos" type="button">🎤 Dictar datos del paciente</button>
+                                <div id="pq-datos-status" style="font-size:12px;color:var(--muted,#667);margin-top:6px;"></div>
+                            </div>
                             <div id="pq-esp-row" class="form-row" style="margin-top:12px;">
                                 <label>Fecha de la vasectomía</label>
                                 <input id="pq-fecha-cirugia" type="date">
@@ -733,6 +761,10 @@
                                 <div class="form-row"><label>Nombre del paciente</label><input id="ph-nombre" type="text"></div>
                                 <div class="form-row"><label>RUT</label><input id="ph-rut" type="text"></div>
                                 <div class="form-row"><label>Clínica</label><select id="ph-clinica" data-clinica></select></div>
+                            </div>
+                            <div style="margin-top:12px;">
+                                <button class="btn" id="ph-dictar-datos" type="button">🎤 Dictar datos del paciente</button>
+                                <div id="ph-datos-status" style="font-size:12px;color:var(--muted,#667);margin-top:6px;"></div>
                             </div>
                         </div>
                         <div class="actions">
@@ -831,23 +863,42 @@
         document.getElementById('userEmail').textContent = user?.email || '';
         document.getElementById('signOutBtn').addEventListener('click', () => signOut());
 
-        // ─── Dictado por voz: graba, transcribe y autocompleta paciente ─────
+        // ─── Dictado del CASO clínico (solo pestaña Informe): llena el cuadro grande ─
         attachDictado({
             button: document.getElementById('i-dictar'),
             setStatus: (msg) => { document.getElementById('i-dictado-status').textContent = msg; },
             onTranscript: async (text) => {
                 document.getElementById('i-text').value = text;
-                const res = await apiFetch('/api/informesuro/extract', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text, mode: 'basics' })
-                });
-                if (!res.ok) return; // degradación elegante: el caso ya quedó en #i-text
-                const { data } = await res.json();
-                if (data.nombre) document.getElementById('i-nombre').value = data.nombre;
-                if (data.rut) document.getElementById('i-rut').value = data.rut;
-                if (data.edad) document.getElementById('i-edad').value = data.edad;
             }
+        });
+
+        // ─── Dictado de DATOS del paciente: llena Nombre/RUT/Edad en TODAS las
+        //     pestañas a la vez (es el mismo paciente en todos los documentos). ─
+        const PATIENT_PREFIXES = ['i', 'c', 'r', 'e', 's', 'a', 'pq', 'ph'];
+        function fillAllPatientData(data) {
+            for (const p of PATIENT_PREFIXES) {
+                if (data.nombre) { const el = document.getElementById(`${p}-nombre`); if (el) el.value = data.nombre; }
+                if (data.rut)    { const el = document.getElementById(`${p}-rut`);    if (el) el.value = data.rut; }
+                if (data.edad)   { const el = document.getElementById(`${p}-edad`);   if (el) el.value = data.edad; }
+            }
+        }
+        PATIENT_PREFIXES.forEach(p => {
+            const btn = document.getElementById(`${p}-dictar-datos`);
+            if (!btn) return;
+            attachDictado({
+                button: btn,
+                setStatus: (msg) => { const s = document.getElementById(`${p}-datos-status`); if (s) s.textContent = msg; },
+                onTranscript: async (text) => {
+                    const res = await apiFetch('/api/informesuro/extract', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ text, mode: 'basics' })
+                    });
+                    if (!res.ok) return;
+                    const { data } = await res.json();
+                    fillAllPatientData(data);
+                }
+            });
         });
 
         // ─── Nuevo paciente: limpia todas las pestañas ──────────────────
