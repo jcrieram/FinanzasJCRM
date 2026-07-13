@@ -866,6 +866,7 @@
         // ─── Dictado del CASO clínico (solo pestaña Informe): llena el cuadro grande ─
         attachDictado({
             button: document.getElementById('i-dictar'),
+            labelIdle: '🎤 Dictar caso',
             setStatus: (msg) => { document.getElementById('i-dictado-status').textContent = msg; },
             onTranscript: async (text) => {
                 document.getElementById('i-text').value = text;
@@ -887,6 +888,7 @@
             if (!btn) return;
             attachDictado({
                 button: btn,
+                labelIdle: '🎤 Dictar datos',
                 setStatus: (msg) => { const s = document.getElementById(`${p}-datos-status`); if (s) s.textContent = msg; },
                 onTranscript: async (text) => {
                     const res = await apiFetch('/api/informesuro/extract', {
