@@ -62,16 +62,16 @@ async function verifyPin(pin) {
 
 // Si el usuario está logueado en Supabase, mandamos el JWT.
 // Si no, caemos al PIN legacy (mientras dure la migración).
-let _supaToken = null;
+// NO cacheamos el token: getAccessToken() ya lo refresca solo vía getSession(),
+// y cachearlo provocaba 401 al expirar la sesión a mitad de jornada (y con ello
+// la pérdida del audio recién grabado). El import dinámico sí lo cachea el navegador.
 async function getSupabaseToken() {
-    if (_supaToken !== null) return _supaToken;
     try {
         const mod = await import('/lib/supabase-client.js');
-        _supaToken = await mod.getAccessToken();
+        return await mod.getAccessToken();
     } catch {
-        _supaToken = '';
+        return '';
     }
-    return _supaToken;
 }
 
 function withPinHeaders(extra = {}) {
@@ -100,11 +100,13 @@ const copyBtn = document.getElementById('copyBtn');
 const emailBtn = document.getElementById('emailBtn');
 const newBtn = document.getElementById('newBtn');
 const errorPanel = document.getElementById('errorPanel');
+const retryBtn = document.getElementById('retryBtn');
 
 let mediaRecorder = null;
 let chunks = [];
 let stream = null;
 let state = 'idle';
+let starting = false; // guard de reentrada para evitar doble-toque en Grabar
 // 'consulta' = entrevista completa → nota clínica.
 // 'examenes' = dictado de laboratorios/imágenes → lista de resultados.
 let recordMode = 'consulta';
@@ -113,6 +115,66 @@ let segmentStart = 0;
 let timerInterval = null;
 let wakeLock = null;
 let pickedMime = '';
+// Última grabación pendiente de procesar { blob, mime, mode }. Se conserva
+// hasta que la transcripción+extracción tengan éxito, para poder reintentar
+// sin regrabar si falla la red/servidor.
+let pendingAudio = null;
+
+// Límite de duración: a 48 kbps, 4 MB ≈ 11,6 min. Cortamos antes con margen
+// para no superar el tope de plataforma (4 MB) y no perder la grabación.
+const HARD_LIMIT_MS = 10 * 60 * 1000;   // auto-finaliza a los 10 min (~3,6 MB)
+const WARN_LIMIT_MS = 8.5 * 60 * 1000;  // avisa a los 8,5 min
+
+// ── Persistencia del audio en IndexedDB (sobrevive a recargas/cierres) ──
+const AUDIO_DB = 'consultavoz-audio';
+const AUDIO_STORE = 'pending';
+const AUDIO_KEY = 'last';
+
+function idbOpen() {
+    return new Promise((resolve, reject) => {
+        const req = indexedDB.open(AUDIO_DB, 1);
+        req.onupgradeneeded = () => req.result.createObjectStore(AUDIO_STORE);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+    });
+}
+async function idbSaveAudio(blob, mime, mode) {
+    try {
+        const db = await idbOpen();
+        await new Promise((res, rej) => {
+            const tx = db.transaction(AUDIO_STORE, 'readwrite');
+            tx.objectStore(AUDIO_STORE).put({ blob, mime, mode, ts: Date.now() }, AUDIO_KEY);
+            tx.oncomplete = res; tx.onerror = () => rej(tx.error);
+        });
+        db.close();
+    } catch (e) { /* best-effort: si IDB falla, seguimos con la copia en memoria */ }
+}
+async function idbLoadAudio() {
+    try {
+        const db = await idbOpen();
+        const val = await new Promise((res, rej) => {
+            const tx = db.transaction(AUDIO_STORE, 'readonly');
+            const r = tx.objectStore(AUDIO_STORE).get(AUDIO_KEY);
+            r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+        });
+        db.close();
+        return val || null;
+    } catch (e) { return null; }
+}
+async function idbClearAudio() {
+    try {
+        const db = await idbOpen();
+        await new Promise((res, rej) => {
+            const tx = db.transaction(AUDIO_STORE, 'readwrite');
+            tx.objectStore(AUDIO_STORE).delete(AUDIO_KEY);
+            tx.oncomplete = res; tx.onerror = () => rej(tx.error);
+        });
+        db.close();
+    } catch (e) {}
+}
+
+function showRetry() { retryBtn.classList.remove('hidden'); }
+function hideRetry() { retryBtn.classList.add('hidden'); }
 
 function showError(msg) {
     errorPanel.textContent = msg;
@@ -129,7 +191,22 @@ function fmtTime(ms) {
 function currentMs() {
     return state === 'recording' ? elapsedMs + (Date.now() - segmentStart) : elapsedMs;
 }
-function refreshTimer() { timerEl.textContent = fmtTime(currentMs()); }
+function refreshTimer() {
+    timerEl.textContent = fmtTime(currentMs());
+    checkLimit();
+}
+
+// Corta la grabación antes de superar el tope de 4 MB (que descartaría el audio).
+function checkLimit() {
+    if (state !== 'recording') return;
+    const ms = currentMs();
+    if (ms >= HARD_LIMIT_MS) {
+        setStatus('Límite de duración alcanzado — finalizando…');
+        finishRecording();
+    } else if (ms >= WARN_LIMIT_MS) {
+        setStatus('⚠️ Cerca del límite (~10 min). Conviene finalizar pronto.');
+    }
+}
 
 async function requestWakeLock() {
     try {
@@ -184,7 +261,14 @@ function setUI(newState) {
 }
 
 async function startRecording() {
+    // Guard de reentrada: evita que un doble-toque cree dos grabadoras y
+    // fugue un stream de micrófono.
+    if (state !== 'idle' || starting) return;
+    starting = true;
     hideError();
+    hideRetry();
+    primaryBtn.disabled = true;
+    examBtn.disabled = true;
     try {
         stream = await navigator.mediaDevices.getUserMedia({
             audio: {
@@ -196,7 +280,20 @@ async function startRecording() {
         });
     } catch (e) {
         showError('No se pudo acceder al micrófono. Revisa los permisos en Ajustes > Safari.');
+        starting = false;
+        setUI('idle');
         return;
+    }
+
+    // Si el sistema corta el micrófono (llamada entrante, Siri, otra app toma
+    // el audio), avisamos en vez de seguir "grabando" en silencio.
+    const track = stream.getAudioTracks()[0];
+    if (track) {
+        track.onended = () => {
+            if (state === 'recording' || state === 'paused') {
+                showError('El micrófono se interrumpió (¿una llamada u otra app?). Finaliza para procesar lo grabado hasta aquí.');
+            }
+        };
     }
 
     const mimeType = pickMimeType();
@@ -210,12 +307,16 @@ async function startRecording() {
     elapsedMs = 0;
     mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
     mediaRecorder.onstop = handleStop;
+    mediaRecorder.onerror = () => {
+        showError('Error de grabación. Finaliza para intentar procesar lo capturado.');
+    };
     mediaRecorder.start(1000);
 
     segmentStart = Date.now();
     timerEl.textContent = '00:00';
     timerInterval = setInterval(refreshTimer, 500);
     setUI('recording');
+    starting = false;
     requestWakeLock();
 }
 
@@ -252,6 +353,7 @@ async function handleStop() {
     const mime = pickedMime || mediaRecorder.mimeType || 'audio/mp4';
     const blob = new Blob(chunks, { type: mime });
     chunks = [];
+    const capturedMode = recordMode;
 
     const sizeMB = (blob.size / 1024 / 1024).toFixed(2);
     if (blob.size === 0) {
@@ -259,12 +361,28 @@ async function handleStop() {
         setUI('idle');
         return;
     }
+
+    // Guardar el audio ANTES de procesar. Si la transcripción falla (red,
+    // timeout, sesión), la grabación NO se pierde: queda para reintentar.
+    pendingAudio = { blob, mime, mode: capturedMode };
+    await idbSaveAudio(blob, mime, capturedMode);
+
     if (blob.size > 4 * 1024 * 1024) {
-        showError(`El audio pesa ${sizeMB} MB y supera el límite de la plataforma (4 MB). Para consultas largas, graba en dos sesiones de máximo 15 minutos cada una.`);
+        showError(`El audio pesa ${sizeMB} MB y supera el límite de la plataforma (4 MB). Para consultas largas, finaliza antes de los 10 minutos. La grabación quedó guardada en este dispositivo.`);
         setUI('idle');
         return;
     }
 
+    await processRecording(blob, mime, capturedMode);
+}
+
+// Transcribe → extrae → muestra. Reutilizable por el botón "Reintentar".
+// En cualquier fallo conserva el audio (pendingAudio + IndexedDB) y ofrece
+// reintentar, en vez de descartar la consulta.
+async function processRecording(blob, mime, mode) {
+    hideError();
+    hideRetry();
+    const sizeMB = (blob.size / 1024 / 1024).toFixed(2);
     processingPanel.classList.remove('hidden');
     processingText.textContent = `Transcribiendo audio (${sizeMB} MB)…`;
 
@@ -273,24 +391,31 @@ async function handleStop() {
         transcript = await transcribe(blob, mime);
         if (!transcript || !transcript.trim()) {
             processingPanel.classList.add('hidden');
-            showError('La transcripción llegó vacía. Asegúrate de hablar cerca del micrófono y en un ambiente sin ruido excesivo. Intenta de nuevo.');
+            showError('La transcripción llegó vacía. Habla cerca del micrófono, en un ambiente sin ruido. La grabación quedó guardada: puedes reintentar.');
+            showRetry();
             setUI('idle');
             return;
         }
-        processingText.textContent = recordMode === 'examenes' ? 'Estructurando exámenes…' : 'Generando nota clínica…';
-        const note = await extract(transcript);
+        processingText.textContent = mode === 'examenes' ? 'Estructurando exámenes…' : 'Generando nota clínica…';
+        const note = await extract(transcript, mode);
+        // Éxito: la grabación ya cumplió su función, la descartamos.
+        pendingAudio = null;
+        await idbClearAudio();
         processingPanel.classList.add('hidden');
         rawTranscript.textContent = transcript;
         noteText.value = note;
         const titleEl = resultPanel.querySelector('.result-title');
-        if (titleEl) titleEl.textContent = recordMode === 'examenes' ? 'Exámenes' : 'Nota clínica';
+        if (titleEl) titleEl.textContent = mode === 'examenes' ? 'Exámenes' : 'Nota clínica';
         resultPanel.classList.remove('hidden');
         setUI('idle');
     } catch (e) {
         processingPanel.classList.add('hidden');
         rawTranscript.textContent = transcript;
-        showError('Error al procesar: ' + (e.message || e));
+        // La transcripción cruda (si se logró) se muestra para no perderla,
+        // y el audio queda para reintentar la extracción.
+        showError('No se pudo procesar la grabación: ' + (e.message || e) + ' — La grabación quedó guardada, puedes reintentar.');
         if (transcript) resultPanel.classList.remove('hidden');
+        showRetry();
         setUI('idle');
     }
 }
@@ -314,11 +439,11 @@ async function transcribe(blob, mime) {
     return data.text;
 }
 
-async function extract(transcript) {
+async function extract(transcript, mode = recordMode) {
     const res = await fetch('/api/extract', {
         method: 'POST',
         headers: await withAuthHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ transcript, mode: recordMode })
+        body: JSON.stringify({ transcript, mode })
     });
     if (res.status === 401) { clearPin(); throw new Error('Sesión expirada. Vuelve a abrir la app.'); }
     if (!res.ok) {
@@ -342,6 +467,26 @@ examBtn.addEventListener('click', () => {
 });
 
 finishBtn.addEventListener('click', finishRecording);
+
+retryBtn.addEventListener('click', async () => {
+    if (!pendingAudio) {
+        const saved = await idbLoadAudio();
+        if (saved && saved.blob) pendingAudio = { blob: saved.blob, mime: saved.mime, mode: saved.mode || 'consulta' };
+    }
+    if (!pendingAudio || !pendingAudio.blob) {
+        showError('No hay ninguna grabación guardada para reintentar.');
+        hideRetry();
+        return;
+    }
+    recordMode = pendingAudio.mode;
+    await processRecording(pendingAudio.blob, pendingAudio.mime, pendingAudio.mode);
+});
+
+// Re-adquiere el wake lock al volver a la app (el sistema lo libera al
+// pasar a segundo plano); si no, la pantalla podría apagarse grabando.
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && state === 'recording') requestWakeLock();
+});
 
 copyBtn.addEventListener('click', async () => {
     try {
@@ -376,15 +521,32 @@ emailBtn.addEventListener('click', async () => {
     }
 });
 
-newBtn.addEventListener('click', () => {
+newBtn.addEventListener('click', async () => {
     resultPanel.classList.add('hidden');
     noteText.value = '';
     rawTranscript.textContent = '';
     timerEl.textContent = '00:00';
     elapsedMs = 0;
+    // Descartar explícitamente la grabación anterior al empezar de cero.
+    pendingAudio = null;
+    await idbClearAudio();
+    hideRetry();
     setUI('idle');
     hideError();
 });
+
+// Al abrir la app, si quedó una grabación sin procesar de una sesión previa
+// (cierre, recarga, crash), ofrecer reintentar en vez de perderla.
+async function checkPendingAudio() {
+    const saved = await idbLoadAudio();
+    if (saved && saved.blob && saved.blob.size > 0) {
+        pendingAudio = { blob: saved.blob, mime: saved.mime, mode: saved.mode || 'consulta' };
+        recordMode = pendingAudio.mode;
+        const mins = saved.ts ? Math.round((Date.now() - saved.ts) / 60000) : null;
+        showError('Quedó una grabación sin procesar' + (mins !== null ? ` (hace ~${mins} min)` : '') + '. Puedes reintentar o iniciar una nueva.');
+        showRetry();
+    }
+}
 
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -393,3 +555,4 @@ if ('serviceWorker' in navigator) {
 }
 
 ensurePin();
+checkPendingAudio();

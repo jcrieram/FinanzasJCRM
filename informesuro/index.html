@@ -1084,10 +1084,38 @@
                     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
                     pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', 'li'] }
                 }).from(preview).save();
+                saveToHistorial();
             } catch (e) { alert('Error generando PDF: ' + e.message); }
             finally { btn.disabled = false; btn.textContent = orig; }
         });
-        document.getElementById('printBtn').addEventListener('click', () => window.print());
+        document.getElementById('printBtn').addEventListener('click', () => { saveToHistorial(); window.print(); });
+
+        // Guarda el documento generado en el historial (Supabase). Se llama al
+        // descargar o imprimir (cuando el documento realmente se produce). El
+        // flag _saved en el propio lastPayload evita guardar dos veces el mismo
+        // documento; como cada generación crea un lastPayload nuevo, se reinicia solo.
+        async function saveToHistorial() {
+            if (!lastPayload || lastPayload._saved) return;
+            lastPayload._saved = true;
+            const p = lastPayload.paciente || {};
+            const { _saved, ...snapshot } = lastPayload;
+            try {
+                const res = await apiFetch('/api/informesuro/save', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        doc_type: lastPayload.doc_type,
+                        patient_name: p.nombre || '',
+                        patient_rut: p.rut || '',
+                        patient_age: p.edad || '',
+                        clinic: lastPayload.clinica || '',
+                        payload: snapshot
+                    })
+                });
+                if (!res.ok && lastPayload) lastPayload._saved = false; // permitir reintento
+            } catch (e) {
+                if (lastPayload) lastPayload._saved = false;
+            }
+        }
 
         function showPreview() {
             document.getElementById('previewPanel').classList.add('show');
@@ -1822,7 +1850,7 @@
                         <td style="padding:8px 12px;">${escapeHtml(fecha)}</td>
                         <td style="padding:8px 12px;">${escapeHtml(d.doc_type_label)}</td>
                         <td style="padding:8px 12px;">${escapeHtml(d.patient_name || '—')}</td>
-                        <td style="padding:8px 12px;">${escapeHtml(d.patient_rut || '—')}</td>
+                        <td style="padding:8px 12px;">${escapeHtml(formatRut(d.patient_rut))}</td>
                         <td style="padding:8px 12px;">${escapeHtml(d.clinic || '—')}</td>
                     </tr>`;
                 }).join('');
@@ -1843,6 +1871,15 @@
 
         // ─── Helpers ────────────────────────────────────────────────────
         function val(id) { return (document.getElementById(id).value || '').trim(); }
+        // El historial guarda el RUT normalizado (dígitos + K). Lo formatea
+        // para mostrarlo: "123456789" → "12.345.678-9".
+        function formatRut(r) {
+            const clean = (r || '').replace(/[^0-9kK]/g, '').toUpperCase();
+            if (clean.length < 2) return r || '—';
+            const cuerpo = clean.slice(0, -1);
+            const dv = clean.slice(-1);
+            return cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + '-' + dv;
+        }
         function setLoading(on, text) {
             const l = document.getElementById('loading');
             if (on) { l.classList.add('show'); document.getElementById('loadingText').textContent = text || 'Generando…'; document.getElementById('previewDoc').innerHTML = ''; }

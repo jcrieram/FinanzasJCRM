@@ -42,17 +42,24 @@ document.getElementById('btn-copy').addEventListener('click', async () => {
     setStatus('⚠️ Abre una ficha clínica (MasterKey, miBiodata, Medilink, Reservo o HIS)', 'error');
     return;
   }
-  chrome.tabs.sendMessage(tab.id, { action: 'copyPatient' }, () => {
-    setTimeout(() => {
-      chrome.storage.local.get('patient', (result) => {
-        if (result.patient && (result.patient.nombre || result.patient.rut)) {
-          renderPatient(result.patient);
-          setStatus('✅ ¡Datos copiados!', 'ok');
-        } else {
-          setStatus('⚠️ No se encontraron datos en la página', 'error');
-        }
-      });
-    }, 600);
+  // Usamos la RESPUESTA DIRECTA del content script (no un timeout que leía
+  // storage y podía mostrar al paciente ANTERIOR con "✅ copiado").
+  chrome.tabs.sendMessage(tab.id, { action: 'copyPatient' }, (resp) => {
+    if (chrome.runtime.lastError) {
+      // El content script no está inyectado (página abierta antes de instalar
+      // o actualizar la extensión). No hay dato nuevo: no confirmar copia.
+      setStatus('⚠️ Recarga la ficha del paciente y vuelve a intentar', 'error');
+      return;
+    }
+    if (resp && resp.ok && resp.data) {
+      renderPatient(resp.data);
+      setStatus('✅ ¡Datos copiados!', 'ok');
+    } else {
+      // Copia fallida: limpiar el paciente guardado para que un "pegar"
+      // posterior NO pegue por error al paciente anterior.
+      chrome.storage.local.remove('patient', () => renderPatient(null));
+      setStatus('⚠️ No se encontraron datos en la página', 'error');
+    }
   });
 });
 

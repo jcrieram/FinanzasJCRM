@@ -37,16 +37,20 @@ function showBanner(message, color = '#27ae60') {
   setTimeout(() => banner.remove(), 4000);
 }
 
-chrome.runtime.onMessage.addListener((message) => {
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action !== 'copyPatient') return;
   const data = extractPatientData();
-  if (!data.nombre && !data.rut && !data.edad) {
+  // Requiere nombre O rut: la edad sola no identifica a un paciente.
+  if (!data.nombre && !data.rut) {
     showBanner('⚠️ No se encontraron datos del paciente en esta página.', '#e74c3c');
-    return;
+    sendResponse({ ok: false, reason: 'no-data' });
+    return true;
   }
   chrome.runtime.sendMessage({ action: 'savePatient', data }, () => {
     showBanner(
       `✅ Copiado (Reservo):\n👤 ${data.nombre || '—'}\n🪪 ${data.rut || '—'}\n📅 ${data.edad ? data.edad + ' años' : '—'}`
     );
+    sendResponse({ ok: true, data });
   });
+  return true; // respuesta asíncrona
 });

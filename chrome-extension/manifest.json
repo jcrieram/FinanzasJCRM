@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "URO Copiar Paciente",
-  "version": "1.4",
+  "version": "1.5",
   "description": "Copia nombre, RUT y edad desde fichas clínicas (MasterKey, miBiodata, Medilink, Reservo, HIS) y los pega en UroWorkNet",
   "permissions": [
     "activeTab",
