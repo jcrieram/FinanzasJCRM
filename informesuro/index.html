@@ -831,11 +831,13 @@
                 <section class="panel preview-panel" id="previewPanel">
                     <div class="panel-header">
                         <span class="panel-title">Vista previa</span>
-                        <div style="display:flex;gap:8px;">
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <button class="btn" id="driveBtn" title="Guardar una copia PDF en tu Google Drive, organizada por paciente">☁️ Conectar Drive</button>
                             <button class="btn" id="printBtn">Imprimir</button>
                             <button class="btn btn-primary" id="downloadBtn">Descargar PDF</button>
                         </div>
                     </div>
+                    <div id="driveStatus" style="display:none;font-size:12px;padding:4px 16px;"></div>
                     <div class="loading" id="loading">
                         <span class="spinner"></span>
                         <span id="loadingText">Generando…</span>
@@ -852,6 +854,7 @@
     <script type="module">
         import { requireAuth, getCurrentUser, signOut, apiFetch } from '/lib/supabase-client.js';
         import { attachDictado } from '/lib/dictado-client.js';
+        import { connectDrive, isDriveConnected, uploadPdf } from '/lib/drive.js';
         import {
             FONASA_CODES, findFonasa, isHolep, HOLEP_INSUMOS,
             CLINIC_LIST, CLINIC_LOGOS, AYUDANTES, MEDICATIONS, MEDICO,
@@ -1076,19 +1079,95 @@
                             : lastPayload.doc_type === 'postprostata' ? 'post_prostata'
                             : lastPayload.doc_type === 'postholep' ? 'post_holep'
                             : 'informe';
-                await html2pdf().set({
+                const pdfOpts = {
                     margin: [10, 10, 10, 10],
                     filename: `${label}_${name}.pdf`,
                     image: { type: 'jpeg', quality: 0.95 },
                     html2canvas: { scale: 2, useCORS: true, letterRendering: true, backgroundColor: '#ffffff' },
                     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
                     pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', 'li'] }
-                }).from(preview).save();
+                };
+                await html2pdf().set(pdfOpts).from(preview).save();
                 saveToHistorial();
+                // Copia en Google Drive (si el médico lo activó). No bloquea la
+                // descarga local: se genera un blob aparte y se sube por paciente.
+                if (driveEnabled()) {
+                    const blob = await html2pdf().set(pdfOpts).from(preview).outputPdf('blob');
+                    uploadToDrive(blob, `${label}_${name}`);
+                }
             } catch (e) { alert('Error generando PDF: ' + e.message); }
             finally { btn.disabled = false; btn.textContent = orig; }
         });
         document.getElementById('printBtn').addEventListener('click', () => { saveToHistorial(); window.print(); });
+
+        // ─── Google Drive (copia PDF por paciente) ──────────────────────
+        const DRIVE_FLAG = 'informesuro_drive';
+        const driveBtn = document.getElementById('driveBtn');
+        const driveStatusEl = document.getElementById('driveStatus');
+        function driveEnabled() { return localStorage.getItem(DRIVE_FLAG) === '1'; }
+        function driveStatus(msg, color) {
+            driveStatusEl.textContent = msg;
+            driveStatusEl.style.color = color || 'var(--muted, #64748b)';
+            driveStatusEl.style.display = msg ? 'block' : 'none';
+        }
+        function refreshDriveBtn() {
+            driveBtn.textContent = driveEnabled() ? '☁️ Drive activado ✓' : '☁️ Conectar Drive';
+        }
+        driveBtn.addEventListener('click', async () => {
+            if (driveEnabled()) {
+                // Segundo clic: desactivar el guardado automático en Drive.
+                localStorage.removeItem(DRIVE_FLAG);
+                refreshDriveBtn();
+                driveStatus('Guardado en Drive desactivado.', '#b45309');
+                return;
+            }
+            driveBtn.disabled = true;
+            driveStatus('Conectando con Google Drive…');
+            try {
+                await connectDrive(true); // popup de consentimiento (gesto del usuario)
+                localStorage.setItem(DRIVE_FLAG, '1');
+                refreshDriveBtn();
+                driveStatus('✅ Google Drive conectado. Cada PDF que descargues se guardará en UroWorkNet/Pacientes.', '#15803d');
+            } catch (e) {
+                driveStatus('No se pudo conectar Drive: ' + e.message, '#b91c1c');
+            } finally {
+                driveBtn.disabled = false;
+            }
+        });
+        // Sanitiza el nombre de carpeta del paciente (Drive no admite "/").
+        function patientFolderName(p) {
+            const rut = formatRut(p.rut || '');
+            const nombre = (p.nombre || 'Sin nombre').trim();
+            return `${rut} — ${nombre}`.replace(/[\\/\r\n]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120);
+        }
+        async function uploadToDrive(blob, baseName) {
+            if (!lastPayload) return;
+            const p = lastPayload.paciente || {};
+            const fecha = new Date().toISOString().slice(0, 10);
+            driveStatus('☁️ Subiendo a Google Drive…');
+            try {
+                const out = await uploadPdf(blob, {
+                    filename: `${baseName}_${fecha}.pdf`,
+                    folderName: patientFolderName(p)
+                });
+                const link = out.webViewLink
+                    ? ` <a href="${out.webViewLink}" target="_blank" rel="noopener">Ver</a>`
+                    : '';
+                driveStatusEl.innerHTML = `☁️ Guardado en Drive: UroWorkNet/Pacientes/${escapeHtml(patientFolderName(p))}${link}`;
+                driveStatusEl.style.color = '#15803d';
+                driveStatusEl.style.display = 'block';
+            } catch (e) {
+                driveStatus('No se pudo guardar en Drive: ' + e.message + ' (el PDF sí se descargó).', '#b91c1c');
+            }
+        }
+        refreshDriveBtn();
+        // Si el médico ya activó Drive, intenta obtener el token en silencio al
+        // cargar (sin popup) para que la primera descarga suba sin fricción.
+        if (driveEnabled()) {
+            connectDrive(false)
+                .then(() => driveStatus('☁️ Google Drive listo.', '#15803d'))
+                .catch(() => {});
+        }
 
         // Guarda el documento generado en el historial (Supabase). Se llama al
         // descargar o imprimir (cuando el documento realmente se produce). El
