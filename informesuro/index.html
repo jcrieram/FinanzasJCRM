@@ -834,6 +834,7 @@
                         <div style="display:flex;gap:8px;align-items:center;">
                             <button class="btn" id="driveBtn" title="Guardar una copia PDF en tu Google Drive, organizada por paciente">☁️ Conectar Drive</button>
                             <button class="btn" id="printBtn">Imprimir</button>
+                            <button class="btn" id="docxBtn" title="Descargar en Word para editarlo">Descargar Word</button>
                             <button class="btn btn-primary" id="downloadBtn">Descargar PDF</button>
                         </div>
                     </div>
@@ -1100,6 +1101,54 @@
         });
         document.getElementById('printBtn').addEventListener('click', () => { saveToHistorial(); window.print(); });
 
+        // ─── Descargar Word (editable) ──────────────────────────────────
+        function docLabelFor(t) {
+            return t === 'cirugia' ? 'solicitud_cirugia'
+                 : t === 'receta' ? 'receta'
+                 : t === 'examenes' ? 'solicitud_examenes'
+                 : t === 'estudios' ? 'solicitud_estudios'
+                 : t === 'alta' ? 'alta_medica'
+                 : t === 'postvasectomia' ? 'post_vasectomia'
+                 : t === 'postprostata' ? 'post_prostata'
+                 : t === 'postholep' ? 'post_holep'
+                 : 'informe';
+        }
+        function docBaseName() {
+            const name = (lastPayload?.paciente?.nombre || 'paciente').replace(/[^a-z0-9]+/gi, '_').toLowerCase();
+            return `${docLabelFor(lastPayload?.doc_type)}_${name}`;
+        }
+        document.getElementById('docxBtn').addEventListener('click', () => {
+            if (!lastPayload) return;
+            const preview = document.getElementById('previewDoc');
+            if (!preview || !preview.innerHTML.trim()) return;
+            // Clonar el documento y convertir src relativos de imágenes en
+            // absolutos, para que Word pueda cargarlos.
+            const clone = preview.cloneNode(true);
+            clone.querySelectorAll('img').forEach(img => {
+                const src = img.getAttribute('src') || '';
+                if (src && !/^https?:|^data:/i.test(src)) {
+                    img.setAttribute('src', new URL(src, location.href).href);
+                }
+            });
+            const styles = `
+                body{font-family:'Times New Roman',serif;font-size:12pt;color:#000;margin:2cm;}
+                h1,h2{font-size:15pt;text-align:center;margin:10pt 0;}
+                h3{font-size:12pt;margin:12pt 0 4pt;border-bottom:1px solid #000;padding-bottom:2pt;}
+                p{text-align:justify;margin:4pt 0;}
+                table{border-collapse:collapse;width:100%;margin:6pt 0;}
+                td,th{border:1px solid #333;padding:4px 6px;font-size:11pt;vertical-align:top;}
+                .right{text-align:right;}
+                img{max-width:100%;}`;
+            const html = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><style>${styles}</style></head><body>${clone.innerHTML}</body></html>`;
+            const blob = new Blob(['﻿', html], { type: 'application/msword' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = `${docBaseName()}.doc`;
+            document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+            saveToHistorial();
+        });
+
         // ─── Google Drive (copia PDF por paciente) ──────────────────────
         const DRIVE_FLAG = 'informesuro_drive';
         const driveBtn = document.getElementById('driveBtn');
@@ -1136,9 +1185,10 @@
         });
         // Sanitiza el nombre de carpeta del paciente (Drive no admite "/").
         function patientFolderName(p) {
-            const rut = formatRut(p.rut || '');
             const nombre = (p.nombre || 'Sin nombre').trim();
-            return `${rut} — ${nombre}`.replace(/[\\/\r\n]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120);
+            const rut = (p.rut || '').trim() ? formatRut(p.rut) : '';
+            const base = rut ? `${rut} — ${nombre}` : nombre;
+            return base.replace(/[\\/\r\n]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120);
         }
         async function uploadToDrive(blob, baseName) {
             if (!lastPayload) return;
@@ -1210,7 +1260,7 @@
         document.getElementById('i-generate').addEventListener('click', async () => {
             const nombre = val('i-nombre'); const rut = val('i-rut'); const edad = val('i-edad');
             const clinica = val('i-clinica'); const text = val('i-text');
-            if (!nombre || !rut) { alert('Nombre y RUT son obligatorios.'); return; }
+            if (!nombre) { alert('El nombre del paciente es obligatorio.'); return; }
             if (!text) { alert('Escribe el caso clínico.'); return; }
             showPreview();
             setLoading(true, 'Procesando texto y generando informe…');
@@ -1275,7 +1325,7 @@
         });
         document.getElementById('c-generate').addEventListener('click', () => {
             const nombre = val('c-nombre'); const rut = val('c-rut'); const edad = val('c-edad');
-            if (!nombre || !rut) { alert('Nombre y RUT son obligatorios.'); return; }
+            if (!nombre) { alert('El nombre del paciente es obligatorio.'); return; }
             const cod1 = parseFonasaInput(val('c-cod1'));
             if (!cod1) { alert('Indica el código FONASA principal.'); return; }
             const cod1obj = findFonasa(cod1);
@@ -1358,7 +1408,7 @@
         });
         document.getElementById('r-generate').addEventListener('click', () => {
             const nombre = val('r-nombre'); const rut = val('r-rut'); const edad = val('r-edad');
-            if (!nombre || !rut) { alert('Nombre y RUT son obligatorios.'); return; }
+            if (!nombre) { alert('El nombre del paciente es obligatorio.'); return; }
             const meds = Array.from(document.querySelectorAll('#r-meds .med-row')).map(row => {
                 const get = (f) => row.querySelector(`[data-f="${f}"]`).value.trim();
                 const dur_n = get('dur_n');
@@ -1517,7 +1567,7 @@
 
         document.getElementById('e-generate').addEventListener('click', () => {
             const nombre = val('e-nombre'); const rut = val('e-rut'); const edad = val('e-edad');
-            if (!nombre || !rut) { alert('Nombre y RUT son obligatorios.'); return; }
+            if (!nombre) { alert('El nombre del paciente es obligatorio.'); return; }
             const items = Array.from(eItemsEl.children).map(row => {
                 const inp = row.querySelector('input');
                 const sel = row.querySelector('select');
@@ -1617,7 +1667,7 @@
 
         document.getElementById('s-generate').addEventListener('click', () => {
             const nombre = val('s-nombre'); const rut = val('s-rut'); const edad = val('s-edad');
-            if (!nombre || !rut) { alert('Nombre y RUT son obligatorios.'); return; }
+            if (!nombre) { alert('El nombre del paciente es obligatorio.'); return; }
             const tipo = sTipoEl.value;
             if (!tipo) { alert('Selecciona el tipo de estudio.'); return; }
             const tpl = STUDY_TEMPLATES[tipo];
@@ -1692,7 +1742,7 @@
 
         document.getElementById('a-generate').addEventListener('click', () => {
             const nombre = val('a-nombre'); const rut = val('a-rut'); const edad = val('a-edad');
-            if (!nombre || !rut) { alert('Nombre y RUT son obligatorios.'); return; }
+            if (!nombre) { alert('El nombre del paciente es obligatorio.'); return; }
             const cod1 = parseFonasaInput(val('a-cod1'));
             const cod1obj = cod1 ? findFonasa(cod1) : null;
             const cod2 = parseFonasaInput(val('a-cod2'));
@@ -1783,7 +1833,7 @@
 
         document.getElementById('pq-generate').addEventListener('click', () => {
             const nombre = val('pq-nombre'); const rut = val('pq-rut'); const edad = val('pq-edad');
-            if (!nombre || !rut) { alert('Nombre y RUT son obligatorios.'); return; }
+            if (!nombre) { alert('El nombre del paciente es obligatorio.'); return; }
             const tipo = document.getElementById('pq-tipo').value;
             const clinica = val('pq-clinica');
             const paciente = { nombre, rut, edad };
@@ -1868,7 +1918,7 @@
 
         document.getElementById('ph-generate').addEventListener('click', () => {
             const nombre = val('ph-nombre'); const rut = val('ph-rut');
-            if (!nombre || !rut) { alert('Nombre y RUT son obligatorios.'); return; }
+            if (!nombre) { alert('El nombre del paciente es obligatorio.'); return; }
             const clinica = val('ph-clinica');
             const paciente = { nombre, rut };
             lastPayload = { doc_type: 'postholep', paciente, clinica, data: {} };
