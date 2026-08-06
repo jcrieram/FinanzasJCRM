@@ -12,7 +12,8 @@
     "api/uroatlas/report.js": { "maxDuration": 60 },
     "api/uroatlas/cases.js": { "maxDuration": 15 },
     "api/informesuro/extract.js": { "maxDuration": 30 },
-    "api/informesuro/historial.js": { "maxDuration": 15 }
+    "api/informesuro/historial.js": { "maxDuration": 15 },
+    "api/informesuro/save.js": { "maxDuration": 15 }
   },
   "headers": [
     {
