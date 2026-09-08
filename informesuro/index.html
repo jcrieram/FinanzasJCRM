@@ -637,6 +637,7 @@
                                     <option value="cistoscopia">Cistoscopía (Interclínica Viña del Mar)</option>
                                     <option value="urodinamia">Estudio Urodinámico (Dr. Pedro Acuña)</option>
                                     <option value="biopsia">Biopsia de Próstata (Dr. Pedro Acuña)</option>
+                                    <option value="derivacion_gonzalez">Derivación Dr. Manuel González</option>
                                     <option value="sige">Derivación a Clínica Sige</option>
                                 </select>
                             </div>
@@ -1679,8 +1680,14 @@
             tpl.fields.forEach(f => {
                 const row = document.createElement('div');
                 row.className = 'form-row';
-                row.innerHTML = `<label>${escapeHtml(f.label)}</label><input id="s-f-${f.key}" type="text" placeholder="${escapeAttr(f.placeholder || '')}">`;
-                grid.appendChild(row);
+                if (f.type === 'textarea') {
+                    row.innerHTML = `<label>${escapeHtml(f.label)}</label><textarea id="s-f-${f.key}" rows="8" style="width:100%;font-family:inherit;font-size:14px;padding:10px;border:1px solid #cbd5e1;border-radius:8px;resize:vertical" placeholder="${escapeAttr(f.placeholder || '')}"></textarea>`;
+                    grid.appendChild(row);
+                    if (f.default) row.querySelector('textarea').value = f.default;
+                } else {
+                    row.innerHTML = `<label>${escapeHtml(f.label)}</label><input id="s-f-${f.key}" type="text" placeholder="${escapeAttr(f.placeholder || '')}">`;
+                    grid.appendChild(row);
+                }
             });
             sFieldsEl.appendChild(grid);
         }
