@@ -20,8 +20,8 @@
             --ios-red: #ff3b30;
             --ios-amber: #ff9500;
             --ios-green: #34c759;
-            --ios-gray: #8e8e93;
-            --ink: #1c1c1e;
+            --ios-gray: #9AA7B4;
+            --ink: #E6EDF4;
         }
 
         html, body {
@@ -34,8 +34,8 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
             color: var(--ink);
-            background-color: #eef2f7;
-            background-image: url('bg.PNG');
+            background-color: #0E1620;
+            background-image: linear-gradient(170deg, rgba(14,22,32,0.86) 0%, rgba(11,18,26,0.95) 55%, rgba(16,58,44,0.90) 170%), url('bg.PNG');
             background-size: cover;
             background-position: center top;
             background-attachment: fixed;
@@ -59,10 +59,8 @@
             font-size: 15px;
             font-weight: 600;
             letter-spacing: 0.2px;
-            color: #1e3a8a;
-            text-shadow:
-                0 1px 0 rgba(255,255,255,0.85),
-                0 2px 6px rgba(255,255,255,0.4);
+            color: #9FC7FF;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.5);
             margin-bottom: 6px;
         }
 
@@ -74,15 +72,15 @@
         }
 
         .card {
-            background: rgba(255, 255, 255, 0.72);
-            backdrop-filter: blur(24px) saturate(180%);
-            -webkit-backdrop-filter: blur(24px) saturate(180%);
-            border: 0.5px solid rgba(255, 255, 255, 0.6);
+            background: rgba(26, 38, 51, 0.68);
+            backdrop-filter: blur(24px) saturate(160%);
+            -webkit-backdrop-filter: blur(24px) saturate(160%);
+            border: 0.5px solid rgba(255, 255, 255, 0.08);
             border-radius: 22px;
             box-shadow:
-                0 1px 0 rgba(255,255,255,0.5) inset,
-                0 12px 40px rgba(15, 23, 42, 0.12),
-                0 2px 6px rgba(15, 23, 42, 0.06);
+                0 1px 0 rgba(255,255,255,0.06) inset,
+                0 14px 40px rgba(0, 0, 0, 0.45),
+                0 2px 6px rgba(0, 0, 0, 0.30);
             padding: 22px 20px;
             margin-bottom: 14px;
         }
@@ -226,13 +224,13 @@
             min-height: 240px;
             border: none;
             border-radius: 14px;
-            background: rgba(255, 255, 255, 0.85);
+            background: rgba(14, 22, 32, 0.85);
             padding: 14px;
             font: 15px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
             color: var(--ink);
             resize: vertical;
             outline: none;
-            box-shadow: 0 0 0 1px rgba(0,0,0,0.06) inset;
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.10) inset;
         }
         textarea#noteText:focus { box-shadow: 0 0 0 2px var(--ios-blue) inset; }
 
@@ -250,8 +248,8 @@
             margin-top: 8px;
             font-size: 12px;
             line-height: 1.4;
-            color: #444;
-            background: rgba(0,0,0,0.04);
+            color: #AEBCCA;
+            background: rgba(255,255,255,0.05);
             padding: 10px;
             border-radius: 10px;
             white-space: pre-wrap;
@@ -259,9 +257,9 @@
         }
 
         .error {
-            background: rgba(255, 59, 48, 0.12);
-            color: #b00020;
-            border: 1px solid rgba(255, 59, 48, 0.25);
+            background: rgba(255, 59, 48, 0.16);
+            color: #FF9A90;
+            border: 1px solid rgba(255, 59, 48, 0.35);
             border-radius: 14px;
             padding: 12px 14px;
             font-size: 14px;
@@ -276,11 +274,11 @@
             text-align: center;
             font-size: 12px;
             color: var(--ios-gray);
-            text-shadow: 0 1px 2px rgba(255,255,255,0.6);
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
         }
         footer .credit {
             font-weight: 600;
-            color: #334155;
+            color: #C2CEDB;
         }
         footer .privacy {
             margin-top: 2px;
@@ -303,19 +301,20 @@
             z-index: 100;
         }
         .pin-card {
-            background: rgba(255, 255, 255, 0.92);
+            background: rgba(23, 33, 44, 0.96);
+            border: 1px solid rgba(255,255,255,0.08);
             border-radius: 22px;
             padding: 28px 24px;
             max-width: 360px;
             width: 100%;
             text-align: center;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+            box-shadow: 0 24px 60px rgba(0,0,0,0.6);
         }
         .pin-card h2 {
             margin: 0 0 6px;
             font-size: 22px;
             font-weight: 700;
-            color: #1e3a8a;
+            color: #E6EDF4;
         }
         .pin-card p {
             margin: 0 0 18px;
@@ -329,9 +328,10 @@
             letter-spacing: 8px;
             text-align: center;
             padding: 14px;
-            border: 1px solid rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.14);
             border-radius: 14px;
-            background: #fff;
+            background: #0E1620;
+            color: #E6EDF4;
             font-family: inherit;
             outline: none;
             margin-bottom: 14px;
@@ -359,7 +359,7 @@
     </div>
 
     <div class="container">
-        <a href="/portal/" style="align-self:flex-start;display:inline-flex;align-items:center;gap:6px;margin-bottom:10px;padding:8px 14px;border-radius:999px;background:rgba(255,255,255,0.9);border:1px solid rgba(30,58,138,0.25);color:#1e3a8a;font-size:14px;font-weight:600;text-decoration:none;box-shadow:0 1px 4px rgba(0,0,0,0.12);">← Volver al portal</a>
+        <a href="/portal/" style="align-self:flex-start;display:inline-flex;align-items:center;gap:6px;margin-bottom:10px;padding:8px 14px;border-radius:999px;background:rgba(26,38,51,0.72);border:1px solid rgba(255,255,255,0.12);color:#9FC7FF;font-size:14px;font-weight:600;text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,0.35);backdrop-filter:blur(10px);">← Volver al portal</a>
         <div class="top-credit">Creado por Dr. Juan Carlos Riera M.</div>
         <div class="hero-spacer"></div>
 
