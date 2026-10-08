@@ -1,4 +1,4 @@
-const CACHE = 'consulta-v10';
+const CACHE = 'consulta-v11';
 const ASSETS = ['./', './index.html', './app.js', './manifest.json'];
 
 self.addEventListener('install', (e) => {
