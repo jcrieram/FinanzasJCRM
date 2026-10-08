@@ -181,6 +181,15 @@
         .btn-primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
         .btn:disabled { opacity: 0.6; cursor: not-allowed; }
         .btn-sm { padding: 5px 12px; font-size: 12px; }
+        .proc-quick {
+            font-size: 12px; font-weight: 600;
+            padding: 6px 13px; border-radius: 999px;
+            border: 1px solid var(--primary); background: #fff; color: var(--primary);
+            cursor: pointer; font-family: inherit;
+            transition: background 0.15s, color 0.15s;
+        }
+        .proc-quick:hover { background: var(--primary); color: #fff; }
+        .proc-quick:active { transform: scale(0.97); }
         .btn-danger { color: var(--danger); border-color: rgba(179, 38, 30, 0.3); }
         .btn-danger:hover { background: rgba(179, 38, 30, 0.05); }
 
@@ -515,6 +524,15 @@
                             <div id="c-coord" class="coord-info" style="display:none;"></div>
 
                             <h4 style="margin-top:20px;font-size:13px;color:var(--primary);">Procedimiento</h4>
+                            <div style="margin:4px 0 2px;font-size:11px;color:var(--text-muted);">Procedimientos frecuentes (rellenan el código automáticamente):</div>
+                            <div style="display:flex;flex-wrap:wrap;gap:7px;margin:6px 0 10px;">
+                                <button type="button" class="proc-quick" data-cod1="19 02 076">Vasectomía</button>
+                                <button type="button" class="proc-quick" data-cod1="19 02 082">Circuncisión</button>
+                                <button type="button" class="proc-quick" data-cod1="19 02 055" data-cod2="19 02 031">HoLEP</button>
+                                <button type="button" class="proc-quick" data-cod1="19 02 064">Hidrocele</button>
+                                <button type="button" class="proc-quick" data-cod1="19 02 055">RTUP</button>
+                                <button type="button" class="proc-quick" data-cod1="18 02 001">Hernia inguinal</button>
+                            </div>
                             <div class="form-grid" style="margin-top:8px;">
                                 <div class="form-row">
                                     <label>Código FONASA principal</label>
@@ -982,6 +1000,35 @@
         document.getElementById('c-cod2').addEventListener('input', maybeFillHolep);
         document.getElementById('c-cod1').addEventListener('change', maybeFillHolep);
         document.getElementById('c-cod2').addEventListener('change', maybeFillHolep);
+
+        // Enter confirma el código escrito: lo deja en formato canónico (ej.
+        // "19 02 055"), rellena HoLEP si aplica y salta al siguiente campo —
+        // sin tener que elegir con el mouse en la lista.
+        function confirmFonasaField(input, nextId) {
+            const code = parseFonasaInput(input.value);
+            const obj = code ? findFonasa(code) : null;
+            if (obj) {
+                input.value = obj.codigo;
+                maybeFillHolep();
+                if (nextId) { const n = document.getElementById(nextId); if (n) n.focus(); return; }
+            }
+            input.blur();
+        }
+        document.getElementById('c-cod1').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); confirmFonasaField(e.target, 'c-cod2'); }
+        });
+        document.getElementById('c-cod2').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); confirmFonasaField(e.target, null); }
+        });
+
+        // Botones de procedimientos frecuentes: rellenan el/los código(s).
+        document.querySelectorAll('.proc-quick').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.getElementById('c-cod1').value = btn.dataset.cod1 || '';
+                document.getElementById('c-cod2').value = btn.dataset.cod2 || '';
+                maybeFillHolep();
+            });
+        });
 
         // Coordinación quirúrgica automática para Miraflores y Los Carrera.
         // Se basa en la clínica destino (donde se opera). Una clínica puede
