@@ -74,28 +74,42 @@
             background: var(--surface);
             border-right: 1px solid var(--border);
             overflow-y: auto;
+            padding: 8px 10px 16px;
         }
         .sidebar-section {
-            padding: 16px 18px 8px;
-            font-size: 11px; font-weight: 700;
+            padding: 14px 6px 6px;
+            font-size: 10.5px; font-weight: 700;
             letter-spacing: 1.2px; text-transform: uppercase;
             color: var(--text-muted);
         }
+        /* Menú de iconos estilo iPhone: tiles redondeados con icono + etiqueta. */
+        .nav-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
         .nav-item {
-            display: flex; align-items: center; gap: 10px;
-            padding: 10px 18px;
-            cursor: pointer; font-size: 13px;
-            color: var(--primary);
-            border-left: 3px solid transparent;
-            transition: background 0.15s, border-color 0.15s;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 8px;
+            padding: 16px 6px;
+            border-radius: 16px;
+            background: var(--surface-alt);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            cursor: pointer; text-align: center;
+            transition: transform 0.12s ease, box-shadow 0.2s ease, background 0.2s ease;
         }
-        .nav-item:hover { background: var(--surface-alt); }
+        .nav-item svg { width: 26px; height: 26px; stroke: var(--primary); flex: none; }
+        .nav-item span { font-size: 11px; font-weight: 600; line-height: 1.15; letter-spacing: 0.2px; }
+        .nav-item:hover { transform: translateY(-2px); box-shadow: 0 5px 14px rgba(15,42,71,0.10); }
         .nav-item.active {
-            background: rgba(31, 78, 121, 0.07);
-            border-left-color: var(--primary);
-            font-weight: 600;
+            background: linear-gradient(135deg, #1F4E79, #2A9D5F);
+            border-color: transparent;
+            box-shadow: 0 6px 16px rgba(31,78,121,0.28);
         }
-        .nav-item.disabled { color: var(--primary); opacity: 0.55; cursor: not-allowed; }
+        .nav-item.active svg { stroke: #fff; }
+        .nav-item.active span { color: #fff; }
+        .nav-item.disabled { opacity: 0.5; cursor: not-allowed; }
         .badge {
             margin-left: auto; font-size: 10px;
             padding: 2px 6px; border-radius: 4px;
@@ -344,30 +358,17 @@
                 grid-area: sidebar;
                 border-right: none;
                 border-bottom: 1px solid var(--border);
-                /* Pestañas en varias filas (chips): todas visibles a la vez, sin
-                   necesidad de deslizar de lado (el scroll horizontal táctil no
-                   es confiable en el celular). */
-                display: flex;
-                flex-wrap: wrap;
-                gap: 6px;
+                /* En móvil, los iconos se ven todos a la vez en una grilla de
+                   4 columnas (como una pantalla de inicio de celular). */
                 overflow: visible;
-                padding: 8px;
+                padding: 10px 8px;
                 position: sticky; top: 0; z-index: 50;
             }
             .sidebar-section { display: none; }
-            .nav-item {
-                flex: 0 0 auto;
-                padding: 8px 12px;
-                border: 1px solid var(--border);
-                border-left: 1px solid var(--border);
-                border-radius: 8px;
-                font-size: 12px;
-            }
-            .nav-item.active {
-                background: rgba(31, 78, 121, 0.07);
-                border-color: var(--primary);
-                font-weight: 600;
-            }
+            .nav-grid { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+            .nav-item { padding: 11px 4px; border-radius: 14px; gap: 5px; }
+            .nav-item svg { width: 22px; height: 22px; }
+            .nav-item span { font-size: 10px; }
             .header-brand { font-size: 14px; }
             .header-btn { padding: 6px 8px; font-size: 11px; }
             .med-row { grid-template-columns: 1fr; }
@@ -407,16 +408,43 @@
 
         <aside class="sidebar">
             <div class="sidebar-section">Documentos</div>
-            <div class="nav-item active" data-tab="informe">📄 Informe Urológico</div>
-            <div class="nav-item" data-tab="cirugia">🔪 Solicitud de Cirugía</div>
-            <div class="nav-item" data-tab="receta">💊 Receta</div>
-            <div class="nav-item" data-tab="examenes">🧪 Solicitud de Exámenes</div>
-            <div class="nav-item" data-tab="estudios">🩻 Solicitud de Estudios</div>
-            <div class="nav-item" data-tab="alta">🏥 Alta Médica</div>
-            <div class="nav-item" data-tab="post-quir">🩹 Post Quirúrgico</div>
-            <div class="nav-item" data-tab="post-holep">🏋️ Post HoLEP</div>
+            <div class="nav-grid">
+                <div class="nav-item active" data-tab="informe">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
+                    <span>Informe</span>
+                </div>
+                <div class="nav-item" data-tab="cirugia">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
+                    <span>Cirugía</span>
+                </div>
+                <div class="nav-item" data-tab="receta">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="8.5" width="19" height="7" rx="3.5"/><line x1="12" y1="8.5" x2="12" y2="15.5"/></svg>
+                    <span>Receta</span>
+                </div>
+                <div class="nav-item" data-tab="examenes">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5S5 10 5 15a7 7 0 0 0 14 0c0-5-7-12.5-7-12.5z"/></svg>
+                    <span>Exámenes</span>
+                </div>
+                <div class="nav-item" data-tab="estudios">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M6 10h3l1.5-3 2 6 1.5-3h3"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                    <span>Estudios</span>
+                </div>
+                <div class="nav-item" data-tab="post-quir">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                    <span>Post-Quir</span>
+                </div>
+                <div class="nav-item" data-tab="post-holep">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    <span>Post-HoLEP</span>
+                </div>
+            </div>
             <div class="sidebar-section">Archivo</div>
-            <div class="nav-item" data-tab="historial">📋 Historial</div>
+            <div class="nav-grid">
+                <div class="nav-item" data-tab="historial">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <span>Historial</span>
+                </div>
+            </div>
         </aside>
 
         <main class="main">
@@ -652,63 +680,6 @@
                 </div>
 
                 <!-- ════════════ ALTA MÉDICA ════════════ -->
-                <div class="tab-content" id="tab-alta">
-                    <section class="panel">
-                        <div class="panel-header">
-                            <div>
-                                <span class="panel-title">Alta Médica</span>
-                                <div class="panel-subtitle">Epicrisis post-quirúrgica con cuerpo automático para HoLEP.</div>
-                            </div>
-                        </div>
-                        <div class="panel-body">
-                            <div class="form-grid">
-                                <div class="form-row"><label>Nombre del paciente</label><input id="a-nombre" type="text"></div>
-                                <div class="form-row"><label>RUT</label><input id="a-rut" type="text"></div>
-                                <div class="form-row"><label>Edad</label><input id="a-edad" type="text"></div>
-                                <div class="form-row"><label>Clínica</label><select id="a-clinica" data-clinica></select></div>
-                                <div class="form-row"><label>Fecha de cirugía</label><input id="a-fecha" type="date"></div>
-                            </div>
-                            <div style="margin-top:12px;">
-                                <button class="btn" id="a-dictar-datos" type="button">🎤 Dictar datos del paciente</button>
-                                <div id="a-datos-status" style="font-size:12px;color:var(--muted,#667);margin-top:6px;"></div>
-                            </div>
-
-                            <h4 style="margin-top:18px;font-size:13px;color:var(--primary);">Diagnóstico y procedimiento</h4>
-                            <div class="form-grid" style="margin-top:8px;">
-                                <div class="form-row" style="grid-column:1 / -1;">
-                                    <label>Diagnóstico de egreso</label>
-                                    <input id="a-diagnostico" type="text" placeholder="Ej. Hiperplasia prostática benigna sintomática">
-                                </div>
-                                <div class="form-row">
-                                    <label>Código FONASA principal</label>
-                                    <input id="a-cod1" type="text" list="fonasa-list" placeholder="Código o palabra clave" autocomplete="off">
-                                </div>
-                                <div class="form-row">
-                                    <label>Código FONASA secundario (opcional)</label>
-                                    <input id="a-cod2" type="text" list="fonasa-list" placeholder="Código o palabra clave" autocomplete="off">
-                                </div>
-                            </div>
-
-                            <div class="form-row" style="margin-top:14px;">
-                                <label style="display:flex;align-items:center;gap:8px;">
-                                    Evolución clínica y hospitalaria
-                                    <button type="button" class="btn btn-sm" id="a-auto-cuerpo" style="font-size:11px;padding:3px 10px;">Generar automático</button>
-                                </label>
-                                <textarea id="a-cuerpo" style="min-height:140px;" placeholder="Texto de la evolución hospitalaria. Para HoLEP, click en Generar automático y se rellena el cuerpo estándar."></textarea>
-                            </div>
-
-                            <div class="form-row" style="margin-top:14px;">
-                                <label>Indicaciones al alta (una por línea)</label>
-                                <textarea id="a-indicaciones" style="min-height:120px;" placeholder="Reposo relativo por 7 días.&#10;Mantener catéter vesical hasta control en consulta.&#10;Beber 2-3 litros de líquido al día.&#10;Control con su urólogo en 7 días.&#10;Acudir a urgencias si fiebre, sangrado abundante, retención o dolor incoercible."></textarea>
-                            </div>
-                        </div>
-                        <div class="actions">
-                            <button class="btn" id="a-clear">Limpiar</button>
-                            <button class="btn btn-primary" id="a-generate">Generar alta</button>
-                        </div>
-                    </section>
-                </div>
-
                 <!-- ════════════ POST QUIRÚRGICO ════════════ -->
                 <div class="tab-content" id="tab-post-quir">
                     <section class="panel">
@@ -797,7 +768,6 @@
                                         <option value="receta">Receta</option>
                                         <option value="examenes">Solicitud Exámenes</option>
                                         <option value="estudios">Solicitud Estudios</option>
-                                        <option value="alta">Alta Médica</option>
                                         <option value="postvasectomia">Post Vasectomía</option>
                                         <option value="postprostata">Post Cirugía Próstata</option>
                                         <option value="postholep">Post HoLEP</option>
@@ -881,7 +851,7 @@
 
         // ─── Dictado de DATOS del paciente: llena Nombre/RUT/Edad en TODAS las
         //     pestañas a la vez (es el mismo paciente en todos los documentos). ─
-        const PATIENT_PREFIXES = ['i', 'c', 'r', 'e', 's', 'a', 'pq', 'ph'];
+        const PATIENT_PREFIXES = ['i', 'c', 'r', 'e', 's', 'pq', 'ph'];
         function fillAllPatientData(data) {
             for (const p of PATIENT_PREFIXES) {
                 if (data.nombre) { const el = document.getElementById(`${p}-nombre`); if (el) el.value = data.nombre; }
@@ -909,10 +879,29 @@
             });
         });
 
+        // ─── Paciente compartido: al escribir Nombre/RUT/Edad en cualquier
+        //     pestaña, se replica en vivo a todas las demás. El paciente queda
+        //     "activo" en todas las opciones hasta tocar "Nuevo paciente". ───
+        const PATIENT_FIELDS = ['nombre', 'rut', 'edad'];
+        PATIENT_PREFIXES.forEach(p => {
+            PATIENT_FIELDS.forEach(f => {
+                const el = document.getElementById(`${p}-${f}`);
+                if (!el) return;
+                el.addEventListener('input', () => {
+                    const v = el.value;
+                    PATIENT_PREFIXES.forEach(op => {
+                        if (op === p) return;
+                        const other = document.getElementById(`${op}-${f}`);
+                        if (other && other.value !== v) other.value = v;
+                    });
+                });
+            });
+        });
+
         // ─── Nuevo paciente: limpia todas las pestañas ──────────────────
         document.getElementById('newPatientBtn').addEventListener('click', () => {
             if (!confirm('¿Borrar todos los datos del paciente actual en todas las pestañas?')) return;
-            ['i-clear', 'c-clear', 'r-clear', 'e-clear', 's-clear', 'a-clear', 'pq-clear', 'ph-clear']
+            ['i-clear', 'c-clear', 'r-clear', 'e-clear', 's-clear', 'pq-clear', 'ph-clear']
                 .forEach(id => {
                     const btn = document.getElementById(id);
                     if (btn) btn.click();
@@ -1101,7 +1090,6 @@
                             : lastPayload.doc_type === 'receta' ? 'receta'
                             : lastPayload.doc_type === 'examenes' ? 'solicitud_examenes'
                             : lastPayload.doc_type === 'estudios' ? 'solicitud_estudios'
-                            : lastPayload.doc_type === 'alta' ? 'alta_medica'
                             : lastPayload.doc_type === 'postvasectomia' ? 'post_vasectomia'
                             : lastPayload.doc_type === 'postprostata' ? 'post_prostata'
                             : lastPayload.doc_type === 'postholep' ? 'post_holep'
@@ -1133,7 +1121,6 @@
                  : t === 'receta' ? 'receta'
                  : t === 'examenes' ? 'solicitud_examenes'
                  : t === 'estudios' ? 'solicitud_estudios'
-                 : t === 'alta' ? 'alta_medica'
                  : t === 'postvasectomia' ? 'post_vasectomia'
                  : t === 'postprostata' ? 'post_prostata'
                  : t === 'postholep' ? 'post_holep'
@@ -1300,6 +1287,7 @@
                 const paciente = { nombre, rut, edad };
                 lastPayload = { doc_type: 'informe', paciente, clinica, data, case_text: text };
                 renderInformePreview(paciente, clinica, data);
+                saveToHistorial();
             } catch (e) {
                 document.getElementById('previewDoc').innerHTML = `<div style="color:var(--danger)">Error: ${escapeHtml(e.message)}</div>`;
             } finally { setLoading(false); }
@@ -1310,7 +1298,7 @@
             const studiesRows = (data.estudios || []).map(e => `<tr><td>${escapeHtml(e.examen)}</td><td>${escapeHtml(e.resultado)}</td></tr>`).join('');
             const dxList = (data.diagnosticos || []).map(d => `<li>${escapeHtml(d)}</li>`).join('');
             document.getElementById('previewDoc').innerHTML = `
-                <div class="right">${escapeHtml(fecha)}</div>
+                ${letterheadBlock()}<div class="right">${escapeHtml(fecha)}</div>
                 <div class="right">A fines de uso de paciente</div>
                 <div class="right">Presente</div>
                 <h2>INFORME UROLÓGICO</h2>
@@ -1377,6 +1365,7 @@
             lastPayload = { doc_type: 'cirugia', paciente, clinica, clinica_destino: clinicaDestino, coordinador, data };
             showPreview();
             renderCirugiaPreview(paciente, clinica, clinicaDestino, data, coordinador);
+            saveToHistorial();
         });
 
         function renderCirugiaPreview(paciente, clinica, clinicaDestino, data, coordinador) {
@@ -1403,7 +1392,7 @@
                 : '';
 
             document.getElementById('previewDoc').innerHTML = `
-                <div class="right">${escapeHtml(fecha)}</div>
+                ${letterheadBlock()}<div class="right">${escapeHtml(fecha)}</div>
                 <h2>SOLICITUD DE INTERVENCIÓN QUIRÚRGICA</h2>
                 ${clinicaDestino ? `<p style="text-align:center;font-size:15px;font-weight:600;color:var(--text-secondary);margin:-8px 0 12px 0">A ${escapeHtml(clinicaDestino)}</p>` : ''}
                 <h3>Datos del paciente</h3>
@@ -1461,6 +1450,7 @@
             lastPayload = { doc_type: 'receta', paciente, clinica, data };
             showPreview();
             renderRecetaPreview(paciente, clinica, data);
+            saveToHistorial();
         });
 
         function renderRecetaPreview(paciente, clinica, data) {
@@ -1475,7 +1465,7 @@
                 <div class="right" style="font-size:14px;font-weight:700;color:var(--primary)">${escapeHtml(MEDICO.nombre)}</div>
                 <div class="right">${escapeHtml(MEDICO.rut)}</div>
                 <div class="right">${escapeHtml(MEDICO.cm)}</div>
-                <div class="right">${escapeHtml(fecha)}</div>
+                ${letterheadBlock()}<div class="right">${escapeHtml(fecha)}</div>
                 <h2>RECETA MÉDICA</h2>
                 <h3>Datos del paciente</h3>
                 <table class="patient">
@@ -1617,6 +1607,7 @@
             lastPayload = { doc_type: 'examenes', paciente, clinica, data };
             showPreview();
             renderExamenesPreview(paciente, clinica, data);
+            saveToHistorial();
         });
 
         function renderExamenesPreview(paciente, clinica, data) {
@@ -1636,7 +1627,7 @@
                 ${data.prioridad && data.prioridad !== 'Normal' ? `<p style="margin-top:12px;color:var(--primary);font-weight:700">Prioridad: ${escapeHtml(data.prioridad)}</p>` : ''}`;
             let html = '';
             if (lab.length) {
-                html += `<div class="right">${escapeHtml(fecha)}</div>
+                html += `${letterheadBlock()}<div class="right">${escapeHtml(fecha)}</div>
                     <h2>SOLICITUD DE EXÁMENES</h2>
                     <h3>Datos del paciente</h3>${patientTbl}
                     <h3>Exámenes de laboratorio</h3>${renderTable(lab, 'Examen')}
@@ -1653,7 +1644,7 @@
                         ${est.volumen ? `<tr><td>Volumen prostático</td><td>${escapeHtml(est.volumen)} cc</td></tr>` : ''}
                     </table>` : '';
                 html += `<div class="page-break">— Hoja ${hojaNum} —</div>
-                    <div class="right">${escapeHtml(fecha)}</div>
+                    ${letterheadBlock()}<div class="right">${escapeHtml(fecha)}</div>
                     <h2>SOLICITUD DE ESTUDIO DE IMAGEN</h2>
                     <h3>Datos del paciente</h3>${patientTbl}
                     ${datosClin}
@@ -1724,13 +1715,14 @@
             lastPayload = { doc_type: 'estudios', paciente, clinica, data };
             showPreview();
             renderEstudioPreview(paciente, clinica, data);
+            saveToHistorial();
         });
 
         function renderEstudioPreview(paciente, clinica, data) {
             const fecha = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
             const lines = (data.body || '').split('\n').map(l => l ? `<p style="margin:0 0 6px 0">${escapeHtml(l)}</p>` : '<p style="margin:0 0 6px 0">&nbsp;</p>').join('');
             document.getElementById('previewDoc').innerHTML = `
-                <div class="right">${escapeHtml(fecha)}</div>
+                ${letterheadBlock()}<div class="right">${escapeHtml(fecha)}</div>
                 <h2>${escapeHtml(data.titulo || 'SOLICITUD DE ESTUDIO')}</h2>
                 <h3>Datos del paciente</h3>
                 <table class="patient">
@@ -1740,96 +1732,6 @@
                 </table>
                 <h3>Solicitud</h3>
                 <div style="font-family:Arial;font-size:13px;line-height:1.55">${lines}</div>
-                ${firmaBlock()}
-            `;
-            setLogoOnPreview(clinica);
-        }
-
-        // ─── Alta Médica ────────────────────────────────────────────────
-        document.getElementById('a-clear').addEventListener('click', () => {
-            ['a-nombre','a-rut','a-edad','a-fecha','a-diagnostico','a-cod1','a-cod2','a-cuerpo','a-indicaciones'].forEach(id => document.getElementById(id).value = '');
-            document.getElementById('a-clinica').value = '';
-            document.getElementById('previewPanel').classList.remove('show');
-            lastPayload = null;
-        });
-
-        document.getElementById('a-auto-cuerpo').addEventListener('click', () => {
-            const cod1 = parseFonasaInput(val('a-cod1'));
-            const cod2 = parseFonasaInput(val('a-cod2'));
-            const cod1obj = cod1 ? findFonasa(cod1) : null;
-            const cod2obj = cod2 ? findFonasa(cod2) : null;
-            const fechaInput = val('a-fecha');
-            // Convertimos YYYY-MM-DD a "DD de mes de YYYY".
-            let fechaTxt = '';
-            if (fechaInput) {
-                const [y, m, d] = fechaInput.split('-');
-                const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-                fechaTxt = `${parseInt(d,10)} de ${meses[parseInt(m,10)-1]} de ${y}`;
-            }
-            const cuerpo = generateEpicrisisBody({
-                edad: val('a-edad'),
-                fechaCirugia: fechaTxt,
-                cod1, cod2,
-                cod1Nombre: cod1obj?.nombre || '',
-                cod2Nombre: cod2obj?.nombre || ''
-            });
-            document.getElementById('a-cuerpo').value = cuerpo;
-        });
-
-        document.getElementById('a-generate').addEventListener('click', () => {
-            const nombre = val('a-nombre'); const rut = val('a-rut'); const edad = val('a-edad');
-            if (!nombre) { alert('El nombre del paciente es obligatorio.'); return; }
-            const cod1 = parseFonasaInput(val('a-cod1'));
-            const cod1obj = cod1 ? findFonasa(cod1) : null;
-            const cod2 = parseFonasaInput(val('a-cod2'));
-            const cod2obj = cod2 ? findFonasa(cod2) : null;
-            const fechaInput = val('a-fecha');
-            let fechaTxt = '';
-            if (fechaInput) {
-                const [y, m, d] = fechaInput.split('-');
-                const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-                fechaTxt = `${parseInt(d,10)} de ${meses[parseInt(m,10)-1]} de ${y}`;
-            }
-            const data = {
-                fecha_cirugia: fechaTxt,
-                diagnostico: val('a-diagnostico'),
-                cod1_codigo: cod1, cod1_nombre: cod1obj?.nombre || '',
-                cod2_codigo: cod2, cod2_nombre: cod2obj?.nombre || '',
-                cuerpo: val('a-cuerpo'),
-                indicaciones: val('a-indicaciones')
-            };
-            const paciente = { nombre, rut, edad };
-            const clinica = val('a-clinica');
-            lastPayload = { doc_type: 'alta', paciente, clinica, data };
-            showPreview();
-            renderAltaPreview(paciente, clinica, data);
-        });
-
-        function renderAltaPreview(paciente, clinica, data) {
-            const fecha = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
-            const cod1Display = data.cod1_codigo ? `${data.cod1_codigo} — ${data.cod1_nombre}` : '—';
-            const cod2Display = (data.cod2_codigo && data.cod2_nombre) ? `${data.cod2_codigo} — ${data.cod2_nombre}` : '—';
-            const cuerpoHtml = (data.cuerpo || '').split(/\n\n+/).map(p => `<p style="text-align:justify">${escapeHtml(p)}</p>`).join('');
-            const indicaciones = (data.indicaciones || '').split('\n').filter(l => l.trim()).map(l => `<li>• ${escapeHtml(l.trim())}</li>`).join('');
-            document.getElementById('previewDoc').innerHTML = `
-                <h2>INFORME DE ALTA MÉDICA</h2>
-                <h3>Identificación del paciente</h3>
-                <table class="patient">
-                    <tr><td>Nombre del paciente</td><td>${escapeHtml(paciente.nombre)}</td></tr>
-                    <tr><td>RUT</td><td>${escapeHtml(paciente.rut)}</td></tr>
-                    <tr><td>Edad</td><td>${escapeHtml(paciente.edad || '—')}</td></tr>
-                    <tr><td>Fecha de cirugía</td><td>${escapeHtml(data.fecha_cirugia || '—')}</td></tr>
-                    <tr><td>Fecha de emisión</td><td>${escapeHtml(fecha)}</td></tr>
-                    <tr><td>Clínica / Centro</td><td>${escapeHtml(clinica || '—')}</td></tr>
-                </table>
-                <h3>Diagnóstico y procedimiento</h3>
-                <table class="patient">
-                    <tr><td>Diagnóstico de egreso</td><td>${escapeHtml(data.diagnostico || '—')}</td></tr>
-                    <tr><td>Procedimiento principal (FONASA)</td><td>${escapeHtml(cod1Display)}</td></tr>
-                    <tr><td>Procedimiento secundario (FONASA)</td><td>${escapeHtml(cod2Display)}</td></tr>
-                </table>
-                ${data.cuerpo ? `<h3>Evolución clínica y hospitalaria</h3>${cuerpoHtml}` : ''}
-                ${indicaciones ? `<h3>Indicaciones al alta</h3><ul class="meds">${indicaciones}</ul>` : ''}
                 ${firmaBlock()}
             `;
             setLogoOnPreview(clinica);
@@ -1883,13 +1785,14 @@
             lastPayload = { doc_type, paciente, clinica, data };
             showPreview();
             renderPostQuirPreview(paciente, clinica, tipo, data);
+            saveToHistorial();
         });
 
         function renderPostQuirPreview(paciente, clinica, tipo, data) {
             const fecha = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
             if (tipo === 'vasectomia') {
                 document.getElementById('previewDoc').innerHTML = `
-                    <h2>RECOMENDACIONES VASECTOMÍA</h2>
+                    ${letterheadBlock()}<h2>RECOMENDACIONES VASECTOMÍA</h2>
                     <table class="patient">
                         <tr><td>Paciente</td><td>${escapeHtml(paciente.nombre)}</td></tr>
                         <tr><td>RUT</td><td>${escapeHtml(paciente.rut)}</td></tr>
@@ -1901,7 +1804,7 @@
                     ${firmaBlock()}
                     <hr class="page-break" style="border-color:var(--primary);margin:24px 0;">
                     <div style="text-align:right;font-style:italic;">${escapeHtml(fecha)}</div>
-                    <h2>SOLICITUD DE EXAMEN DE LABORATORIO</h2>
+                    ${letterheadBlock()}<h2>SOLICITUD DE EXAMEN DE LABORATORIO</h2>
                     <h3>I. Datos del paciente</h3>
                     <table class="patient">
                         <tr><td>Nombre del paciente</td><td>${escapeHtml(paciente.nombre)}</td></tr>
@@ -1916,7 +1819,7 @@
                     ${firmaBlock()}`;
             } else {
                 document.getElementById('previewDoc').innerHTML = `
-                    <h2>INSTRUCCIONES POST CIRUGÍA DE PRÓSTATA</h2>
+                    ${letterheadBlock()}<h2>INSTRUCCIONES POST CIRUGÍA DE PRÓSTATA</h2>
                     <table class="patient">
                         <tr><td>Paciente</td><td>${escapeHtml(paciente.nombre)}</td></tr>
                         <tr><td>RUT</td><td>${escapeHtml(paciente.rut)}</td></tr>
@@ -1927,7 +1830,7 @@
                     ${firmaBlock()}
                     <hr class="page-break" style="border-color:var(--primary);margin:24px 0;">
                     <div style="text-align:right;font-style:italic;">${escapeHtml(fecha)}</div>
-                    <h2>SOLICITUD DE EXÁMENES DE LABORATORIO</h2>
+                    ${letterheadBlock()}<h2>SOLICITUD DE EXÁMENES DE LABORATORIO</h2>
                     <h3>I. Datos del paciente</h3>
                     <table class="patient">
                         <tr><td>Nombre del paciente</td><td>${escapeHtml(paciente.nombre)}</td></tr>
@@ -1960,7 +1863,7 @@
             lastPayload = { doc_type: 'postholep', paciente, clinica, data: {} };
             showPreview();
             document.getElementById('previewDoc').innerHTML = `
-                <h2>Ejercicios posterior a HoLEP</h2>
+                ${letterheadBlock()}<h2>Ejercicios posterior a HoLEP</h2>
                 <table class="patient">
                     <tr><td>Paciente</td><td>${escapeHtml(nombre)}</td></tr>
                     <tr><td>RUT</td><td>${escapeHtml(rut)}</td></tr>
@@ -1988,6 +1891,7 @@
                 <p style="font-size:13px;margin-top:6px"><strong>No olvide contactarme en caso de cualquier situación inesperada.</strong></p>
                 ${firmaBlock()}`;
             setLogoOnPreview(clinica);
+            saveToHistorial();
         });
 
         // ─── Historial ───────────────────────────────────────────────────
@@ -2049,6 +1953,15 @@
             const l = document.getElementById('loading');
             if (on) { l.classList.add('show'); document.getElementById('loadingText').textContent = text || 'Generando…'; document.getElementById('previewDoc').innerHTML = ''; }
             else l.classList.remove('show');
+        }
+        // Membrete profesional, encabeza cada hoja imprimible. Estilos en línea
+        // para que se vea igual en pantalla, PDF, impresión y Word.
+        function letterheadBlock() {
+            return `<div style="text-align:center;margin:0 0 16px 0;padding-bottom:10px;border-bottom:2px solid #1F4E79;">
+                <div style="font-size:21px;font-weight:800;color:#0F2A47;letter-spacing:0.3px;">Dr. Juan Carlos Riera</div>
+                <div style="font-size:12px;font-weight:700;color:#1F4E79;letter-spacing:3px;text-transform:uppercase;margin-top:3px;">Urólogo</div>
+                <div style="font-size:11.5px;color:#4A5666;margin-top:7px;">Instagram @jcrieram&nbsp;&nbsp;·&nbsp;&nbsp;drjuancarlosriera.com</div>
+            </div>`;
         }
         function firmaBlock() {
             return `<div class="firma">
