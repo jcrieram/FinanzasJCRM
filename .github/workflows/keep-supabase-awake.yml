@@ -1,0 +1,28 @@
+name: Keep Supabase Awake
+
+# Mantiene activo el proyecto de Supabase "uroworknet" para que no se pause
+# por inactividad (la pausa tumba el login con "Failed to fetch").
+# Corre a diario y hace una consulta mínima a la REST API de Supabase, lo que
+# cuenta como actividad de base de datos. No usa funciones de Vercel.
+#
+# La anon key de abajo es PÚBLICA por diseño (la app ya la entrega al navegador
+# vía /api/config); está protegida por las policies RLS. No es un secreto.
+
+on:
+  schedule:
+    - cron: '23 9 * * *'   # diario ~09:23 UTC (~06:23 Chile); minuto no-cero por confiabilidad
+  workflow_dispatch: {}      # permite dispararlo a mano desde la pestaña Actions
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Consulta mínima a Supabase (registra actividad)
+        run: |
+          code=$(curl -sS -o /dev/null -w "%{http_code}" \
+            "https://tjomuijpmujcstxcjmsz.supabase.co/rest/v1/generated_documents?select=id&limit=1" \
+            -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRqb211aWpwbXVqY3N0eGNqbXN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc3NDYwODIsImV4cCI6MjA5MzMyMjA4Mn0.qCuzOvLxpPqtnBXOd_Se10KUPnP9tyOhOZjlkS3Iad4")
+          echo "Supabase respondió HTTP $code"
+          # 200 (ok) o 401/403 (RLS) igual cuentan como actividad; solo fallamos
+          # si no hubo respuesta (000 = no se pudo conectar).
+          if [ "$code" = "000" ]; then echo "Sin respuesta de Supabase"; exit 1; fi
