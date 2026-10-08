@@ -11,17 +11,28 @@
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         :root {
-            --bg: #F5F7FA;
-            --surface: #FFFFFF;
-            --surface-alt: #FAFBFC;
-            --border: #E1E5EA;
-            --navy: #0F2A47;
-            --primary: #1F4E79;
-            --primary-hover: #163A5C;
-            --text: #1A2332;
-            --text-secondary: #4A5666;
-            --text-muted: #7B8794;
-            --danger: #B3261E;
+            /* ── Tema oscuro (modo noche): más descansado para la vista ── */
+            --bg: #0E1620;
+            --surface: #1B2733;
+            --surface-alt: #172029;
+            --input-bg: #131D27;
+            --border: #2C3A48;
+            --navy: #0B1620;
+            /* --primary = acento CLARO para la interfaz oscura (textos, iconos,
+               enlaces). La vista previa del documento lo redefine localmente a
+               azul marino, porque es un "papel" claro. */
+            --primary: #5AA0E6;
+            --primary-hover: #74B2EF;
+            --text: #E6EDF4;
+            --text-secondary: #AEBCCA;
+            --text-muted: #7E8D9C;
+            --danger: #F08A82;
+            --green: #37B26C;
+            --brand-gradient: linear-gradient(135deg, #1F4E79 0%, #2A9D5F 100%);
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.30);
+            --shadow-md: 0 6px 20px rgba(0,0,0,0.40);
+            --shadow-lg: 0 16px 40px rgba(0,0,0,0.52);
+            --radius: 14px;
         }
         html, body {
             height: 100%;
@@ -41,12 +52,15 @@
         }
         .header {
             grid-area: header;
-            background: var(--navy);
+            background: linear-gradient(100deg, #09131D 0%, #0C1A28 55%, #103A2C 170%);
             color: #fff;
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding: 0 20px;
+            box-shadow: 0 2px 14px rgba(0,0,0,0.45);
+            border-bottom: 1px solid #243244;
+            z-index: 10;
         }
         .header-brand { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 700; }
         .header-brand-mark {
@@ -118,18 +132,21 @@
         }
         .nav-item.disabled .badge { background: #FFE9C4; color: #8A5A00; }
 
-        .main { grid-area: main; overflow-y: auto; padding: 24px; }
+        .main { grid-area: main; overflow-y: auto; padding: 24px; background: linear-gradient(160deg, #131C27 0%, #0E1620 100%); }
         .container { max-width: 980px; margin: 0 auto; }
         .panel {
             background: var(--surface);
             border: 1px solid var(--border);
-            border-radius: 8px;
-            margin-bottom: 16px;
+            border-radius: var(--radius);
+            margin-bottom: 18px;
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
         }
         .panel-header {
-            padding: 14px 18px;
+            padding: 16px 20px;
             border-bottom: 1px solid var(--border);
             display: flex; justify-content: space-between; align-items: center;
+            background: linear-gradient(180deg, #1F2C3A 0%, #18222D 100%);
         }
         .panel-title { font-size: 14px; font-weight: 700; }
         .panel-subtitle { color: var(--text-muted); font-size: 13px; margin-top: 4px; }
@@ -148,47 +165,52 @@
             letter-spacing: 0.3px; text-transform: uppercase;
         }
         .form-row input, .form-row select, .form-row textarea {
-            border: 1px solid var(--border); border-radius: 6px;
-            padding: 8px 12px; font-family: inherit; font-size: 14px;
-            color: var(--text); background: var(--surface);
+            border: 1px solid var(--border); border-radius: 10px;
+            padding: 10px 13px; font-family: inherit; font-size: 14px;
+            color: var(--text); background: var(--input-bg);
+            transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
         }
+        .form-row input::placeholder, .form-row textarea::placeholder { color: #67788A; }
+        .form-row select option { background: var(--surface); color: var(--text); }
         .form-row textarea { min-height: 140px; resize: vertical; line-height: 1.55; }
         .form-row input:focus, .form-row select:focus, .form-row textarea:focus {
-            outline: none; border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(31, 78, 121, 0.10);
+            outline: none; border-color: var(--green); background: #fff;
+            box-shadow: 0 0 0 3px rgba(42, 157, 95, 0.14);
         }
         .actions {
             display: flex; gap: 10px; justify-content: flex-end;
-            padding: 12px 18px;
+            padding: 14px 20px;
             border-top: 1px solid var(--border);
-            background: var(--surface-alt);
-            border-radius: 0 0 8px 8px;
+            background: linear-gradient(180deg, #18222D 0%, #141D26 100%);
         }
         .btn {
-            padding: 8px 18px;
+            padding: 9px 18px;
             font-family: inherit; font-size: 13px; font-weight: 600;
-            border-radius: 6px;
+            border-radius: 10px;
             border: 1px solid var(--border);
             background: var(--surface);
             color: var(--text);
             cursor: pointer;
+            transition: transform 0.12s ease, box-shadow 0.2s ease, background 0.15s;
         }
-        .btn:hover { background: var(--surface-alt); }
+        .btn:hover { background: var(--surface-alt); box-shadow: var(--shadow-sm); }
+        .btn:active { transform: translateY(1px); }
         .btn-primary {
-            background: var(--primary); color: #fff;
-            border-color: var(--primary);
+            background: var(--brand-gradient); color: #fff;
+            border-color: transparent;
+            box-shadow: 0 4px 14px rgba(31,78,121,0.26);
         }
-        .btn-primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
-        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .btn-primary:hover { box-shadow: 0 6px 18px rgba(31,78,121,0.34); transform: translateY(-1px); }
+        .btn:disabled { opacity: 0.55; cursor: not-allowed; box-shadow: none; transform: none; }
         .btn-sm { padding: 5px 12px; font-size: 12px; }
         .proc-quick {
             font-size: 12px; font-weight: 600;
             padding: 6px 13px; border-radius: 999px;
-            border: 1px solid var(--primary); background: #fff; color: var(--primary);
+            border: 1px solid var(--primary); background: transparent; color: var(--primary);
             cursor: pointer; font-family: inherit;
             transition: background 0.15s, color 0.15s;
         }
-        .proc-quick:hover { background: var(--primary); color: #fff; }
+        .proc-quick:hover { background: var(--primary); color: #0E1620; }
         .proc-quick:active { transform: scale(0.97); }
         .btn-danger { color: var(--danger); border-color: rgba(179, 38, 30, 0.3); }
         .btn-danger:hover { background: rgba(179, 38, 30, 0.05); }
@@ -196,14 +218,23 @@
         .preview-panel { display: none; }
         .preview-panel.show { display: block; }
         .preview-doc {
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 8px;
+            background: #F4F2EA;
+            border: 1px solid #39465420;
+            border-radius: 12px;
             padding: 32px 40px;
             font-family: Arial, sans-serif;
             font-size: 13px;
             line-height: 1.55;
             position: relative;
+            box-shadow: var(--shadow-md);
+            /* El documento es un "papel" claro: redefinimos los tokens aquí para
+               que sus textos (var(--primary)/var(--text)) salgan en azul marino
+               legible sobre el papel, no en el acento claro del tema oscuro. */
+            --primary: #1F4E79;
+            --text: #1A2332;
+            --text-secondary: #4A5666;
+            --text-muted: #6B7685;
+            color: #1A2332;
         }
         .preview-doc .clinic-logo {
             position: absolute;
@@ -386,7 +417,7 @@
         @media print {
             body * { visibility: hidden; }
             .preview-doc, .preview-doc * { visibility: visible; }
-            .preview-doc { position: absolute; inset: 0; border: none; margin: 0; }
+            .preview-doc { position: absolute; inset: 0; border: none; margin: 0; background: #fff !important; box-shadow: none !important; }
             .page-break, .preview-doc hr.page-break {
                 border: none !important; margin: 0 !important; height: 0 !important;
                 visibility: hidden;
@@ -404,7 +435,7 @@
     <div class="app">
         <header class="header">
             <a href="/portal/" class="header-brand" title="Volver al portal" style="text-decoration:none;color:inherit;cursor:pointer;">
-                <div class="header-brand-mark">I</div>
+                <div class="header-brand-mark"><svg width="18" height="18" viewBox="0 0 64 64" fill="none" stroke="#fff" stroke-width="4" stroke-linejoin="round"><path d="M22 12 C 14 12, 9 22, 11 33 C 13 44, 19 53, 26 51 C 30 50, 30 46, 27 41 C 24 36, 24 28, 27 22 C 29 17, 27 12, 22 12 Z"/><path d="M42 12 C 50 12, 55 22, 53 33 C 51 44, 45 53, 38 51 C 34 50, 34 46, 37 41 C 40 36, 40 28, 37 22 C 35 17, 37 12, 42 12 Z"/></svg></div>
                 InformesUro
             </a>
             <div class="header-meta">
@@ -801,7 +832,7 @@
                             <div style="overflow-x:auto;">
                                 <table id="hist-table" style="width:100%;border-collapse:collapse;font-size:13px;display:none;">
                                     <thead>
-                                        <tr style="background:#EBF3FB;color:#1F4E79;">
+                                        <tr style="background:var(--surface-alt);color:var(--primary);">
                                             <th style="padding:8px 12px;text-align:left;font-weight:600;">Fecha</th>
                                             <th style="padding:8px 12px;text-align:left;font-weight:600;">Tipo</th>
                                             <th style="padding:8px 12px;text-align:left;font-weight:600;">Paciente</th>
@@ -1052,7 +1083,7 @@
             let html = '';
             if (list.length > 1) {
                 html += `<label style="display:block;font-weight:600;margin-bottom:4px">Coordinadora quirúrgica</label>
-                    <select id="c-coord-select" style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;margin-bottom:8px;background:#fff">
+                    <select id="c-coord-select" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:8px;background:var(--input-bg);color:var(--text)">
                         ${list.map((c, i) => `<option value="${i}">${escapeHtml(c.nombre)} — ${escapeHtml(c.telefono)}</option>`).join('')}
                     </select>`;
             }
@@ -1719,7 +1750,7 @@
                 const row = document.createElement('div');
                 row.className = 'form-row';
                 if (f.type === 'textarea') {
-                    row.innerHTML = `<label>${escapeHtml(f.label)}</label><textarea id="s-f-${f.key}" rows="8" style="width:100%;font-family:inherit;font-size:14px;padding:10px;border:1px solid #cbd5e1;border-radius:8px;resize:vertical" placeholder="${escapeAttr(f.placeholder || '')}"></textarea>`;
+                    row.innerHTML = `<label>${escapeHtml(f.label)}</label><textarea id="s-f-${f.key}" rows="8" style="width:100%;font-family:inherit;font-size:14px;padding:10px;border:1px solid var(--border);border-radius:8px;resize:vertical;background:var(--input-bg);color:var(--text)" placeholder="${escapeAttr(f.placeholder || '')}"></textarea>`;
                     grid.appendChild(row);
                     if (f.default) row.querySelector('textarea').value = f.default;
                 } else {
@@ -1961,7 +1992,7 @@
                 if (!documents.length) { empty.textContent = 'No hay documentos que coincidan.'; empty.style.display = 'block'; return; }
                 tbody.innerHTML = documents.map((d, i) => {
                     const fecha = new Date(d.created_at).toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + new Date(d.created_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
-                    const bg = i % 2 === 0 ? '' : 'background:#f9fafb;';
+                    const bg = i % 2 === 0 ? '' : 'background:rgba(255,255,255,0.03);';
                     return `<tr style="${bg}">
                         <td style="padding:8px 12px;">${escapeHtml(fecha)}</td>
                         <td style="padding:8px 12px;">${escapeHtml(d.doc_type_label)}</td>
