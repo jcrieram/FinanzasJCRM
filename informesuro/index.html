@@ -174,8 +174,8 @@
         .form-row select option { background: var(--surface); color: var(--text); }
         .form-row textarea { min-height: 140px; resize: vertical; line-height: 1.55; }
         .form-row input:focus, .form-row select:focus, .form-row textarea:focus {
-            outline: none; border-color: var(--green); background: #fff;
-            box-shadow: 0 0 0 3px rgba(42, 157, 95, 0.14);
+            outline: none; border-color: var(--green); background: var(--surface);
+            box-shadow: 0 0 0 3px rgba(55, 178, 108, 0.22);
         }
         .actions {
             display: flex; gap: 10px; justify-content: flex-end;
@@ -312,7 +312,8 @@
             color: var(--text);
         }
         .coord-info strong { color: var(--primary); }
-        .med-row input { padding: 6px 10px; font-size: 13px; }
+        .med-row input { padding: 6px 10px; font-size: 13px; background: var(--input-bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px; }
+        .med-row input:focus { outline: none; border-color: var(--green); }
         .med-row .remove-med {
             width: 32px; height: 32px;
             background: transparent;
@@ -810,7 +811,7 @@
                             <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
                                 <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:160px;">
                                     <label style="font-size:12px;font-weight:600;">Tipo</label>
-                                    <select id="hist-tipo" style="padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;">
+                                    <select id="hist-tipo" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--input-bg);color:var(--text);">
                                         <option value="">— Todos —</option>
                                         <option value="informe">Informe Urológico</option>
                                         <option value="cirugia">Solicitud Cirugía</option>
@@ -824,7 +825,7 @@
                                 </div>
                                 <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:160px;">
                                     <label style="font-size:12px;font-weight:600;">RUT paciente</label>
-                                    <input id="hist-rut" type="text" placeholder="Buscar por RUT" style="padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;">
+                                    <input id="hist-rut" type="text" placeholder="Buscar por RUT" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--input-bg);color:var(--text);">
                                 </div>
                             </div>
                             <div id="hist-loading" style="display:none;text-align:center;padding:20px;color:#666;font-size:13px;">Cargando…</div>
@@ -1639,7 +1640,7 @@
             const row = document.createElement('div');
             row.style.cssText = 'display:grid;grid-template-columns:1fr 130px 32px;gap:8px;margin-bottom:6px;align-items:center;';
             row.innerHTML = `
-                <input type="text" placeholder="Nombre del examen" style="border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:13px;font-family:inherit;" value="${escapeAttr(name)}">
+                <input type="text" placeholder="Nombre del examen" style="border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:13px;font-family:inherit;background:var(--input-bg);color:var(--text);" value="${escapeAttr(name)}">
                 <select style="border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:13px;font-family:inherit;background:var(--surface);">
                     <option value="lab" ${type === 'lab' ? 'selected' : ''}>Laboratorio</option>
                     <option value="imagen" ${type === 'imagen' ? 'selected' : ''}>Imagen / estudio</option>
