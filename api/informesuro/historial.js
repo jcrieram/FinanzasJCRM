@@ -23,11 +23,27 @@ export default async function handler(req, res) {
     if (!auth.user) return res.status(401).json({ error: 'Requiere autenticación Supabase' });
 
     const q = req.query || {};
+    const supa = getServiceClient();
+
+    // Documento individual (con payload completo) para reabrirlo en la vista
+    // previa. Siempre acotado al usuario autenticado.
+    if (q.id) {
+        const { data, error } = await supa
+            .from('generated_documents')
+            .select('id, doc_type, patient_name, patient_rut, patient_age, clinic, payload, created_at')
+            .eq('user_id', auth.user.id)
+            .eq('id', q.id)
+            .single();
+        if (error || !data) return res.status(404).json({ error: 'Documento no encontrado' });
+        return res.status(200).json({
+            document: { ...data, doc_type_label: TYPE_LABELS[data.doc_type] || data.doc_type }
+        });
+    }
+
     const tipo = q.tipo || '';
     const rut = (q.rut || '').replace(/[^0-9kK]/g, '');
     const limit = Math.min(parseInt(q.limit, 10) || 100, 200);
 
-    const supa = getServiceClient();
     let query = supa
         .from('generated_documents')
         .select('id, doc_type, patient_name, patient_rut, patient_age, clinic, created_at')

@@ -852,6 +852,7 @@
                                             <th style="padding:8px 12px;text-align:left;font-weight:600;">Paciente</th>
                                             <th style="padding:8px 12px;text-align:left;font-weight:600;">RUT</th>
                                             <th style="padding:8px 12px;text-align:left;font-weight:600;">Clínica</th>
+                                            <th style="padding:8px 12px;text-align:center;font-weight:600;">Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody id="hist-tbody"></tbody>
@@ -864,7 +865,10 @@
                 <!-- ════════════ PREVIEW (compartida) ════════════ -->
                 <section class="panel preview-panel" id="previewPanel">
                     <div class="panel-header">
-                        <span class="panel-title">Vista previa</span>
+                        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                            <span class="panel-title">Vista previa</span>
+                            <span id="saveStatus" title="Estado del archivado en el historial" style="display:none;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;white-space:nowrap;"></span>
+                        </div>
                         <div style="display:flex;gap:8px;align-items:center;">
                             <button class="btn" id="driveBtn" title="Guardar una copia PDF en tu Google Drive, organizada por paciente">☁️ Conectar Drive</button>
                             <button class="btn" id="printBtn">Imprimir</button>
@@ -1324,31 +1328,83 @@
                 .catch(() => {});
         }
 
-        // Guarda el documento generado en el historial (Supabase). Se llama al
-        // descargar o imprimir (cuando el documento realmente se produce). El
-        // flag _saved en el propio lastPayload evita guardar dos veces el mismo
-        // documento; como cada generación crea un lastPayload nuevo, se reinicia solo.
-        async function saveToHistorial() {
-            if (!lastPayload || lastPayload._saved) return;
-            lastPayload._saved = true;
-            const p = lastPayload.paciente || {};
-            const { _saved, ...snapshot } = lastPayload;
-            try {
-                const res = await apiFetch('/api/informesuro/save', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        doc_type: lastPayload.doc_type,
-                        patient_name: p.nombre || '',
-                        patient_rut: p.rut || '',
-                        patient_age: p.edad || '',
-                        clinic: lastPayload.clinica || '',
-                        payload: snapshot
-                    })
-                });
-                if (!res.ok && lastPayload) lastPayload._saved = false; // permitir reintento
-            } catch (e) {
-                if (lastPayload) lastPayload._saved = false;
+        // ─── Guardado en el historial (archivado confiable) ─────────────
+        // Cada generación debe quedar archivada en Supabase. Antes el guardado
+        // era "silencioso": si fallaba (Supabase frío, red intermitente, token
+        // caducado) no reintentaba ni avisaba, y el documento se perdía sin que
+        // el médico lo supiera. Ahora:
+        //   • muestra el estado en #saveStatus (Guardando / Archivado / Error),
+        //   • reintenta automáticamente con espera creciente,
+        //   • permite reintentar a mano haciendo clic en la insignia,
+        //   • usa _saveState en el propio lastPayload para no duplicar.
+        function setSaveStatus(state, payloadRef) {
+            // Solo refleja el estado si corresponde al documento en pantalla.
+            if (payloadRef && payloadRef !== lastPayload) return;
+            const el = document.getElementById('saveStatus');
+            if (!el) return;
+            const map = {
+                saving:  { t: '⏳ Guardando…',            bg: 'rgba(224,162,60,0.18)',  fg: '#E0A23C' },
+                saved:   { t: '✓ Archivado en historial', bg: 'rgba(55,178,108,0.18)',  fg: '#37B26C' },
+                error:   { t: '⚠ No archivado — reintentar', bg: 'rgba(240,138,130,0.18)', fg: '#F08A82' },
+                none:    null
+            };
+            const cfg = map[state];
+            if (!cfg) { el.style.display = 'none'; el.onclick = null; el.style.cursor = 'default'; return; }
+            el.style.display = '';
+            el.textContent = cfg.t;
+            el.style.background = cfg.bg;
+            el.style.color = cfg.fg;
+            if (state === 'error') {
+                el.style.cursor = 'pointer';
+                el.title = 'Haz clic para reintentar el archivado';
+                el.onclick = () => { if (lastPayload) { lastPayload._saveState = null; saveToHistorial(); } };
+            } else {
+                el.style.cursor = 'default';
+                el.onclick = null;
+                el.title = 'Estado del archivado en el historial';
             }
+        }
+
+        async function saveToHistorial() {
+            const pl = lastPayload;
+            if (!pl) return false;
+            if (pl._saveState === 'saved' || pl._saveState === 'saving') return pl._saveState === 'saved';
+            pl._saveState = 'saving';
+            setSaveStatus('saving', pl);
+
+            const p = pl.paciente || {};
+            const { _saved, _saveState, ...snapshot } = pl;
+            const body = JSON.stringify({
+                doc_type: pl.doc_type,
+                patient_name: p.nombre || '',
+                patient_rut: p.rut || '',
+                patient_age: p.edad || '',
+                clinic: pl.clinica || '',
+                payload: snapshot
+            });
+
+            // Hasta 3 intentos con espera creciente (0.8s, 2s) ante fallos
+            // transitorios (Supabase recién despertando, red intermitente).
+            const delays = [0, 800, 2000];
+            for (let i = 0; i < delays.length; i++) {
+                if (delays[i]) await new Promise(r => setTimeout(r, delays[i]));
+                if (pl !== lastPayload && pl._saveState !== 'saving') { /* sigue intentando igual: el doc se generó */ }
+                try {
+                    const res = await apiFetch('/api/informesuro/save', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' }, body
+                    });
+                    if (res.ok) {
+                        pl._saveState = 'saved';
+                        setSaveStatus('saved', pl);
+                        return true;
+                    }
+                    // 4xx (p.ej. tipo inválido / no autorizado) no se arregla reintentando.
+                    if (res.status >= 400 && res.status < 500) break;
+                } catch (e) { /* reintentar */ }
+            }
+            pl._saveState = 'error';
+            setSaveStatus('error', pl);
+            return false;
         }
 
         function showPreview() {
@@ -1954,6 +2010,13 @@
             const paciente = { nombre, rut };
             lastPayload = { doc_type: 'postholep', paciente, clinica, data: {} };
             showPreview();
+            renderHolepPreview(paciente, clinica);
+            saveToHistorial();
+        });
+
+        function renderHolepPreview(paciente, clinica) {
+            const nombre = paciente.nombre || '';
+            const rut = paciente.rut || '';
             document.getElementById('previewDoc').innerHTML = `
                 ${letterheadBlock()}<h2>Ejercicios posterior a HoLEP</h2>
                 <table class="patient">
@@ -1983,10 +2046,55 @@
                 <p style="font-size:13px;margin-top:6px"><strong>No olvide contactarme en caso de cualquier situación inesperada.</strong></p>
                 ${firmaBlock()}`;
             setLogoOnPreview(clinica);
-            saveToHistorial();
-        });
+        }
 
         // ─── Historial ───────────────────────────────────────────────────
+        // Reabre un documento archivado a partir de su snapshot guardado.
+        // Reutiliza las mismas funciones de render que la generación normal,
+        // así lo que se ve (y se imprime/descarga) es idéntico al original.
+        function renderFromPayload(pl) {
+            const pac = pl.paciente || {};
+            const clin = pl.clinica || '';
+            const data = pl.data || {};
+            switch (pl.doc_type) {
+                case 'informe':        renderInformePreview(pac, clin, data); break;
+                case 'cirugia':        renderCirugiaPreview(pac, clin, pl.clinica_destino || '', data, pl.coordinador || null); break;
+                case 'receta':         renderRecetaPreview(pac, clin, data); break;
+                case 'examenes':       renderExamenesPreview(pac, clin, data); break;
+                case 'estudios':       renderEstudioPreview(pac, clin, data); break;
+                case 'postvasectomia': renderPostQuirPreview(pac, clin, 'vasectomia', data); break;
+                case 'postprostata':   renderPostQuirPreview(pac, clin, 'prostata', data); break;
+                case 'postholep':      renderHolepPreview(pac, clin); break;
+                default:
+                    document.getElementById('previewDoc').innerHTML =
+                        `<div style="color:var(--danger)">No se puede reconstruir este documento (tipo desconocido: ${escapeHtml(pl.doc_type || '—')}).</div>`;
+            }
+        }
+
+        // Abre un documento del historial: pide su snapshot completo al API,
+        // lo renderiza en la vista previa y lo deja listo para reimprimir o
+        // descargar. No lo vuelve a archivar (ya está guardado).
+        async function abrirHistorial(id) {
+            if (!id) return;
+            showPreview();
+            setLoading(true, 'Abriendo documento archivado…');
+            try {
+                const res = await apiFetch(`/api/informesuro/historial?id=${encodeURIComponent(id)}`);
+                if (!res.ok) throw new Error(`Error ${res.status}: ${await res.text()}`);
+                const { document: doc } = await res.json();
+                if (!doc || !doc.payload) throw new Error('El documento no tiene contenido archivado.');
+                const pl = { ...doc.payload, _saveState: 'saved' };
+                if (!pl.doc_type) pl.doc_type = doc.doc_type;
+                setLoading(false);
+                lastPayload = pl;
+                renderFromPayload(pl);
+                setSaveStatus('saved', pl);
+            } catch (e) {
+                setLoading(false);
+                document.getElementById('previewDoc').innerHTML =
+                    `<div style="color:var(--danger)">No se pudo abrir el documento: ${escapeHtml(e.message)}</div>`;
+            }
+        }
         async function loadHistorial() {
             const tipo = document.getElementById('hist-tipo').value;
             const rut = document.getElementById('hist-rut').value.trim();
@@ -2007,14 +2115,24 @@
                 tbody.innerHTML = documents.map((d, i) => {
                     const fecha = new Date(d.created_at).toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + new Date(d.created_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
                     const bg = i % 2 === 0 ? '' : 'background:rgba(255,255,255,0.03);';
+                    const nombre = (d.patient_name || '').trim();
+                    const nombreCell = nombre
+                        ? escapeHtml(nombre)
+                        : '<span style="color:var(--text-muted);font-style:italic;">(sin nombre)</span>';
                     return `<tr style="${bg}">
-                        <td style="padding:8px 12px;">${escapeHtml(fecha)}</td>
-                        <td style="padding:8px 12px;">${escapeHtml(d.doc_type_label)}</td>
-                        <td style="padding:8px 12px;">${escapeHtml(d.patient_name || '—')}</td>
-                        <td style="padding:8px 12px;">${escapeHtml(formatRut(d.patient_rut))}</td>
+                        <td style="padding:8px 12px;white-space:nowrap;">${escapeHtml(fecha)}</td>
+                        <td style="padding:8px 12px;">${escapeHtml(d.doc_type_label || '—')}</td>
+                        <td style="padding:8px 12px;">${nombreCell}</td>
+                        <td style="padding:8px 12px;white-space:nowrap;">${escapeHtml(formatRut(d.patient_rut))}</td>
                         <td style="padding:8px 12px;">${escapeHtml(d.clinic || '—')}</td>
+                        <td style="padding:8px 12px;text-align:center;">
+                            <button class="btn hist-ver" data-id="${escapeHtml(d.id)}" style="padding:4px 14px;font-size:12px;">Ver</button>
+                        </td>
                     </tr>`;
                 }).join('');
+                tbody.querySelectorAll('.hist-ver').forEach(btn => {
+                    btn.addEventListener('click', () => abrirHistorial(btn.getAttribute('data-id')));
+                });
                 table.style.display = 'table';
             } catch (e) {
                 loading.style.display = 'none';
