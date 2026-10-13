@@ -432,12 +432,31 @@
             .preview-doc h2 { margin: 6px 0 10px; }
             .preview-doc h3 { margin-top: 10px; }
             .preview-doc .firma { margin-top: 16px; }
+            /* El panel-body no debe aportar relleno en impresión (sumaba alto y
+               empujaba una 2ª hoja en blanco). */
+            .panel-body { padding: 0 !important; }
+            html, body { height: auto !important; }
+            /* El último elemento del documento no lleva margen inferior, para
+               no desbordar unos píxeles a una página vacía. */
+            .preview-doc > *:last-child { margin-bottom: 0 !important; }
             .page-break, .preview-doc hr.page-break {
                 border: none !important; margin: 0 !important; height: 0 !important;
                 visibility: hidden;
                 page-break-before: always; break-before: page;
             }
+            @page { size: letter; margin: 12mm; }
         }
+        /* Geometría de impresión para MEDIR (auto-ajuste a 1 hoja). Reproduce el
+           layout de impresión para calcular el zoom necesario. */
+        .preview-doc.measuring-print {
+            padding: 0 !important; margin: 0 auto !important;
+            width: 725px !important; max-width: 725px !important;
+            font-size: 12px !important; border: none !important;
+            box-shadow: none !important; background: #fff !important;
+        }
+        .preview-doc.measuring-print h2 { margin: 6px 0 10px !important; }
+        .preview-doc.measuring-print h3 { margin-top: 10px !important; }
+        .preview-doc.measuring-print .firma { margin-top: 16px !important; }
         .page-break {
             border-top: 2px dashed #ccc; margin: 32px 0; text-align: center;
             color: #999; font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
@@ -818,7 +837,10 @@
                                 <span class="panel-title">Historial de documentos</span>
                                 <div class="panel-subtitle">Documentos generados en esta cuenta.</div>
                             </div>
-                            <button class="btn" id="hist-refresh" style="align-self:center;">Actualizar</button>
+                            <div style="display:flex;gap:8px;align-self:center;">
+                                <button class="btn" id="hist-export" title="Descarga una planilla CSV que se abre en Google Sheets o Excel">⬇ Exportar a Sheets/Excel</button>
+                                <button class="btn" id="hist-refresh">Actualizar</button>
+                            </div>
                         </div>
                         <div class="panel-body">
                             <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
@@ -851,7 +873,9 @@
                                             <th style="padding:8px 12px;text-align:left;font-weight:600;">Tipo</th>
                                             <th style="padding:8px 12px;text-align:left;font-weight:600;">Paciente</th>
                                             <th style="padding:8px 12px;text-align:left;font-weight:600;">RUT</th>
+                                            <th style="padding:8px 12px;text-align:left;font-weight:600;">Teléfono</th>
                                             <th style="padding:8px 12px;text-align:left;font-weight:600;">Clínica</th>
+                                            <th style="padding:8px 12px;text-align:center;font-weight:600;">Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody id="hist-tbody"></tbody>
@@ -864,7 +888,10 @@
                 <!-- ════════════ PREVIEW (compartida) ════════════ -->
                 <section class="panel preview-panel" id="previewPanel">
                     <div class="panel-header">
-                        <span class="panel-title">Vista previa</span>
+                        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                            <span class="panel-title">Vista previa</span>
+                            <span id="saveStatus" title="Estado del archivado en el historial" style="display:none;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;white-space:nowrap;"></span>
+                        </div>
                         <div style="display:flex;gap:8px;align-items:center;">
                             <button class="btn" id="driveBtn" title="Guardar una copia PDF en tu Google Drive, organizada por paciente">☁️ Conectar Drive</button>
                             <button class="btn" id="printBtn">Imprimir</button>
@@ -1207,6 +1234,41 @@
         });
         document.getElementById('printBtn').addEventListener('click', () => { saveToHistorial(); window.print(); });
 
+        // ─── Auto-ajuste a una sola hoja al imprimir ────────────────────
+        // Escala el documento para que cada ORDEN entre en una página. Respeta
+        // los saltos de página explícitos (.page-break): los documentos de
+        // varias órdenes (p.ej. post-vasectomía) conservan sus páginas; cada
+        // una se escala según el segmento más alto. Un documento normal = 1 hoja.
+        function fitPreviewForPrint() {
+            const doc = document.getElementById('previewDoc');
+            if (!doc || !doc.innerHTML.trim()) return;
+            doc.style.zoom = '';
+            doc.classList.add('measuring-print');
+            const docTop = doc.getBoundingClientRect().top;
+            const total = doc.scrollHeight;
+            let maxSeg = total;
+            const breaks = Array.from(doc.querySelectorAll('.page-break'));
+            if (breaks.length) {
+                const ys = breaks.map(b => b.getBoundingClientRect().top - docTop);
+                const bounds = [0, ...ys, total];
+                maxSeg = 0;
+                for (let i = 0; i < bounds.length - 1; i++) {
+                    maxSeg = Math.max(maxSeg, bounds[i + 1] - bounds[i]);
+                }
+            }
+            const pageUsable = 940; // alto útil de una carta (margen 12mm) en px, con holgura
+            const scale = Math.min(1, pageUsable / (maxSeg || 1));
+            doc.style.zoom = String(scale);
+        }
+        function unfitPreviewAfterPrint() {
+            const doc = document.getElementById('previewDoc');
+            if (!doc) return;
+            doc.classList.remove('measuring-print');
+            doc.style.zoom = '';
+        }
+        window.addEventListener('beforeprint', fitPreviewForPrint);
+        window.addEventListener('afterprint', unfitPreviewAfterPrint);
+
         // ─── Descargar Word (editable) ──────────────────────────────────
         function docLabelFor(t) {
             return t === 'cirugia' ? 'solicitud_cirugia'
@@ -1324,31 +1386,91 @@
                 .catch(() => {});
         }
 
-        // Guarda el documento generado en el historial (Supabase). Se llama al
-        // descargar o imprimir (cuando el documento realmente se produce). El
-        // flag _saved en el propio lastPayload evita guardar dos veces el mismo
-        // documento; como cada generación crea un lastPayload nuevo, se reinicia solo.
-        async function saveToHistorial() {
-            if (!lastPayload || lastPayload._saved) return;
-            lastPayload._saved = true;
-            const p = lastPayload.paciente || {};
-            const { _saved, ...snapshot } = lastPayload;
-            try {
-                const res = await apiFetch('/api/informesuro/save', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        doc_type: lastPayload.doc_type,
-                        patient_name: p.nombre || '',
-                        patient_rut: p.rut || '',
-                        patient_age: p.edad || '',
-                        clinic: lastPayload.clinica || '',
-                        payload: snapshot
-                    })
-                });
-                if (!res.ok && lastPayload) lastPayload._saved = false; // permitir reintento
-            } catch (e) {
-                if (lastPayload) lastPayload._saved = false;
+        // ─── Guardado en el historial (archivado confiable) ─────────────
+        // Cada generación debe quedar archivada en Supabase. Antes el guardado
+        // era "silencioso": si fallaba (Supabase frío, red intermitente, token
+        // caducado) no reintentaba ni avisaba, y el documento se perdía sin que
+        // el médico lo supiera. Ahora:
+        //   • muestra el estado en #saveStatus (Guardando / Archivado / Error),
+        //   • reintenta automáticamente con espera creciente,
+        //   • permite reintentar a mano haciendo clic en la insignia,
+        //   • usa _saveState en el propio lastPayload para no duplicar.
+        function setSaveStatus(state, payloadRef) {
+            // Solo refleja el estado si corresponde al documento en pantalla.
+            if (payloadRef && payloadRef !== lastPayload) return;
+            const el = document.getElementById('saveStatus');
+            if (!el) return;
+            const map = {
+                saving:  { t: '⏳ Guardando…',            bg: 'rgba(224,162,60,0.18)',  fg: '#E0A23C' },
+                saved:   { t: '✓ Archivado en historial', bg: 'rgba(55,178,108,0.18)',  fg: '#37B26C' },
+                error:   { t: '⚠ No archivado — reintentar', bg: 'rgba(240,138,130,0.18)', fg: '#F08A82' },
+                none:    null
+            };
+            const cfg = map[state];
+            if (!cfg) { el.style.display = 'none'; el.onclick = null; el.style.cursor = 'default'; return; }
+            el.style.display = '';
+            el.textContent = cfg.t;
+            el.style.background = cfg.bg;
+            el.style.color = cfg.fg;
+            if (state === 'error') {
+                el.style.cursor = 'pointer';
+                el.title = 'Haz clic para reintentar el archivado';
+                el.onclick = () => { if (lastPayload) { lastPayload._saveState = null; saveToHistorial(); } };
+            } else {
+                el.style.cursor = 'default';
+                el.onclick = null;
+                el.title = 'Estado del archivado en el historial';
             }
+        }
+
+        async function saveToHistorial() {
+            const pl = lastPayload;
+            if (!pl) return false;
+            if (pl._saveState === 'saved' || pl._saveState === 'saving') return pl._saveState === 'saved';
+            pl._saveState = 'saving';
+            setSaveStatus('saving', pl);
+
+            const p = pl.paciente || {};
+            // La tabla guarda el objeto del documento en "data" (jsonb) y el
+            // texto del caso en "case_text". Para poder reabrir una cirugía con
+            // su clínica de destino y coordinador, se pliegan dentro de "data".
+            const data = { ...(pl.data || {}) };
+            if (pl.doc_type === 'cirugia') {
+                if (pl.clinica_destino) data.clinica_destino = pl.clinica_destino;
+                if (pl.coordinador) data.coordinador = pl.coordinador;
+            }
+            const body = JSON.stringify({
+                doc_type: pl.doc_type,
+                patient_name: p.nombre || '',
+                patient_rut: p.rut || '',
+                patient_age: p.edad || '',
+                clinic: pl.clinica || '',
+                case_text: pl.case_text || '',
+                data
+            });
+
+            // Hasta 3 intentos con espera creciente (0.8s, 2s) ante fallos
+            // transitorios (Supabase recién despertando, red intermitente).
+            const delays = [0, 800, 2000];
+            for (let i = 0; i < delays.length; i++) {
+                if (delays[i]) await new Promise(r => setTimeout(r, delays[i]));
+                if (pl !== lastPayload && pl._saveState !== 'saving') { /* sigue intentando igual: el doc se generó */ }
+                try {
+                    const res = await apiFetch('/api/informesuro/save', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' }, body
+                    });
+                    if (res.ok) {
+                        pl._saveState = 'saved';
+                        setSaveStatus('saved', pl);
+                        return true;
+                    }
+                    // 4xx (p.ej. tipo inválido / no autorizado) no se arregla reintentando.
+                    if (res.status >= 400 && res.status < 500) break;
+                } catch (e) { /* reintentar */ }
+            }
+            pl._saveState = 'error';
+            setSaveStatus('error', pl);
+            return false;
         }
 
         function showPreview() {
@@ -1954,6 +2076,13 @@
             const paciente = { nombre, rut };
             lastPayload = { doc_type: 'postholep', paciente, clinica, data: {} };
             showPreview();
+            renderHolepPreview(paciente, clinica);
+            saveToHistorial();
+        });
+
+        function renderHolepPreview(paciente, clinica) {
+            const nombre = paciente.nombre || '';
+            const rut = paciente.rut || '';
             document.getElementById('previewDoc').innerHTML = `
                 ${letterheadBlock()}<h2>Ejercicios posterior a HoLEP</h2>
                 <table class="patient">
@@ -1983,10 +2112,66 @@
                 <p style="font-size:13px;margin-top:6px"><strong>No olvide contactarme en caso de cualquier situación inesperada.</strong></p>
                 ${firmaBlock()}`;
             setLogoOnPreview(clinica);
-            saveToHistorial();
-        });
+        }
 
         // ─── Historial ───────────────────────────────────────────────────
+        // Reabre un documento archivado a partir de su snapshot guardado.
+        // Reutiliza las mismas funciones de render que la generación normal,
+        // así lo que se ve (y se imprime/descarga) es idéntico al original.
+        function renderFromPayload(pl) {
+            const pac = pl.paciente || {};
+            const clin = pl.clinica || '';
+            const data = pl.data || {};
+            switch (pl.doc_type) {
+                case 'informe':        renderInformePreview(pac, clin, data); break;
+                case 'cirugia':        renderCirugiaPreview(pac, clin, pl.clinica_destino || '', data, pl.coordinador || null); break;
+                case 'receta':         renderRecetaPreview(pac, clin, data); break;
+                case 'examenes':       renderExamenesPreview(pac, clin, data); break;
+                case 'estudios':       renderEstudioPreview(pac, clin, data); break;
+                case 'postvasectomia': renderPostQuirPreview(pac, clin, 'vasectomia', data); break;
+                case 'postprostata':   renderPostQuirPreview(pac, clin, 'prostata', data); break;
+                case 'postholep':      renderHolepPreview(pac, clin); break;
+                default:
+                    document.getElementById('previewDoc').innerHTML =
+                        `<div style="color:var(--danger)">No se puede reconstruir este documento (tipo desconocido: ${escapeHtml(pl.doc_type || '—')}).</div>`;
+            }
+        }
+
+        // Abre un documento del historial: pide su snapshot completo al API,
+        // lo renderiza en la vista previa y lo deja listo para reimprimir o
+        // descargar. No lo vuelve a archivar (ya está guardado).
+        async function abrirHistorial(id) {
+            if (!id) return;
+            showPreview();
+            setLoading(true, 'Abriendo documento archivado…');
+            try {
+                const res = await apiFetch(`/api/informesuro/historial?id=${encodeURIComponent(id)}`);
+                if (!res.ok) throw new Error(`Error ${res.status}: ${await res.text()}`);
+                const { document: doc } = await res.json();
+                if (!doc) throw new Error('El documento no tiene contenido archivado.');
+                const dd = (doc.data && typeof doc.data === 'object') ? doc.data : {};
+                const pl = {
+                    doc_type: doc.doc_type,
+                    paciente: { nombre: doc.patient_name || '', rut: doc.patient_rut || '', edad: doc.patient_age || '' },
+                    clinica: doc.clinic || '',
+                    clinica_destino: dd.clinica_destino || '',
+                    coordinador: dd.coordinador || null,
+                    case_text: doc.case_text || '',
+                    data: dd,
+                    _saveState: 'saved'
+                };
+                setLoading(false);
+                lastPayload = pl;
+                renderFromPayload(pl);
+                setSaveStatus('saved', pl);
+            } catch (e) {
+                setLoading(false);
+                document.getElementById('previewDoc').innerHTML =
+                    `<div style="color:var(--danger)">No se pudo abrir el documento: ${escapeHtml(e.message)}</div>`;
+            }
+        }
+        let histDocs = [];   // últimos documentos cargados (para exportar)
+
         async function loadHistorial() {
             const tipo = document.getElementById('hist-tipo').value;
             const rut = document.getElementById('hist-rut').value.trim();
@@ -2003,18 +2188,30 @@
                 if (!res.ok) throw new Error(`Error ${res.status}: ${await res.text()}`);
                 const { documents } = await res.json();
                 loading.style.display = 'none';
+                histDocs = documents;
                 if (!documents.length) { empty.textContent = 'No hay documentos que coincidan.'; empty.style.display = 'block'; return; }
                 tbody.innerHTML = documents.map((d, i) => {
                     const fecha = new Date(d.created_at).toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + new Date(d.created_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
                     const bg = i % 2 === 0 ? '' : 'background:rgba(255,255,255,0.03);';
+                    const nombre = (d.patient_name || '').trim();
+                    const nombreCell = nombre
+                        ? escapeHtml(nombre)
+                        : '<span style="color:var(--text-muted);font-style:italic;">(sin nombre)</span>';
                     return `<tr style="${bg}">
-                        <td style="padding:8px 12px;">${escapeHtml(fecha)}</td>
-                        <td style="padding:8px 12px;">${escapeHtml(d.doc_type_label)}</td>
-                        <td style="padding:8px 12px;">${escapeHtml(d.patient_name || '—')}</td>
-                        <td style="padding:8px 12px;">${escapeHtml(formatRut(d.patient_rut))}</td>
+                        <td style="padding:8px 12px;white-space:nowrap;">${escapeHtml(fecha)}</td>
+                        <td style="padding:8px 12px;">${escapeHtml(d.doc_type_label || '—')}</td>
+                        <td style="padding:8px 12px;">${nombreCell}</td>
+                        <td style="padding:8px 12px;white-space:nowrap;">${escapeHtml(formatRut(d.patient_rut))}</td>
+                        <td style="padding:8px 12px;white-space:nowrap;">${escapeHtml(d.patient_phone || '—')}</td>
                         <td style="padding:8px 12px;">${escapeHtml(d.clinic || '—')}</td>
+                        <td style="padding:8px 12px;text-align:center;">
+                            <button class="btn hist-ver" data-id="${escapeHtml(d.id)}" style="padding:4px 14px;font-size:12px;">Ver</button>
+                        </td>
                     </tr>`;
                 }).join('');
+                tbody.querySelectorAll('.hist-ver').forEach(btn => {
+                    btn.addEventListener('click', () => abrirHistorial(btn.getAttribute('data-id')));
+                });
                 table.style.display = 'table';
             } catch (e) {
                 loading.style.display = 'none';
@@ -2023,6 +2220,40 @@
             }
         }
 
+        // Exporta el historial cargado a CSV (se abre en Google Sheets / Excel).
+        // Columnas: Fecha, Tipo solicitado, Paciente, RUT, Teléfono, Clínica.
+        function exportarHistorialCSV() {
+            if (!histDocs.length) { alert('No hay documentos para exportar. Carga el historial primero.'); return; }
+            const esc = (v) => {
+                const s = (v == null ? '' : String(v));
+                return /[",\n;]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+            };
+            const headers = ['Fecha', 'Tipo solicitado', 'Paciente', 'RUT', 'Teléfono', 'Clínica'];
+            const rows = histDocs.map(d => {
+                const f = new Date(d.created_at);
+                const fecha = f.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' +
+                              f.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+                return [
+                    fecha,
+                    d.doc_type_label || d.doc_type || '',
+                    d.patient_name || '',
+                    formatRut(d.patient_rut),
+                    d.patient_phone || '',
+                    d.clinic || ''
+                ].map(esc).join(',');
+            });
+            // BOM (﻿) para que Excel/Sheets respete los acentos.
+            const csv = '﻿' + [headers.map(esc).join(','), ...rows].join('\r\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const hoy = new Date().toISOString().slice(0, 10);
+            const a = document.createElement('a');
+            a.href = url; a.download = `historial_documentos_${hoy}.csv`;
+            document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        }
+
+        document.getElementById('hist-export').addEventListener('click', exportarHistorialCSV);
         document.getElementById('hist-refresh').addEventListener('click', loadHistorial);
         document.getElementById('hist-tipo').addEventListener('change', loadHistorial);
         document.getElementById('hist-rut').addEventListener('input', () => {
