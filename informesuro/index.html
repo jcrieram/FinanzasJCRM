@@ -432,12 +432,31 @@
             .preview-doc h2 { margin: 6px 0 10px; }
             .preview-doc h3 { margin-top: 10px; }
             .preview-doc .firma { margin-top: 16px; }
+            /* El panel-body no debe aportar relleno en impresión (sumaba alto y
+               empujaba una 2ª hoja en blanco). */
+            .panel-body { padding: 0 !important; }
+            html, body { height: auto !important; }
+            /* El último elemento del documento no lleva margen inferior, para
+               no desbordar unos píxeles a una página vacía. */
+            .preview-doc > *:last-child { margin-bottom: 0 !important; }
             .page-break, .preview-doc hr.page-break {
                 border: none !important; margin: 0 !important; height: 0 !important;
                 visibility: hidden;
                 page-break-before: always; break-before: page;
             }
+            @page { size: letter; margin: 12mm; }
         }
+        /* Geometría de impresión para MEDIR (auto-ajuste a 1 hoja). Reproduce el
+           layout de impresión para calcular el zoom necesario. */
+        .preview-doc.measuring-print {
+            padding: 0 !important; margin: 0 auto !important;
+            width: 725px !important; max-width: 725px !important;
+            font-size: 12px !important; border: none !important;
+            box-shadow: none !important; background: #fff !important;
+        }
+        .preview-doc.measuring-print h2 { margin: 6px 0 10px !important; }
+        .preview-doc.measuring-print h3 { margin-top: 10px !important; }
+        .preview-doc.measuring-print .firma { margin-top: 16px !important; }
         .page-break {
             border-top: 2px dashed #ccc; margin: 32px 0; text-align: center;
             color: #999; font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
@@ -1214,6 +1233,41 @@
             finally { btn.disabled = false; btn.textContent = orig; }
         });
         document.getElementById('printBtn').addEventListener('click', () => { saveToHistorial(); window.print(); });
+
+        // ─── Auto-ajuste a una sola hoja al imprimir ────────────────────
+        // Escala el documento para que cada ORDEN entre en una página. Respeta
+        // los saltos de página explícitos (.page-break): los documentos de
+        // varias órdenes (p.ej. post-vasectomía) conservan sus páginas; cada
+        // una se escala según el segmento más alto. Un documento normal = 1 hoja.
+        function fitPreviewForPrint() {
+            const doc = document.getElementById('previewDoc');
+            if (!doc || !doc.innerHTML.trim()) return;
+            doc.style.zoom = '';
+            doc.classList.add('measuring-print');
+            const docTop = doc.getBoundingClientRect().top;
+            const total = doc.scrollHeight;
+            let maxSeg = total;
+            const breaks = Array.from(doc.querySelectorAll('.page-break'));
+            if (breaks.length) {
+                const ys = breaks.map(b => b.getBoundingClientRect().top - docTop);
+                const bounds = [0, ...ys, total];
+                maxSeg = 0;
+                for (let i = 0; i < bounds.length - 1; i++) {
+                    maxSeg = Math.max(maxSeg, bounds[i + 1] - bounds[i]);
+                }
+            }
+            const pageUsable = 940; // alto útil de una carta (margen 12mm) en px, con holgura
+            const scale = Math.min(1, pageUsable / (maxSeg || 1));
+            doc.style.zoom = String(scale);
+        }
+        function unfitPreviewAfterPrint() {
+            const doc = document.getElementById('previewDoc');
+            if (!doc) return;
+            doc.classList.remove('measuring-print');
+            doc.style.zoom = '';
+        }
+        window.addEventListener('beforeprint', fitPreviewForPrint);
+        window.addEventListener('afterprint', unfitPreviewAfterPrint);
 
         // ─── Descargar Word (editable) ──────────────────────────────────
         function docLabelFor(t) {
