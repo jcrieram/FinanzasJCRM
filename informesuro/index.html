@@ -818,7 +818,10 @@
                                 <span class="panel-title">Historial de documentos</span>
                                 <div class="panel-subtitle">Documentos generados en esta cuenta.</div>
                             </div>
-                            <button class="btn" id="hist-refresh" style="align-self:center;">Actualizar</button>
+                            <div style="display:flex;gap:8px;align-self:center;">
+                                <button class="btn" id="hist-export" title="Descarga una planilla CSV que se abre en Google Sheets o Excel">⬇ Exportar a Sheets/Excel</button>
+                                <button class="btn" id="hist-refresh">Actualizar</button>
+                            </div>
                         </div>
                         <div class="panel-body">
                             <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
@@ -851,6 +854,7 @@
                                             <th style="padding:8px 12px;text-align:left;font-weight:600;">Tipo</th>
                                             <th style="padding:8px 12px;text-align:left;font-weight:600;">Paciente</th>
                                             <th style="padding:8px 12px;text-align:left;font-weight:600;">RUT</th>
+                                            <th style="padding:8px 12px;text-align:left;font-weight:600;">Teléfono</th>
                                             <th style="padding:8px 12px;text-align:left;font-weight:600;">Clínica</th>
                                             <th style="padding:8px 12px;text-align:center;font-weight:600;">Acciones</th>
                                         </tr>
@@ -1373,14 +1377,22 @@
             setSaveStatus('saving', pl);
 
             const p = pl.paciente || {};
-            const { _saved, _saveState, ...snapshot } = pl;
+            // La tabla guarda el objeto del documento en "data" (jsonb) y el
+            // texto del caso en "case_text". Para poder reabrir una cirugía con
+            // su clínica de destino y coordinador, se pliegan dentro de "data".
+            const data = { ...(pl.data || {}) };
+            if (pl.doc_type === 'cirugia') {
+                if (pl.clinica_destino) data.clinica_destino = pl.clinica_destino;
+                if (pl.coordinador) data.coordinador = pl.coordinador;
+            }
             const body = JSON.stringify({
                 doc_type: pl.doc_type,
                 patient_name: p.nombre || '',
                 patient_rut: p.rut || '',
                 patient_age: p.edad || '',
                 clinic: pl.clinica || '',
-                payload: snapshot
+                case_text: pl.case_text || '',
+                data
             });
 
             // Hasta 3 intentos con espera creciente (0.8s, 2s) ante fallos
@@ -2082,9 +2094,18 @@
                 const res = await apiFetch(`/api/informesuro/historial?id=${encodeURIComponent(id)}`);
                 if (!res.ok) throw new Error(`Error ${res.status}: ${await res.text()}`);
                 const { document: doc } = await res.json();
-                if (!doc || !doc.payload) throw new Error('El documento no tiene contenido archivado.');
-                const pl = { ...doc.payload, _saveState: 'saved' };
-                if (!pl.doc_type) pl.doc_type = doc.doc_type;
+                if (!doc) throw new Error('El documento no tiene contenido archivado.');
+                const dd = (doc.data && typeof doc.data === 'object') ? doc.data : {};
+                const pl = {
+                    doc_type: doc.doc_type,
+                    paciente: { nombre: doc.patient_name || '', rut: doc.patient_rut || '', edad: doc.patient_age || '' },
+                    clinica: doc.clinic || '',
+                    clinica_destino: dd.clinica_destino || '',
+                    coordinador: dd.coordinador || null,
+                    case_text: doc.case_text || '',
+                    data: dd,
+                    _saveState: 'saved'
+                };
                 setLoading(false);
                 lastPayload = pl;
                 renderFromPayload(pl);
@@ -2095,6 +2116,8 @@
                     `<div style="color:var(--danger)">No se pudo abrir el documento: ${escapeHtml(e.message)}</div>`;
             }
         }
+        let histDocs = [];   // últimos documentos cargados (para exportar)
+
         async function loadHistorial() {
             const tipo = document.getElementById('hist-tipo').value;
             const rut = document.getElementById('hist-rut').value.trim();
@@ -2111,6 +2134,7 @@
                 if (!res.ok) throw new Error(`Error ${res.status}: ${await res.text()}`);
                 const { documents } = await res.json();
                 loading.style.display = 'none';
+                histDocs = documents;
                 if (!documents.length) { empty.textContent = 'No hay documentos que coincidan.'; empty.style.display = 'block'; return; }
                 tbody.innerHTML = documents.map((d, i) => {
                     const fecha = new Date(d.created_at).toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + new Date(d.created_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
@@ -2124,6 +2148,7 @@
                         <td style="padding:8px 12px;">${escapeHtml(d.doc_type_label || '—')}</td>
                         <td style="padding:8px 12px;">${nombreCell}</td>
                         <td style="padding:8px 12px;white-space:nowrap;">${escapeHtml(formatRut(d.patient_rut))}</td>
+                        <td style="padding:8px 12px;white-space:nowrap;">${escapeHtml(d.patient_phone || '—')}</td>
                         <td style="padding:8px 12px;">${escapeHtml(d.clinic || '—')}</td>
                         <td style="padding:8px 12px;text-align:center;">
                             <button class="btn hist-ver" data-id="${escapeHtml(d.id)}" style="padding:4px 14px;font-size:12px;">Ver</button>
@@ -2141,6 +2166,40 @@
             }
         }
 
+        // Exporta el historial cargado a CSV (se abre en Google Sheets / Excel).
+        // Columnas: Fecha, Tipo solicitado, Paciente, RUT, Teléfono, Clínica.
+        function exportarHistorialCSV() {
+            if (!histDocs.length) { alert('No hay documentos para exportar. Carga el historial primero.'); return; }
+            const esc = (v) => {
+                const s = (v == null ? '' : String(v));
+                return /[",\n;]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+            };
+            const headers = ['Fecha', 'Tipo solicitado', 'Paciente', 'RUT', 'Teléfono', 'Clínica'];
+            const rows = histDocs.map(d => {
+                const f = new Date(d.created_at);
+                const fecha = f.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' +
+                              f.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+                return [
+                    fecha,
+                    d.doc_type_label || d.doc_type || '',
+                    d.patient_name || '',
+                    formatRut(d.patient_rut),
+                    d.patient_phone || '',
+                    d.clinic || ''
+                ].map(esc).join(',');
+            });
+            // BOM (﻿) para que Excel/Sheets respete los acentos.
+            const csv = '﻿' + [headers.map(esc).join(','), ...rows].join('\r\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const hoy = new Date().toISOString().slice(0, 10);
+            const a = document.createElement('a');
+            a.href = url; a.download = `historial_documentos_${hoy}.csv`;
+            document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        }
+
+        document.getElementById('hist-export').addEventListener('click', exportarHistorialCSV);
         document.getElementById('hist-refresh').addEventListener('click', loadHistorial);
         document.getElementById('hist-tipo').addEventListener('change', loadHistorial);
         document.getElementById('hist-rut').addEventListener('input', () => {

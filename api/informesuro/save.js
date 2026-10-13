@@ -34,14 +34,22 @@ export default async function handler(req, res) {
     const doc_type = String(body.doc_type || '').trim();
     if (!VALID_TYPES.has(doc_type)) return res.status(400).json({ error: 'Tipo de documento inválido' });
 
+    // La tabla generated_documents tiene columnas: doc_type, patient_name,
+    // patient_rut, patient_age, clinic, case_text (text) y data (jsonb).
+    // NO existe una columna "payload" — escribir en ella hacía fallar TODOS
+    // los insert (de ahí que no se archivara nada). Guardamos el objeto de
+    // datos del documento en "data" y el texto del caso (informe) en case_text.
     const record = {
         user_id: auth.user.id,
         doc_type,
-        patient_name: clip(body.patient_name, 200),
-        patient_rut: normalizeRut(body.patient_rut) || null,
+        patient_name: clip(body.patient_name, 200) || '',
+        // patient_rut es NOT NULL en la tabla: usar cadena vacía (no null)
+        // cuando el paciente no tiene RUT, para no romper el insert.
+        patient_rut: normalizeRut(body.patient_rut),
         patient_age: clip(body.patient_age, 20),
         clinic: clip(body.clinic, 200),
-        payload: (body.payload && typeof body.payload === 'object') ? body.payload : {}
+        case_text: clip(body.case_text, 20000),
+        data: (body.data && typeof body.data === 'object' && !Array.isArray(body.data)) ? body.data : {}
     };
 
     try {

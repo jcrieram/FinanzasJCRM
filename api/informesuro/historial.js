@@ -30,7 +30,7 @@ export default async function handler(req, res) {
     if (q.id) {
         const { data, error } = await supa
             .from('generated_documents')
-            .select('id, doc_type, patient_name, patient_rut, patient_age, clinic, payload, created_at')
+            .select('id, doc_type, patient_name, patient_rut, patient_age, clinic, case_text, data, created_at')
             .eq('user_id', auth.user.id)
             .eq('id', q.id)
             .single();
@@ -44,9 +44,13 @@ export default async function handler(req, res) {
     const rut = (q.rut || '').replace(/[^0-9kK]/g, '');
     const limit = Math.min(parseInt(q.limit, 10) || 100, 200);
 
+    // Se incluye `data` para extraer el teléfono (guardado dentro del
+    // documento, p.ej. en solicitudes de cirugía). No se devuelve el objeto
+    // `data` completo en la lista: solo el teléfono derivado, para mantenerla
+    // liviana. El contenido completo se obtiene con ?id= al reabrir.
     let query = supa
         .from('generated_documents')
-        .select('id, doc_type, patient_name, patient_rut, patient_age, clinic, created_at')
+        .select('id, doc_type, patient_name, patient_rut, patient_age, clinic, data, created_at')
         .eq('user_id', auth.user.id)
         .order('created_at', { ascending: false })
         .limit(limit);
@@ -57,10 +61,16 @@ export default async function handler(req, res) {
     const { data, error } = await query;
     if (error) return res.status(500).json({ error: error.message });
 
-    const documents = (data || []).map(d => ({
-        ...d,
-        doc_type_label: TYPE_LABELS[d.doc_type] || d.doc_type
-    }));
+    const documents = (data || []).map(d => {
+        const dd = (d.data && typeof d.data === 'object') ? d.data : {};
+        const phone = dd.telefono || dd.fono || dd.phone || '';
+        const { data: _omit, ...rest } = d;
+        return {
+            ...rest,
+            patient_phone: (phone || '').toString().trim(),
+            doc_type_label: TYPE_LABELS[d.doc_type] || d.doc_type
+        };
+    });
 
     return res.status(200).json({ documents });
 }
