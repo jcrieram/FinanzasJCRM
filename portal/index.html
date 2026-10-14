@@ -558,10 +558,11 @@
             inset: 0;
             background-image: url('imageportal.jpeg');
             background-size: cover;
-            background-position: center 42%;
+            background-position: 70% 66%;
             background-repeat: no-repeat;
-            -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 16%, #000 84%, transparent 100%);
-                    mask-image: linear-gradient(to right, transparent 0%, #000 16%, #000 84%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 8%, #000 94%, transparent 100%);
+                    mask-image: linear-gradient(to right, transparent 0%, #000 8%, #000 94%, transparent 100%);
+            filter: brightness(1.08) contrast(1.02) saturate(1.05);
             animation: bannerZoom 26s ease-in-out infinite alternate;
         }
         @keyframes bannerZoom { from { transform: scale(1); } to { transform: scale(1.08); } }
@@ -569,10 +570,10 @@
         .banner__scrim {
             position: absolute; inset: 0;
             background: linear-gradient(180deg,
-                rgba(4, 16, 42, 0.35) 0%,
-                rgba(4, 16, 42, 0.05) 32%,
-                rgba(4, 16, 42, 0.45) 72%,
-                var(--navy-deep) 100%);
+                rgba(4, 16, 42, 0.30) 0%,
+                rgba(4, 16, 42, 0.00) 40%,
+                rgba(4, 16, 42, 0.16) 80%,
+                rgba(4, 16, 42, 0.86) 100%);
         }
         .banner__content {
             position: relative; z-index: 2;
