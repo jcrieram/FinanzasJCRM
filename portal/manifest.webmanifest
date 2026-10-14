@@ -1,0 +1,16 @@
+{
+  "name": "UroWorkNet",
+  "short_name": "UroWorkNet",
+  "description": "Sistema integral de gestión urológica — InformesUro, ConsultaVoz, UroAtlas y Cistoscopía.",
+  "start_url": "/portal/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#04102A",
+  "theme_color": "#07162D",
+  "icons": [
+    { "src": "/portal/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/portal/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/portal/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
