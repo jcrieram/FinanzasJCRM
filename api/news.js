@@ -38,24 +38,37 @@ export default async function handler(req, res) {
     const prompt = `Busca en internet una noticia o publicación científica urológica relevante de los últimos 7 días (puede ser de revistas como European Urology, Journal of Urology, BJUI; sociedades AUA, EAU, CAU; o medios especializados). Resume en 2 o 3 líneas en español lo más importante para un urólogo en consulta. No agregues introducción ni saludo. Al final entre paréntesis menciona la fuente y la fecha si la tienes. Si encuentras varias, elige la más impactante clínicamente.`;
 
     try {
-        const upstream = await fetch('https://api.openai.com/v1/chat/completions', {
+        // Responses API con la herramienta integrada de búsqueda web.
+        // (El antiguo modelo gpt-4o-mini-search-preview fue deprecado por OpenAI.)
+        const upstream = await fetch('https://api.openai.com/v1/responses', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${apiKey}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                model: 'gpt-4o-mini-search-preview',
-                messages: [{ role: 'user', content: prompt }],
-                web_search_options: {}
+                model: 'gpt-4o-mini',
+                tools: [{ type: 'web_search' }],
+                input: prompt,
+                max_output_tokens: 600
             })
         });
         const data = await upstream.json();
         if (!upstream.ok) {
             return res.status(upstream.status).json({ error: data.error?.message || 'Error de OpenAI' });
         }
-        const news = data.choices?.[0]?.message?.content?.trim() || '';
-        return res.status(200).json({ news });
+        // La respuesta cruda trae un array `output`; extraemos el texto del mensaje.
+        let news = (typeof data.output_text === 'string' ? data.output_text : '').trim();
+        if (!news) {
+            news = (data.output || [])
+                .filter(o => o.type === 'message')
+                .flatMap(o => o.content || [])
+                .filter(c => c.type === 'output_text' && typeof c.text === 'string')
+                .map(c => c.text)
+                .join('\n')
+                .trim();
+        }
+        return res.status(200).json({ news: news || 'Sin resultados.' });
     } catch (e) {
         return res.status(500).json({ error: e.message });
     }
