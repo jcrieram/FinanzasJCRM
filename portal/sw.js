@@ -1,7 +1,7 @@
 // Service worker del portal UroWorkNet (PWA "añadir a inicio").
 // Network-first: siempre intenta la última versión; el caché es solo
 // respaldo sin conexión. No intercepta /api/.
-const CACHE = 'uwn-portal-v1';
+const CACHE = 'uwn-portal-v2';
 const ASSETS = [
     '/portal/',
     '/portal/index.html',
