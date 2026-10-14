@@ -532,14 +532,164 @@
             font-weight: 700;
         }
 
+        /* ════════════════════════════════════════ BANNER FOTO ═══ */
+        .banner {
+            position: relative;
+            width: 100%;
+            height: clamp(300px, 46vh, 500px);
+            overflow: hidden;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            /* Fallback elegante si aún no se ha cargado la foto */
+            background:
+                radial-gradient(ellipse at 50% 15%, rgba(0, 113, 227, 0.45), transparent 60%),
+                radial-gradient(ellipse at 80% 90%, rgba(52, 199, 89, 0.30), transparent 55%),
+                linear-gradient(160deg, #0A2A4E 0%, #07162D 55%, #04102A 100%);
+        }
+        /* La foto: cubre el banner y se DIFUMINA a los lados (máscara horizontal)
+           para fundirse con el fondo. Cambia la ruta por tu foto operando. */
+        .banner__img {
+            position: absolute;
+            inset: 0;
+            background-image: url('img/portada.jpg');
+            background-size: cover;
+            background-position: center 30%;
+            background-repeat: no-repeat;
+            -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 16%, #000 84%, transparent 100%);
+                    mask-image: linear-gradient(to right, transparent 0%, #000 16%, #000 84%, transparent 100%);
+            animation: bannerZoom 26s ease-in-out infinite alternate;
+        }
+        @keyframes bannerZoom { from { transform: scale(1); } to { transform: scale(1.08); } }
+        /* Oscurecido superior/inferior para legibilidad del texto y fundido con la página */
+        .banner__scrim {
+            position: absolute; inset: 0;
+            background: linear-gradient(180deg,
+                rgba(4, 16, 42, 0.35) 0%,
+                rgba(4, 16, 42, 0.05) 32%,
+                rgba(4, 16, 42, 0.45) 72%,
+                var(--navy-deep) 100%);
+        }
+        .banner__content {
+            position: relative; z-index: 2;
+            text-align: center;
+            padding: 0 24px 40px;
+            animation: fadeInUp 1s ease-out;
+        }
+        .banner__title {
+            font-size: clamp(44px, 10vw, 104px);
+            font-weight: 900;
+            letter-spacing: -0.045em;
+            line-height: 0.92;
+            background: linear-gradient(135deg, #ffffff 0%, #e6f0ff 42%, #64B5F6 74%, #34c759 100%);
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+            text-shadow: 0 2px 50px rgba(0, 0, 0, 0.45);
+        }
+        .banner__by {
+            margin-top: 12px;
+            font-size: clamp(12px, 2vw, 17px);
+            font-weight: 500;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: rgba(236, 244, 253, 0.82);
+            text-shadow: 0 1px 20px rgba(0, 0, 0, 0.6);
+        }
+        .banner__by b { color: #fff; font-weight: 700; }
+
+        /* ════════════════════════════════════════ ICONOS ESTILO iPHONE ═══ */
+        .apps { padding-top: 44px; }
+        .greeting {
+            text-align: center;
+            font-size: clamp(18px, 3vw, 26px);
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            margin-bottom: 34px;
+            color: var(--text-primary);
+        }
+        .greeting span { color: var(--text-muted); font-weight: 500; }
+
+        .appgrid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: clamp(12px, 3.5vw, 44px);
+            max-width: 780px;
+            margin: 0 auto;
+            padding: 0 4px;
+        }
+        .appicon {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 13px;
+            text-decoration: none;
+            color: inherit;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease-out forwards;
+        }
+        .appicon:nth-child(1) { animation-delay: 0.05s; }
+        .appicon:nth-child(2) { animation-delay: 0.15s; }
+        .appicon:nth-child(3) { animation-delay: 0.25s; }
+        .appicon:nth-child(4) { animation-delay: 0.35s; }
+        .appicon__tile {
+            position: relative;
+            width: clamp(68px, 18vw, 110px);
+            aspect-ratio: 1 / 1;
+            border-radius: 25%;
+            background: linear-gradient(150deg, var(--c1), var(--c2));
+            display: flex; align-items: center; justify-content: center;
+            box-shadow:
+                0 14px 30px rgba(0, 0, 0, 0.45),
+                0 3px 8px rgba(0, 0, 0, 0.4),
+                inset 0 1.5px 0 rgba(255, 255, 255, 0.4);
+            transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.45s ease;
+            overflow: hidden;
+        }
+        /* Brillo superior tipo iOS */
+        .appicon__tile::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0) 48%);
+        }
+        .appicon__tile svg {
+            position: relative; z-index: 1;
+            width: 46%; height: 46%;
+            stroke: #fff; fill: none;
+            stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25));
+        }
+        .appicon__badge {
+            position: absolute; top: 7px; right: 7px;
+            width: 13px; height: 13px; border-radius: 50%;
+            border: 2px solid rgba(4, 16, 42, 0.55);
+            z-index: 2;
+        }
+        .badge-live { background: #34c759; box-shadow: 0 0 9px rgba(52, 199, 89, 0.9); }
+        .badge-beta { background: #ff9f0a; box-shadow: 0 0 9px rgba(255, 159, 10, 0.8); }
+        .appicon:hover .appicon__tile {
+            transform: translateY(-9px) scale(1.07);
+            box-shadow:
+                0 26px 50px rgba(0, 0, 0, 0.55),
+                0 0 44px var(--glow, rgba(0, 113, 227, 0.5)),
+                inset 0 1.5px 0 rgba(255, 255, 255, 0.45);
+        }
+        .appicon:active .appicon__tile { transform: translateY(-3px) scale(1.02); }
+        .appicon__name {
+            font-size: clamp(12px, 1.7vw, 15px);
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            text-align: center;
+            color: var(--text-primary);
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .banner__img { animation: none; }
+        }
+
         /* ════════════════════════════════════════ RESPONSIVE ═══ */
         @media (max-width: 640px) {
-            .hero { padding: 100px 20px 40px; }
             .topbar { padding: 14px 18px; }
-            .apps { padding: 40px 20px 40px; }
-            .card { padding: 28px 24px 24px; min-height: 280px; }
-            .card-status { top: 24px; right: 24px; }
-            .card h3 { font-size: 22px; }
+            .apps { padding: 36px 16px 40px; }
+            .appgrid { gap: 10px; max-width: 420px; }
+            .banner { height: clamp(240px, 38vh, 360px); }
         }
 
         /* ════════════════════════════════════════ NEWS FAB + MODAL ═══ */
@@ -733,107 +883,67 @@
         </div>
     </header>
 
-    <section class="hero">
-        <div class="logo-mark">
-            <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                    <linearGradient id="kgrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stop-color="#64B5F6"/>
-                        <stop offset="100%" stop-color="#34c759"/>
-                    </linearGradient>
-                </defs>
-                <path d="M22 12 C 14 12, 9 22, 11 33 C 13 44, 19 53, 26 51 C 30 50, 30 46, 27 41 C 24 36, 24 28, 27 22 C 29 17, 27 12, 22 12 Z"
-                      stroke="url(#kgrad)" stroke-width="3" stroke-linejoin="round" fill="none"/>
-                <path d="M42 12 C 50 12, 55 22, 53 33 C 51 44, 45 53, 38 51 C 34 50, 34 46, 37 41 C 40 36, 40 28, 37 22 C 35 17, 37 12, 42 12 Z"
-                      stroke="url(#kgrad)" stroke-width="3" stroke-linejoin="round" fill="none"/>
-                <circle cx="32" cy="32" r="2.5" fill="url(#kgrad)"/>
-            </svg>
+    <section class="banner">
+        <div class="banner__img"></div>
+        <div class="banner__scrim"></div>
+        <div class="banner__content">
+            <h1 class="banner__title">UroWorkNet</h1>
+            <p class="banner__by">by <b>Dr. Juan Carlos Riera</b></p>
         </div>
-
-        <h1 class="brand">UroWorkNet</h1>
-
-        <p class="tagline">Sistema integral de gestión urológica.<br>Tres herramientas, una sola plataforma.</p>
-        <div class="doctor-pill">
-            <span class="badge-dot"></span>
-            Dr. Juan Carlos Riera M. · Urólogo
-        </div>
-
-        <div class="scroll-hint">Tus apps</div>
     </section>
 
     <main class="apps">
-        <span class="section-eyebrow">Plataforma</span>
-        <h2 class="section-title">Todo lo que necesitas<br>en un mismo lugar</h2>
-        <p class="section-subtitle">Tres herramientas integradas para automatizar y agilizar tu práctica urológica diaria.</p>
+        <div class="greeting" id="greeting">Tus aplicaciones <span>— elige una para empezar</span></div>
 
-        <div class="cards">
+        <div class="appgrid">
 
-            <a class="card" href="/informesuro/">
-                <span class="card-status status-live"><span class="dot"></span>Disponible</span>
-                <div class="card-inner">
-                    <div class="card-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#64B5F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                            <polyline points="14 2 14 8 20 8"/>
-                            <line x1="9" y1="13" x2="15" y2="13"/>
-                            <line x1="9" y1="17" x2="15" y2="17"/>
-                            <line x1="9" y1="9" x2="11" y2="9"/>
-                        </svg>
-                    </div>
-                    <h3>InformesUro</h3>
-                    <p class="desc">Informes clínicos, solicitudes de cirugía y exámenes, derivaciones, alta médica, recetas. Documentos profesionales generados con IA en segundos.</p>
-                    <span class="card-cta">Abrir</span>
-                </div>
+            <a class="appicon" href="/informesuro/" style="--c1:#0A84FF;--c2:#0040DD;--glow:rgba(10,132,255,0.55)">
+                <span class="appicon__tile">
+                    <span class="appicon__badge badge-live" title="Disponible"></span>
+                    <svg viewBox="0 0 24 24">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="9" y1="13" x2="15" y2="13"/>
+                        <line x1="9" y1="17" x2="15" y2="17"/>
+                        <line x1="9" y1="9" x2="11" y2="9"/>
+                    </svg>
+                </span>
+                <span class="appicon__name">InformesUro</span>
             </a>
 
-            <a class="card" href="https://finanzas-jcrm.vercel.app/consulta/" target="_blank" rel="noopener">
-                <span class="card-status status-live"><span class="dot"></span>Disponible</span>
-                <div class="card-inner">
-                    <div class="card-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#64B5F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                            <line x1="12" y1="19" x2="12" y2="23"/>
-                            <line x1="8" y1="23" x2="16" y2="23"/>
-                        </svg>
-                    </div>
-                    <h3>ConsultaVoz</h3>
-                    <p class="desc">Graba la entrevista con el paciente y obtén la nota clínica lista para pegar en la ficha. Detecta primera consulta vs control y captura exámenes automáticamente.</p>
-                    <span class="card-cta">Abrir</span>
-                </div>
+            <a class="appicon" href="https://finanzas-jcrm.vercel.app/consulta/" target="_blank" rel="noopener" style="--c1:#34C759;--c2:#0E9F6E;--glow:rgba(52,199,89,0.55)">
+                <span class="appicon__tile">
+                    <span class="appicon__badge badge-live" title="Disponible"></span>
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                        <line x1="12" y1="19" x2="12" y2="23"/>
+                        <line x1="8" y1="23" x2="16" y2="23"/>
+                    </svg>
+                </span>
+                <span class="appicon__name">ConsultaVoz</span>
             </a>
 
-            <a class="card" href="/uroatlas/">
-                <span class="card-status status-soon"><span class="dot"></span>Beta</span>
-                <div class="card-inner">
-                    <div class="card-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#64B5F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
-                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
-                        </svg>
-                    </div>
-                    <h3>UroAtlas</h3>
-                    <p class="desc">IA experta con guidelines AUA y EAU. Discute casos clínicos complejos, analiza UroTAC y resonancias, y consulta literatura urológica con un toque.</p>
-                    <span class="card-cta">Abrir</span>
-                </div>
+            <a class="appicon" href="/uroatlas/" style="--c1:#BF5AF2;--c2:#7C3AED;--glow:rgba(191,90,242,0.55)">
+                <span class="appicon__tile">
+                    <span class="appicon__badge badge-beta" title="Beta"></span>
+                    <svg viewBox="0 0 24 24">
+                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                    </svg>
+                </span>
+                <span class="appicon__name">UroAtlas</span>
             </a>
 
-            <a class="card" href="/cistoscopia/">
-                <span class="card-status status-live"><span class="dot"></span>Disponible</span>
-                <div class="card-inner">
-                    <div class="card-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#64B5F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                            <line x1="12" y1="19" x2="12" y2="23"/>
-                            <line x1="8" y1="23" x2="16" y2="23"/>
-                            <path d="M15 5l4-2M15 8l5-1" opacity="0.5"/>
-                        </svg>
-                    </div>
-                    <h3>Cistoscopía</h3>
-                    <p class="desc">Dicta el informe de uretrocistoscopía manos libres en pabellón. Vista previa en vivo, membrete profesional y exporta a Word o PDF en una página.</p>
-                    <span class="card-cta">Abrir</span>
-                </div>
+            <a class="appicon" href="/cistoscopia/" style="--c1:#FF9F0A;--c2:#FF6A00;--glow:rgba(255,159,10,0.55)">
+                <span class="appicon__tile">
+                    <span class="appicon__badge badge-live" title="Disponible"></span>
+                    <svg viewBox="0 0 24 24">
+                        <path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12z"/>
+                        <circle cx="12" cy="12" r="3.2"/>
+                    </svg>
+                </span>
+                <span class="appicon__name">Cistoscopía</span>
             </a>
 
         </div>
@@ -966,5 +1076,16 @@
         <p class="credit">Hecho con <span class="heart">♥</span> por <strong>Dr. Juan Carlos Riera M.</strong></p>
         <p class="small">UroWorkNet · Sistema de Gestión Urológica · 2026</p>
     </footer>
+
+    <script>
+        // Saludo según la hora del día.
+        (function () {
+            const el = document.getElementById('greeting');
+            if (!el) return;
+            const h = new Date().getHours();
+            const saludo = h < 12 ? 'Buenos días' : (h < 20 ? 'Buenas tardes' : 'Buenas noches');
+            el.innerHTML = saludo + ', Dr. Riera <span>— elige una app para empezar</span>';
+        })();
+    </script>
 </body>
 </html>
