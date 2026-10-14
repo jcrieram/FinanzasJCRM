@@ -1,5 +1,5 @@
 // Devuelve un resumen de 2-3 líneas de una noticia urológica reciente,
-// usando el modelo de OpenAI con búsqueda web. Cacheado en CDN una hora
+// usando Claude (Anthropic) con búsqueda web. Cacheado en CDN una hora
 // para evitar llamadas repetidas.
 //
 // Anti-abuso: la vista por defecto (sin ?force) se sirve cacheada en el
@@ -16,9 +16,9 @@ export default async function handler(req, res) {
     if (req.method !== 'GET') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
-    const apiKey = process.env.OPENAI_API_KEY;
+    const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
-        return res.status(500).json({ error: 'OPENAI_API_KEY no configurada' });
+        return res.status(500).json({ error: 'ANTHROPIC_API_KEY no configurada' });
     }
 
     // Si viene ?force=... el cliente quiere bypass del cache (otra noticia).
@@ -38,36 +38,33 @@ export default async function handler(req, res) {
     const prompt = `Busca en internet una noticia o publicación científica urológica relevante de los últimos 7 días (puede ser de revistas como European Urology, Journal of Urology, BJUI; sociedades AUA, EAU, CAU; o medios especializados). Resume en 2 o 3 líneas en español lo más importante para un urólogo en consulta. No agregues introducción ni saludo. Al final entre paréntesis menciona la fuente y la fecha si la tienes. Si encuentras varias, elige la más impactante clínicamente.`;
 
     try {
-        // Responses API con la herramienta integrada de búsqueda web.
-        // (El antiguo modelo gpt-4o-mini-search-preview fue deprecado por OpenAI.)
-        const upstream = await fetch('https://api.openai.com/v1/responses', {
+        // Claude (Anthropic) con la herramienta integrada de búsqueda web.
+        // Se usa el ecosistema que ya tiene créditos (antes se usaba OpenAI,
+        // cuyo modelo de búsqueda fue deprecado y cuya cuenta quedó sin crédito).
+        const upstream = await fetch('https://api.anthropic.com/v1/messages', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'application/json'
+                'x-api-key': apiKey,
+                'anthropic-version': '2023-06-01',
+                'content-type': 'application/json'
             },
             body: JSON.stringify({
-                model: 'gpt-4o-mini',
-                tools: [{ type: 'web_search' }],
-                input: prompt,
-                max_output_tokens: 600
+                model: 'claude-haiku-4-5-20251001',
+                max_tokens: 600,
+                tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 3 }],
+                messages: [{ role: 'user', content: prompt }]
             })
         });
         const data = await upstream.json();
         if (!upstream.ok) {
-            return res.status(upstream.status).json({ error: data.error?.message || 'Error de OpenAI' });
+            return res.status(upstream.status).json({ error: data.error?.message || 'Error de Anthropic' });
         }
-        // La respuesta cruda trae un array `output`; extraemos el texto del mensaje.
-        let news = (typeof data.output_text === 'string' ? data.output_text : '').trim();
-        if (!news) {
-            news = (data.output || [])
-                .filter(o => o.type === 'message')
-                .flatMap(o => o.content || [])
-                .filter(c => c.type === 'output_text' && typeof c.text === 'string')
-                .map(c => c.text)
-                .join('\n')
-                .trim();
-        }
+        // La respuesta trae bloques; concatenamos solo los de texto del asistente.
+        const news = (data.content || [])
+            .filter(b => b.type === 'text' && typeof b.text === 'string')
+            .map(b => b.text)
+            .join('')
+            .trim();
         return res.status(200).json({ news: news || 'Sin resultados.' });
     } catch (e) {
         return res.status(500).json({ error: e.message });
