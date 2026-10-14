@@ -35,9 +35,13 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-        return res.status(500).json({ error: 'OPENAI_API_KEY no configurada' });
+    // Gemini es el motor principal (contextual). OpenAI es respaldo. Basta con
+    // que UNO esté configurado — así el dictado sigue funcionando aunque OpenAI
+    // no tenga créditos o se retire su clave.
+    const apiKey = process.env.OPENAI_API_KEY || '';
+    const geminiKey = process.env.GEMINI_API_KEY || '';
+    if (!apiKey && !geminiKey) {
+        return res.status(500).json({ error: 'No hay proveedor de transcripción configurado (GEMINI_API_KEY u OPENAI_API_KEY)' });
     }
 
     const auth = await authenticate(req, { allowPin: true });
@@ -74,9 +78,13 @@ export default async function handler(req, res) {
             });
         }
     }
-    attempts.push({ name: 'gpt-4o-transcribe', run: (ms) => transcribeOpenAI(apiKey, rawBuf, contentType, 'gpt-4o-transcribe', ms), cap: 28000 });
-    attempts.push({ name: 'gpt-4o-mini-transcribe', run: (ms) => transcribeOpenAI(apiKey, rawBuf, contentType, 'gpt-4o-mini-transcribe', ms), cap: 20000 });
-    attempts.push({ name: 'whisper-1', run: (ms) => transcribeOpenAI(apiKey, rawBuf, contentType, 'whisper-1', ms), cap: 15000 });
+    // Respaldos de OpenAI — solo si hay clave (si no tiene créditos, igualmente
+    // fallarán y la cascada ya habrá intentado Gemini primero).
+    if (apiKey) {
+        attempts.push({ name: 'gpt-4o-transcribe', run: (ms) => transcribeOpenAI(apiKey, rawBuf, contentType, 'gpt-4o-transcribe', ms), cap: 28000 });
+        attempts.push({ name: 'gpt-4o-mini-transcribe', run: (ms) => transcribeOpenAI(apiKey, rawBuf, contentType, 'gpt-4o-mini-transcribe', ms), cap: 20000 });
+        attempts.push({ name: 'whisper-1', run: (ms) => transcribeOpenAI(apiKey, rawBuf, contentType, 'whisper-1', ms), cap: 15000 });
+    }
 
     let text = null;
     let usedAttempt = null;
@@ -109,7 +117,7 @@ export default async function handler(req, res) {
 
     // Pasada de corrección fonética — solo para los modelos acústicos de
     // OpenAI. Gemini ya transcribe con contexto, no la necesita.
-    if (!usedAttempt.contextual) {
+    if (!usedAttempt.contextual && apiKey) {
         const budget = Math.min(15000, remaining() - 2000);
         if (budget >= 6000) {
             text = await correctTranscript(apiKey, text, budget);
