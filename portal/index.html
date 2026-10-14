@@ -8,6 +8,10 @@
     <meta name="apple-mobile-web-app-title" content="UroWorkNet">
     <meta name="theme-color" content="#07162D">
     <meta name="description" content="UroWorkNet — Sistema integral de gestión urológica. Reportes, ConsultaVoz, UroAtlas.">
+    <link rel="manifest" href="/portal/manifest.webmanifest">
+    <link rel="apple-touch-icon" href="/portal/icon-180.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/portal/icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/portal/icon-512.png">
     <title>UroWorkNet · Sistema de Gestión Urológica</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -552,9 +556,9 @@
         .banner__img {
             position: absolute;
             inset: 0;
-            background-image: url('img/portada.jpg');
+            background-image: url('imageportal.jpeg');
             background-size: cover;
-            background-position: center 30%;
+            background-position: center 56%;
             background-repeat: no-repeat;
             -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 16%, #000 84%, transparent 100%);
                     mask-image: linear-gradient(to right, transparent 0%, #000 16%, #000 84%, transparent 100%);
@@ -680,6 +684,50 @@
             text-align: center;
             color: var(--text-primary);
         }
+        /* Fondo tenue y desenfocado con la misma foto, para dar profundidad
+           sin recargar (suave, pensado para vista sensible). */
+        .bg-photo {
+            position: fixed; inset: 0;
+            background: url('imageportal.jpeg') center 45% / cover no-repeat;
+            filter: blur(60px) brightness(0.6) saturate(1.05);
+            opacity: 0.10;
+            transform: scale(1.1);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Chip "continuar donde quedaste" */
+        .recent-chip {
+            display: none;
+            margin: 0 auto 26px;
+            width: fit-content;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 16px 9px 12px;
+            border-radius: 100px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            transition: transform 0.3s ease, border-color 0.3s ease, background 0.3s ease;
+        }
+        .recent-chip.show { display: inline-flex; }
+        .recent-chip:hover { transform: translateY(-2px); border-color: rgba(100,181,246,0.45); background: rgba(100,181,246,0.10); }
+        .recent-chip .recent-ic {
+            width: 26px; height: 26px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            background: linear-gradient(150deg, var(--rc1, #0A84FF), var(--rc2, #0040DD));
+        }
+        .recent-chip .recent-ic svg { width: 15px; height: 15px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .recent-chip b { color: var(--text-primary); font-weight: 600; }
+
+        /* Parallax del título del banner (sutil) */
+        .banner__content { will-change: transform, opacity; }
+
         @media (prefers-reduced-motion: reduce) {
             .banner__img { animation: none; }
         }
@@ -868,6 +916,7 @@
 </head>
 <body>
     <div class="bg-base"></div>
+    <div class="bg-photo"></div>
     <div class="bg-grid"></div>
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
@@ -894,6 +943,11 @@
 
     <main class="apps">
         <div class="greeting" id="greeting">Tus aplicaciones <span>— elige una para empezar</span></div>
+
+        <a class="recent-chip" id="recentChip" href="#">
+            <span class="recent-ic" id="recentIc"></span>
+            <span>Continuar en <b id="recentName"></b></span>
+        </a>
 
         <div class="appgrid">
 
@@ -1078,13 +1132,68 @@
     </footer>
 
     <script>
-        // Saludo según la hora del día.
         (function () {
-            const el = document.getElementById('greeting');
-            if (!el) return;
-            const h = new Date().getHours();
-            const saludo = h < 12 ? 'Buenos días' : (h < 20 ? 'Buenas tardes' : 'Buenas noches');
-            el.innerHTML = saludo + ', Dr. Riera <span>— elige una app para empezar</span>';
+            // ── Saludo según la hora del día ──
+            const g = document.getElementById('greeting');
+            if (g) {
+                const h = new Date().getHours();
+                const s = h < 12 ? 'Buenos días' : (h < 20 ? 'Buenas tardes' : 'Buenas noches');
+                g.innerHTML = s + ', Dr. Riera <span>— elige una app para empezar</span>';
+            }
+
+            // ── Accesos recientes (continuar donde quedaste) ──
+            const KEY = 'uwn_last_app';
+            document.querySelectorAll('.appicon').forEach(a => {
+                a.addEventListener('click', () => {
+                    try {
+                        const cs = getComputedStyle(a);
+                        localStorage.setItem(KEY, JSON.stringify({
+                            name: a.querySelector('.appicon__name').textContent,
+                            href: a.getAttribute('href'),
+                            c1: cs.getPropertyValue('--c1').trim(),
+                            c2: cs.getPropertyValue('--c2').trim(),
+                            svg: a.querySelector('svg').outerHTML
+                        }));
+                    } catch (e) {}
+                });
+            });
+            try {
+                const last = JSON.parse(localStorage.getItem(KEY) || 'null');
+                if (last && last.href) {
+                    const chip = document.getElementById('recentChip');
+                    chip.href = last.href;
+                    document.getElementById('recentName').textContent = last.name;
+                    const ic = document.getElementById('recentIc');
+                    ic.style.setProperty('--rc1', last.c1 || '#0A84FF');
+                    ic.style.setProperty('--rc2', last.c2 || '#0040DD');
+                    ic.innerHTML = last.svg || '';
+                    chip.classList.add('show');
+                }
+            } catch (e) {}
+
+            // ── Parallax sutil del título del banner ──
+            const bc = document.querySelector('.banner__content');
+            const banner = document.querySelector('.banner');
+            if (bc && banner && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                let ticking = false;
+                window.addEventListener('scroll', () => {
+                    if (ticking) return; ticking = true;
+                    requestAnimationFrame(() => {
+                        const y = window.scrollY;
+                        const p = Math.min(1, y / (banner.offsetHeight || 1));
+                        bc.style.transform = 'translateY(' + (y * 0.22) + 'px)';
+                        bc.style.opacity = String(1 - p * 0.85);
+                        ticking = false;
+                    });
+                }, { passive: true });
+            }
+
+            // ── PWA: service worker ──
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('/portal/sw.js').catch(() => {});
+                });
+            }
         })();
     </script>
 </body>
