@@ -588,14 +588,16 @@
                             <div id="c-coord" class="coord-info" style="display:none;"></div>
 
                             <h4 style="margin-top:20px;font-size:13px;color:var(--primary);">Procedimiento</h4>
-                            <div style="margin:4px 0 2px;font-size:11px;color:var(--text-muted);">Procedimientos frecuentes (rellenan el código automáticamente):</div>
+                            <div style="margin:4px 0 2px;font-size:11px;color:var(--text-muted);">Procedimientos frecuentes (rellenan el código automáticamente). <strong>*</strong> pregunta el lado (izq./der./bilateral); HoLEP y RTUP piden el volumen prostático. Lo seleccionado se agrega a <em>Indicación clínica</em>.</div>
                             <div style="display:flex;flex-wrap:wrap;gap:7px;margin:6px 0 10px;">
-                                <button type="button" class="proc-quick" data-cod1="19 02 076">Vasectomía</button>
+                                <button type="button" class="proc-quick" data-cod1="19 02 055" data-cod2="19 02 031" data-vol="1">HoLEP</button>
                                 <button type="button" class="proc-quick" data-cod1="19 02 082">Circuncisión</button>
-                                <button type="button" class="proc-quick" data-cod1="19 02 055" data-cod2="19 02 031">HoLEP</button>
-                                <button type="button" class="proc-quick" data-cod1="19 02 064">Hidrocele</button>
-                                <button type="button" class="proc-quick" data-cod1="19 02 055">RTUP</button>
-                                <button type="button" class="proc-quick" data-cod1="18 02 001">Hernia inguinal</button>
+                                <button type="button" class="proc-quick" data-cod1="19 02 076" data-lat="1">Vasectomía *</button>
+                                <button type="button" class="proc-quick" data-cod1="18 02 001" data-lat="1">Hernia inguinal *</button>
+                                <button type="button" class="proc-quick" data-cod1="19 02 064" data-lat="1">Hidrocele *</button>
+                                <button type="button" class="proc-quick" data-cod1="19 02 075" data-lat="1">Varicocele *</button>
+                                <button type="button" class="proc-quick" data-cod1="19 02 055" data-vol="1">RTUP</button>
+                                <button type="button" class="proc-quick" data-cod1="19 02 021" data-lat="1">Ureterolitotomía *</button>
                             </div>
                             <div class="form-grid" style="margin-top:8px;">
                                 <div class="form-row">
@@ -1093,12 +1095,90 @@
             if (e.key === 'Enter') { e.preventDefault(); confirmFonasaField(e.target, null); }
         });
 
-        // Botones de procedimientos frecuentes: rellenan el/los código(s).
+        // ─── Diálogos rápidos (lado / volumen) para los botones de cirugía ───
+        // Modal ligero, sin librerías, con los colores del tema.
+        function quickModal(title, buildBody) {
+            return new Promise(resolve => {
+                const ov = document.createElement('div');
+                ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;';
+                const box = document.createElement('div');
+                box.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;max-width:380px;width:100%;box-shadow:0 24px 70px rgba(0,0,0,0.55);';
+                box.innerHTML = `<div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:14px;">${title}</div>`;
+                const done = (v) => { document.removeEventListener('keydown', onKey); ov.remove(); resolve(v); };
+                function onKey(e) { if (e.key === 'Escape') done(null); }
+                const cancel = document.createElement('button');
+                cancel.type = 'button'; cancel.textContent = 'Cancelar';
+                cancel.style.cssText = 'margin-top:14px;width:100%;padding:8px;border:none;background:transparent;color:var(--text-muted);font-size:13px;cursor:pointer;';
+                cancel.addEventListener('click', () => done(null));
+                buildBody(box, done);
+                box.appendChild(cancel);
+                ov.appendChild(box);
+                ov.addEventListener('click', e => { if (e.target === ov) done(null); });
+                document.addEventListener('keydown', onKey);
+                document.body.appendChild(ov);
+            });
+        }
+        function askChoice(title, options) {
+            return quickModal(title, (box, done) => {
+                const row = document.createElement('div');
+                row.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;';
+                options.forEach(o => {
+                    const b = document.createElement('button');
+                    b.type = 'button'; b.textContent = o;
+                    b.style.cssText = 'flex:1;min-width:96px;padding:13px 14px;border-radius:10px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-size:14px;font-weight:600;cursor:pointer;transition:background .15s,color .15s;';
+                    b.addEventListener('mouseenter', () => { b.style.background = 'var(--primary)'; b.style.color = '#0E1620'; });
+                    b.addEventListener('mouseleave', () => { b.style.background = 'var(--input-bg)'; b.style.color = 'var(--text)'; });
+                    b.addEventListener('click', () => done(o));
+                    row.appendChild(b);
+                });
+                box.appendChild(row);
+            });
+        }
+        function askNumber(title, unit, placeholder) {
+            return quickModal(title, (box, done) => {
+                const wrap = document.createElement('div');
+                wrap.style.cssText = 'display:flex;align-items:center;gap:8px;';
+                const inp = document.createElement('input');
+                inp.type = 'number'; inp.min = '1'; inp.inputMode = 'numeric'; inp.placeholder = placeholder || '';
+                inp.style.cssText = 'flex:1;padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-size:16px;';
+                const u = document.createElement('span');
+                u.textContent = unit || ''; u.style.cssText = 'color:var(--text-secondary);font-size:14px;font-weight:600;';
+                const ok = document.createElement('button');
+                ok.type = 'button'; ok.textContent = 'Aceptar';
+                ok.style.cssText = 'margin-top:12px;width:100%;padding:12px;border-radius:10px;border:none;background:var(--primary);color:#0E1620;font-size:14px;font-weight:700;cursor:pointer;';
+                const submit = () => { const v = inp.value.trim(); done(v || null); };
+                ok.addEventListener('click', submit);
+                inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); submit(); } });
+                wrap.appendChild(inp); wrap.appendChild(u);
+                box.appendChild(wrap); box.appendChild(ok);
+                setTimeout(() => inp.focus(), 50);
+            });
+        }
+        // Agrega/reemplaza una línea "Prefijo valor" en Indicación clínica.
+        function setIndicacionLine(prefix, value) {
+            const ta = document.getElementById('c-indicacion');
+            const keep = (ta.value || '').split('\n')
+                .filter(l => !l.trim().toLowerCase().startsWith(prefix.toLowerCase()));
+            const base = keep.join('\n').replace(/\n+$/,'');
+            ta.value = (base ? base + '\n' : '') + prefix + ' ' + value;
+        }
+
+        // Botones de procedimientos frecuentes: rellenan el/los código(s) y,
+        // según el procedimiento, preguntan el lado o el volumen prostático.
         document.querySelectorAll('.proc-quick').forEach(btn => {
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', async () => {
                 document.getElementById('c-cod1').value = btn.dataset.cod1 || '';
                 document.getElementById('c-cod2').value = btn.dataset.cod2 || '';
                 maybeFillHolep();
+                const nombre = btn.textContent.replace('*', '').trim();
+                if (btn.dataset.lat) {
+                    const lado = await askChoice(`¿Lado de la ${nombre}?`, ['Izquierda', 'Derecha', 'Bilateral']);
+                    if (lado) setIndicacionLine('Lateralidad:', lado);
+                }
+                if (btn.dataset.vol) {
+                    const vol = await askNumber(`Volumen prostático estimado (${nombre})`, 'cc', 'Ej. 60');
+                    if (vol) setIndicacionLine('Volumen prostático estimado:', vol + ' cc');
+                }
             });
         });
 
