@@ -89,6 +89,7 @@ export default async function handler(req, res) {
     let text = null;
     let usedAttempt = null;
     let lastError = 'Error desconocido';
+    let creditIssue = false;
 
     for (const attempt of attempts) {
         const budget = Math.min(attempt.cap, remaining() - CORRECTION_RESERVE_MS);
@@ -107,11 +108,15 @@ export default async function handler(req, res) {
             console.error(`[transcribe] ${lastError}`);
         } catch (e) {
             lastError = e.message;
+            if (/credit|billing|prepayment|quota|depleted|insufficient|no credits|saldo|balance/i.test(e.message || '')) creditIssue = true;
             console.error(`[transcribe] modelo "${attempt.name}" falló: ${e.message}`);
         }
     }
 
     if (!text) {
+        if (creditIssue) {
+            return res.status(502).json({ error: 'El servicio de transcripción no tiene saldo disponible por ahora. Avísale al administrador para recargar los créditos. La grabación quedó guardada; puedes reintentar más tarde.' });
+        }
         return res.status(502).json({ error: `La transcripción falló con todos los modelos disponibles. Último error: ${lastError}` });
     }
 
