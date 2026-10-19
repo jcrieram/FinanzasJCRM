@@ -74,7 +74,7 @@ export default async function handler(req, res) {
                 name: 'gemini',
                 contextual: true, // ya corrige por contexto; no necesita la pasada extra
                 run: (ms) => transcribeGemini(filePart, ms),
-                cap: 30000
+                cap: 45000
             });
         }
     }
@@ -272,7 +272,10 @@ async function transcribeGemini(filePart, timeoutMs) {
                         { inline_data: { mime_type: geminiMime(filePart.mime), data: filePart.bytes.toString('base64') } }
                     ]
                 }],
-                generationConfig: { temperature: 0 }
+                // thinkingBudget:0 desactiva el "razonamiento" del modelo flash:
+                // transcribir no lo necesita y con él activado tarda demasiado
+                // (se pasaba del timeout). Así responde rápido.
+                generationConfig: { temperature: 0, thinkingConfig: { thinkingBudget: 0 } }
             }),
             signal: AbortSignal.timeout(timeoutMs)
         }
