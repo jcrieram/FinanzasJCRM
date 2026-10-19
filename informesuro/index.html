@@ -579,6 +579,7 @@
                                 <div class="form-row"><label>Clínica destino (donde se operará)</label><select id="c-clinica-destino" data-clinica></select></div>
                                 <div class="form-row"><label>Previsión</label><select id="c-prevision"></select></div>
                                 <div class="form-row"><label>Teléfono</label><input id="c-telefono" type="text"></div>
+                                <div class="form-row"><label>Email</label><input id="c-email" type="email" list="c-email-domains" autocomplete="off" placeholder="paciente@ejemplo.com"><datalist id="c-email-domains"></datalist></div>
                             </div>
                             <div style="margin-top:12px;">
                                 <button class="btn" id="c-dictar-datos" type="button">🎤 Dictar datos del paciente</button>
@@ -1623,14 +1624,35 @@
 
         // ─── Solicitud de Cirugía ───────────────────────────────────────
         document.getElementById('c-clear').addEventListener('click', () => {
-            ['c-nombre','c-rut','c-edad','c-telefono','c-insumos','c-indicacion','c-cod1','c-cod2'].forEach(id => document.getElementById(id).value = '');
+            ['c-nombre','c-rut','c-edad','c-telefono','c-email','c-insumos','c-indicacion','c-cod1','c-cod2'].forEach(id => document.getElementById(id).value = '');
             document.getElementById('c-clinica').value = '';
             document.getElementById('c-clinica-destino').value = '';
             document.getElementById('c-prevision').value = '';
             document.getElementById('c-coord').style.display = 'none';
             document.getElementById('previewPanel').classList.remove('show');
+            document.getElementById('c-email-domains').innerHTML = '';
             lastPayload = null;
         });
+
+        // Sugerencias de los dominios de correo más usados al escribir el email.
+        (function () {
+            const emailInput = document.getElementById('c-email');
+            const dl = document.getElementById('c-email-domains');
+            if (!emailInput || !dl) return;
+            const DOMINIOS = ['gmail.com', 'hotmail.com', 'outlook.com', 'yahoo.com', 'icloud.com', 'live.cl'];
+            emailInput.addEventListener('input', () => {
+                const v = emailInput.value.trim();
+                const at = v.indexOf('@');
+                const local = at === -1 ? v : v.slice(0, at);
+                const typed = at === -1 ? '' : v.slice(at + 1).toLowerCase();
+                if (!local) { dl.innerHTML = ''; return; }
+                dl.innerHTML = DOMINIOS
+                    .filter(d => !typed || d.startsWith(typed))
+                    .map(d => `<option value="${local}@${d}"></option>`)
+                    .join('');
+            });
+        })();
+
         document.getElementById('c-generate').addEventListener('click', () => {
             const nombre = val('c-nombre'); const rut = val('c-rut'); const edad = val('c-edad');
             if (!nombre) { alert('El nombre del paciente es obligatorio.'); return; }
@@ -1650,7 +1672,8 @@
                 peso_prostata: holep,
                 indicacion: val('c-indicacion'),
                 prevision: val('c-prevision'),
-                telefono: val('c-telefono')
+                telefono: val('c-telefono'),
+                email: val('c-email')
             };
             const paciente = { nombre, rut, edad };
             const clinica = val('c-clinica');
@@ -1697,6 +1720,7 @@
                     <tr><td>Clínica de origen</td><td>${escapeHtml(clinica || '—')}</td></tr>
                     <tr><td>Previsión</td><td>${escapeHtml(data.prevision || '—')}</td></tr>
                     <tr><td>Teléfono</td><td>${escapeHtml(data.telefono || '—')}</td></tr>
+                    ${data.email ? `<tr><td>Email</td><td>${escapeHtml(data.email)}</td></tr>` : ''}
                 </table>
                 <h3>Procedimiento solicitado</h3>
                 <table class="patient">${procHtml}</table>
