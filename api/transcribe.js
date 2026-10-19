@@ -6,7 +6,7 @@
 // médico y que alimenta a /api/extract.
 //
 // CASCADA DE MODELOS (se intenta en orden; el primero que responda bien gana):
-//   1. Gemini (gemini-2.5-flash) — SOLO si GEMINI_API_KEY está configurada en
+//   1. Gemini (gemini-3.8-flash) — SOLO si GEMINI_API_KEY está configurada en
 //      Vercel. Es transcripción CONTEXTUAL: el modelo escucha el audio
 //      entendiendo que es una consulta urológica, por lo que no confunde
 //      "próstata" con "prórroga" ni "control" con "contrato". La opción más
@@ -259,7 +259,7 @@ function geminiMime(mime) {
 
 async function transcribeGemini(filePart, timeoutMs) {
     const key = process.env.GEMINI_API_KEY;
-    const model = process.env.GEMINI_TRANSCRIBE_MODEL || 'gemini-2.5-flash';
+    const model = process.env.GEMINI_TRANSCRIBE_MODEL || 'gemini-3.8-flash';
     const upstream = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
         {
