@@ -241,36 +241,58 @@ function geminiMime(mime) {
 async function transcribeGemini(filePart, timeoutMs) {
     const key = process.env.GEMINI_API_KEY;
     const model = process.env.GEMINI_TRANSCRIBE_MODEL || 'gemini-3.8-flash';
-    const upstream = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
-        {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{
-                    parts: [
-                        { text: GEMINI_TRANSCRIBE_PROMPT },
-                        { inline_data: { mime_type: geminiMime(filePart.mime), data: filePart.bytes.toString('base64') } }
-                    ]
-                }],
-                // thinkingBudget:0 desactiva el "razonamiento" del modelo flash:
-                // transcribir no lo necesita y con él activado tarda demasiado
-                // (se pasaba del timeout). Así responde rápido.
-                generationConfig: { temperature: 0, thinkingConfig: { thinkingBudget: 0 } }
-            }),
-            signal: AbortSignal.timeout(timeoutMs)
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+    const body = JSON.stringify({
+        contents: [{
+            parts: [
+                { text: GEMINI_TRANSCRIBE_PROMPT },
+                { inline_data: { mime_type: geminiMime(filePart.mime), data: filePart.bytes.toString('base64') } }
+            ]
+        }],
+        // thinkingBudget:0 desactiva el "razonamiento" del modelo flash: transcribir
+        // no lo necesita y con él activado tarda demasiado (se pasaba del timeout).
+        generationConfig: { temperature: 0, thinkingConfig: { thinkingBudget: 0 } }
+    });
+
+    // Reintenta ante errores TRANSITORIOS de Gemini (sobrecarga/"high demand",
+    // 503/429/500, UNAVAILABLE, rate limit, timeouts de red), que suelen
+    // resolverse enseguida. Todo dentro del presupuesto de tiempo asignado.
+    const deadline = Date.now() + timeoutMs;
+    let lastErr = null;
+    for (let intento = 0; intento < 4; intento++) {
+        const restante = deadline - Date.now();
+        if (restante < 3500) break;
+        const perCall = Math.min(restante, 18000);
+        let permanente = false;
+        try {
+            const upstream = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body,
+                signal: AbortSignal.timeout(perCall)
+            });
+            const data = await upstream.json().catch(() => null);
+            if (upstream.ok) {
+                const text = (data?.candidates?.[0]?.content?.parts || [])
+                    .map(p => p.text || '').join('').trim();
+                if (text) return text;
+                lastErr = new Error('Gemini devolvió una transcripción vacía');
+            } else {
+                const msg = data?.error?.message || `Error de Gemini (${upstream.status})`;
+                lastErr = new Error(msg);
+                const transitorio = upstream.status === 503 || upstream.status === 429 || upstream.status === 500
+                    || /high demand|overload|unavailable|try again|rate.?limit|resource.?exhausted/i.test(msg);
+                permanente = !transitorio;
+            }
+        } catch (e) {
+            lastErr = e; // timeout/red → se considera transitorio y se reintenta
         }
-    );
-    const data = await upstream.json().catch(() => null);
-    if (!upstream.ok) {
-        throw new Error(data?.error?.message || `Error de Gemini (${upstream.status})`);
+        if (permanente) throw lastErr;
+        if (deadline - Date.now() > 3500) {
+            await new Promise(r => setTimeout(r, 700 * (intento + 1)));
+        }
     }
-    const text = (data?.candidates?.[0]?.content?.parts || [])
-        .map(p => p.text || '')
-        .join('')
-        .trim();
-    if (!text) throw new Error('Gemini devolvió una transcripción vacía');
-    return text;
+    throw lastErr || new Error('Gemini falló tras varios intentos');
 }
 
 // ═══════════════════════════════════════════════════════════════
