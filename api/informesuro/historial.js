@@ -13,7 +13,8 @@ const TYPE_LABELS = {
     alta: 'Alta Médica',
     postvasectomia: 'Post Vasectomía',
     postprostata: 'Post Cirugía Próstata',
-    postholep: 'Post HoLEP'
+    postholep: 'Post HoLEP',
+    uromune: 'Uromune'
 };
 
 export default async function handler(req, res) {
