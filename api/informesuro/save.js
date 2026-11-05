@@ -9,7 +9,7 @@ export const config = { maxDuration: 15 };
 
 const VALID_TYPES = new Set([
     'informe', 'cirugia', 'receta', 'examenes', 'estudios',
-    'alta', 'postvasectomia', 'postprostata', 'postholep'
+    'alta', 'postvasectomia', 'postprostata', 'postholep', 'uromune'
 ]);
 
 function normalizeRut(rut) {
