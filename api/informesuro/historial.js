@@ -14,7 +14,8 @@ const TYPE_LABELS = {
     postvasectomia: 'Post Vasectomía',
     postprostata: 'Post Cirugía Próstata',
     postholep: 'Post HoLEP',
-    uromune: 'Uromune'
+    uromune: 'Uromune',
+    magistral: 'Testosterona Gel'
 };
 
 export default async function handler(req, res) {
