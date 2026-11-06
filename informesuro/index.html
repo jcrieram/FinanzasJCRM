@@ -514,6 +514,10 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6M10 2v4.5L5.5 15a3.5 3.5 0 0 0 3.2 5h6.6a3.5 3.5 0 0 0 3.2-5L14 6.5V2"/><line x1="7" y1="14" x2="17" y2="14"/></svg>
                     <span>Uromune</span>
                 </div>
+                <div class="nav-item" data-tab="magistral">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.5a4 4 0 1 1-4 4h0"/><path d="M14 2v7.5a4 4 0 1 0 4 4h0"/><line x1="8" y1="2" x2="16" y2="2"/></svg>
+                    <span>Testosterona Gel</span>
+                </div>
             </div>
             <div class="sidebar-section">Archivo</div>
             <div class="nav-grid">
@@ -871,6 +875,48 @@
                     </section>
                 </div>
 
+                <!-- ════════════ RECETA MAGISTRAL (Narma) ════════════ -->
+                <div class="tab-content" id="tab-magistral">
+                    <section class="panel">
+                        <div class="panel-header">
+                            <div>
+                                <span class="panel-title">Testosterona Gel — Narma</span>
+                                <div class="panel-subtitle">Receta magistral de testosterona tópica (Topiclick). Los datos del paciente se comparten; la fecha se pone sola.</div>
+                            </div>
+                        </div>
+                        <div class="panel-body">
+                            <div class="form-grid">
+                                <div class="form-row"><label>Nombre del paciente</label><input id="m-nombre" type="text"></div>
+                                <div class="form-row"><label>RUT</label><input id="m-rut" type="text"></div>
+                                <div class="form-row"><label>E-mail</label><input id="m-email" type="email" list="m-email-domains" autocomplete="off"><datalist id="m-email-domains"></datalist></div>
+                                <div class="form-row"><label>Teléfono</label><input id="m-telefono" type="text"></div>
+                            </div>
+                            <div class="form-row" style="margin-top:12px;">
+                                <label>Diagnóstico</label>
+                                <input id="m-diagnostico" type="text" placeholder="Opcional">
+                            </div>
+                            <h4 style="margin:18px 0 6px;font-size:13px;color:var(--primary);">Formulación — Testosterona (marcada por defecto)</h4>
+                            <div class="form-grid">
+                                <div class="form-row"><label>Concentración (%)</label><input id="m-test-pct" type="text" placeholder="Ej. 2"></div>
+                                <div class="form-row"><label>mg/click · mg/cápsula</label><input id="m-test-mg" type="text" placeholder="Ej. 5 mg/click"></div>
+                                <div class="form-row"><label>Cantidad de frascos / unidades</label><input id="m-frascos" type="text" placeholder="Ej. 1"></div>
+                            </div>
+                            <div class="form-row" style="margin-top:12px;">
+                                <label>Posología</label>
+                                <textarea id="m-posologia" style="min-height:90px;" placeholder="Indicaciones de uso (ej. Aplicar 2 clicks en cara interna del antebrazo cada mañana)."></textarea>
+                            </div>
+                            <div style="margin-top:12px;">
+                                <button class="btn" id="m-dictar-datos" type="button">🎤 Dictar datos del paciente</button>
+                                <div id="m-datos-status" style="font-size:12px;color:var(--muted,#667);margin-top:6px;"></div>
+                            </div>
+                        </div>
+                        <div class="actions">
+                            <button class="btn" id="m-clear">Limpiar</button>
+                            <button class="btn btn-primary" id="m-generate">Generar receta</button>
+                        </div>
+                    </section>
+                </div>
+
                 <!-- ════════════ HISTORIAL ════════════ -->
                 <div class="tab-content" id="tab-historial">
                     <section class="panel">
@@ -899,6 +945,7 @@
                                         <option value="postprostata">Post Cirugía Próstata</option>
                                         <option value="postholep">Post HoLEP</option>
                                         <option value="uromune">Uromune</option>
+                                        <option value="magistral">Testosterona Gel</option>
                                     </select>
                                 </div>
                                 <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:160px;">
@@ -984,7 +1031,7 @@
 
         // ─── Dictado de DATOS del paciente: llena Nombre/RUT/Edad en TODAS las
         //     pestañas a la vez (es el mismo paciente en todos los documentos). ─
-        const PATIENT_PREFIXES = ['i', 'c', 'r', 'e', 's', 'pq', 'ph', 'u'];
+        const PATIENT_PREFIXES = ['i', 'c', 'r', 'e', 's', 'pq', 'ph', 'u', 'm'];
         function fillAllPatientData(data) {
             for (const p of PATIENT_PREFIXES) {
                 if (data.nombre) { const el = document.getElementById(`${p}-nombre`); if (el) el.value = data.nombre; }
@@ -1034,7 +1081,7 @@
         // ─── Nuevo paciente: limpia todas las pestañas ──────────────────
         document.getElementById('newPatientBtn').addEventListener('click', () => {
             if (!confirm('¿Borrar todos los datos del paciente actual en todas las pestañas?')) return;
-            ['i-clear', 'c-clear', 'r-clear', 'e-clear', 's-clear', 'pq-clear', 'ph-clear', 'u-clear']
+            ['i-clear', 'c-clear', 'r-clear', 'e-clear', 's-clear', 'pq-clear', 'ph-clear', 'u-clear', 'm-clear']
                 .forEach(id => {
                     const btn = document.getElementById(id);
                     if (btn) btn.click();
@@ -2383,6 +2430,136 @@
             </div>`;
         }
 
+        // ─── Testosterona Gel (Receta magistral Narma) ──────────────────
+        (function () {
+            const inp = document.getElementById('m-email');
+            const dl = document.getElementById('m-email-domains');
+            if (!inp || !dl) return;
+            const DOMS = ['gmail.com', 'hotmail.com', 'outlook.com', 'yahoo.com', 'icloud.com', 'live.cl'];
+            inp.addEventListener('input', () => {
+                const v = inp.value.trim(); const at = v.indexOf('@');
+                const local = at === -1 ? v : v.slice(0, at);
+                const typed = at === -1 ? '' : v.slice(at + 1).toLowerCase();
+                if (!local) { dl.innerHTML = ''; return; }
+                dl.innerHTML = DOMS.filter(d => !typed || d.startsWith(typed)).map(d => `<option value="${local}@${d}"></option>`).join('');
+            });
+        })();
+
+        document.getElementById('m-clear').addEventListener('click', () => {
+            ['m-nombre', 'm-rut', 'm-email', 'm-telefono', 'm-diagnostico', 'm-test-pct', 'm-test-mg', 'm-frascos', 'm-posologia']
+                .forEach(id => document.getElementById(id).value = '');
+            document.getElementById('m-email-domains').innerHTML = '';
+            document.getElementById('previewPanel').classList.remove('show');
+            lastPayload = null;
+        });
+
+        document.getElementById('m-generate').addEventListener('click', () => {
+            const nombre = val('m-nombre'); const rut = val('m-rut');
+            if (!nombre) { alert('El nombre del paciente es obligatorio.'); return; }
+            const paciente = { nombre, rut };
+            const data = {
+                email: val('m-email'),
+                telefono: val('m-telefono'),
+                diagnostico: val('m-diagnostico'),
+                testPct: val('m-test-pct'),
+                testMg: val('m-test-mg'),
+                frascos: val('m-frascos'),
+                posologia: val('m-posologia')
+            };
+            lastPayload = { doc_type: 'magistral', paciente, clinica: '', data };
+            showPreview();
+            renderMagistralPreview(paciente, data);
+            saveToHistorial();
+        });
+
+        // Reproduce el RECETARIO MAGISTRAL de Narma (datos de la empresa) con el
+        // encabezado del Dr. arriba, Testosterona marcada y Tópico fijo, fecha de
+        // hoy. print-color-adjust:exact para que las barras oscuras impriman.
+        function renderMagistralPreview(paciente, data) {
+            data = data || {};
+            const p = paciente || {};
+            const hoy = new Date();
+            const fecha = String(hoy.getDate()).padStart(2, '0') + '/' + String(hoy.getMonth() + 1).padStart(2, '0') + '/' + hoy.getFullYear();
+            const e = (v) => escapeHtml(v || '');
+            const line = (v) => (v && String(v).trim()) ? e(v) : '';
+            const NAVY = '#1b2a4a';
+            const EXACT = '-webkit-print-color-adjust:exact;print-color-adjust:exact';
+            const ACTIVOS = ['Testosterona', 'Estradiol', 'Estriol', 'DHEA', 'BIEST (Estriol/Estradiol)', 'Progesterona', 'Pregnenolona'];
+            const filas = ACTIVOS.map((a, i) => {
+                const t = i === 0;
+                return `<tr>
+                    <td style="padding:7px 10px;border:1px solid #c9d2de">${t ? '☑' : '☐'} ${t ? `<strong>${a}</strong>` : a}</td>
+                    <td style="padding:7px 10px;border:1px solid #c9d2de;text-align:center">${t ? e(data.testPct) : ''}</td>
+                    <td style="padding:7px 10px;border:1px solid #c9d2de;text-align:center">${t ? e(data.testMg) : ''}</td>
+                </tr>`;
+            }).join('');
+            const th = `background:${NAVY};color:#fff;border:1px solid ${NAVY};${EXACT}`;
+            document.getElementById('previewDoc').innerHTML = `
+            ${letterheadBlock()}
+            <div style="font-family:Arial,Helvetica,sans-serif;color:#1a2332">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 6px">
+                    <div style="display:flex;align-items:center;gap:9px">
+                        <div style="width:32px;height:32px;border-radius:50%;background:${NAVY};color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;${EXACT}">N</div>
+                        <div><div style="font-size:19px;font-weight:800;letter-spacing:1px;color:${NAVY};line-height:1">narma</div><div style="font-size:9.5px;color:#6b7685">Tu nueva farma</div></div>
+                    </div>
+                    <div style="font-size:9.5px;color:#6b7685;letter-spacing:.5px">SUBE TU RECETA</div>
+                </div>
+                <div style="height:3px;background:${NAVY};margin:3px 0 10px;${EXACT}"></div>
+                <div style="text-align:center;font-size:16px;font-weight:800;color:${NAVY};letter-spacing:1.5px;margin-bottom:12px">RECETARIO MAGISTRAL</div>
+
+                <div style="border:1.5px solid #cdd8e3;border-radius:8px;padding:9px 14px;margin-bottom:12px;font-size:12px;line-height:2">
+                    <strong>Nombre:</strong> ${line(p.nombre)} &nbsp;&nbsp;&nbsp; <strong>RUT:</strong> ${line(p.rut)} &nbsp;&nbsp;&nbsp; <strong>Fecha:</strong> ${e(fecha)}<br>
+                    <strong>Email:</strong> ${line(data.email)} &nbsp;&nbsp;&nbsp; <strong>Teléfono:</strong> ${line(data.telefono)}
+                </div>
+
+                <div style="font-weight:700;color:${NAVY};font-size:12px;margin:10px 0 4px">1. DIAGNÓSTICO</div>
+                <div style="border:1.5px solid #cdd8e3;border-radius:8px;padding:10px 14px;min-height:30px;font-size:12px">${line(data.diagnostico)}</div>
+
+                <div style="font-weight:700;color:${NAVY};font-size:12px;margin:12px 0 4px">2. FORMULACIÓN</div>
+                <table style="width:100%;border-collapse:collapse;font-size:11.5px">
+                    <thead>
+                        <tr><th rowspan="2" style="${th};padding:7px 10px;text-align:left">ACTIVO</th><th colspan="2" style="${th};padding:5px 10px">CONCENTRACIÓN / DOSIS</th></tr>
+                        <tr><th style="${th};padding:4px 10px">%</th><th style="${th};padding:4px 10px">mg/click · mg/cápsula</th></tr>
+                    </thead>
+                    <tbody>${filas}
+                        <tr><td style="padding:9px 10px;border:1px solid #c9d2de">&nbsp;</td><td style="border:1px solid #c9d2de"></td><td style="border:1px solid #c9d2de"></td></tr>
+                        <tr><td style="padding:9px 10px;border:1px solid #c9d2de">&nbsp;</td><td style="border:1px solid #c9d2de"></td><td style="border:1px solid #c9d2de"></td></tr>
+                    </tbody>
+                </table>
+
+                <div style="font-weight:700;color:${NAVY};font-size:12px;margin:14px 0 4px">3. FORMATO Y CANTIDAD</div>
+                <div style="border:1.5px solid #cdd8e3;border-radius:8px;padding:10px 14px;font-size:12px;line-height:2">
+                    <span style="margin-right:20px">☑ <strong>Tópico (Topiclick)</strong></span>
+                    <span style="margin-right:20px">☐ Intravaginal</span>
+                    <span style="margin-right:20px">☐ Cápsulas</span>
+                    <span>☐ Otro: ________________</span><br>
+                    <strong>Cantidad de frascos / unidades:</strong> ${line(data.frascos)}
+                </div>
+
+                <div style="font-weight:700;color:${NAVY};font-size:12px;margin:14px 0 4px">4. POSOLOGÍA</div>
+                <div style="display:flex;gap:14px;align-items:stretch">
+                    <div style="flex:1;border:1.5px solid #cdd8e3;border-radius:8px;padding:10px 14px;min-height:92px;font-size:12px;white-space:pre-wrap">${line(data.posologia)}</div>
+                    <div style="width:230px;border:1.5px solid #cdd8e3;border-radius:8px;overflow:hidden;font-size:11px">
+                        <div style="${th};padding:5px 10px;font-weight:700">Referencia Dosis Topiclick:</div>
+                        <div style="padding:4px 10px;border-bottom:1px solid #e2e8f0">0,4% = 1 mg/click</div>
+                        <div style="padding:4px 10px;border-bottom:1px solid #e2e8f0">1% = 2,5 mg/click</div>
+                        <div style="padding:4px 10px;border-bottom:1px solid #e2e8f0">2% = 5 mg/click</div>
+                        <div style="padding:4px 10px">5% = 12,5 mg/click</div>
+                    </div>
+                </div>
+
+                <div style="display:flex;gap:28px;margin-top:30px;font-size:11.5px">
+                    <div style="flex:1;border-top:1px solid #1a2332;padding-top:4px"><strong>JUAN CARLOS RIERA</strong><br><span style="color:#6b7685">Nombre del Médico</span></div>
+                    <div style="flex:1;border-top:1px solid #1a2332;padding-top:4px">25.279.729-7<br><span style="color:#6b7685">RUT</span></div>
+                    <div style="flex:1;border-top:1px solid #1a2332;padding-top:4px">&nbsp;<br><span style="color:#6b7685">Firma / Timbre</span></div>
+                </div>
+
+                <div style="margin-top:18px;padding-top:8px;border-top:1px solid #dfe6ee;text-align:center;font-size:10px;color:#6b7685">
+                    www.narma.cl &nbsp;·&nbsp; contacto@narma.cl &nbsp;·&nbsp; +56940935661 &nbsp;·&nbsp; Gerónimo de Alderete 1383, Vitacura, Santiago
+                </div>
+            </div>`;
+        }
+
         // ─── Historial ───────────────────────────────────────────────────
         // Reabre un documento archivado a partir de su snapshot guardado.
         // Reutiliza las mismas funciones de render que la generación normal,
@@ -2401,6 +2578,7 @@
                 case 'postprostata':   renderPostQuirPreview(pac, clin, 'prostata', data); break;
                 case 'postholep':      renderHolepPreview(pac, clin); break;
                 case 'uromune':        renderUromunePreview(pac, data); break;
+                case 'magistral':      renderMagistralPreview(pac, data); break;
                 default:
                     document.getElementById('previewDoc').innerHTML =
                         `<div style="color:var(--danger)">No se puede reconstruir este documento (tipo desconocido: ${escapeHtml(pl.doc_type || '—')}).</div>`;
