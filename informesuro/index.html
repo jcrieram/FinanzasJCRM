@@ -1956,6 +1956,23 @@
             ePresetsEl.appendChild(card);
         })();
 
+        // Preset: Ecografía Doppler de pene. Agrega el estudio (en su hoja); al
+        // generar, la receta de Caverject 20 mcg se añade sola en otra hoja
+        // (ver renderExamenesPreview).
+        (function addDopplerPreset() {
+            const card = document.createElement('div');
+            card.className = 'preset-card';
+            card.innerHTML = `<div class="preset-card-title">Doppler de pene</div><div class="preset-card-chips"></div>`;
+            const btn = document.createElement('button');
+            btn.className = 'med-preset-btn';
+            btn.type = 'button';
+            btn.textContent = '+ Ecografía Doppler de pene';
+            btn.title = 'Agrega la Ecografía Doppler de pene (en su hoja) y añade automáticamente, en una hoja aparte, la receta de Caverject 20 mcg con la indicación de llevar la ampolla el día de la ecografía';
+            btn.addEventListener('click', () => addExamRow('Ecografía Doppler de pene', 'imagen'));
+            card.querySelector('.preset-card-chips').appendChild(btn);
+            ePresetsEl.appendChild(card);
+        })();
+
         function openRMDialog() {
             const existing = document.getElementById('rm-inline-form');
             if (existing) { existing.remove(); return; }
@@ -2087,6 +2104,22 @@
                     ${indyPrior}
                     ${firmaBlock()}`;
             });
+            // Si se pidió Ecografía Doppler de pene, se agrega automáticamente una
+            // hoja con la receta de Caverject 20 mcg (vasodilatador intracavernoso
+            // necesario para el examen). El paciente debe llevar la ampolla.
+            const pidioDoppler = data.items.some(it => /doppler/i.test(it.name) && /pene/i.test(it.name));
+            if (pidioDoppler) {
+                const hojaCav = (lab.length ? 1 : 0) + img.length + 1;
+                html += `<div class="page-break">— Hoja ${hojaCav} —</div>
+                    ${letterheadBlock()}<div class="right">${escapeHtml(fecha)}</div>
+                    <h2>RECETA MÉDICA</h2>
+                    <h3>Datos del paciente</h3>${patientTbl}
+                    <h3>Prescripción farmacológica</h3>
+                    <ul class="meds"><li>• Caverject (alprostadil) 20 mcg — 1 ampolla.</li></ul>
+                    <h3>Indicaciones</h3>
+                    <p style="text-align:justify">Llevar la ampolla el día de la ecografía.</p>
+                    ${firmaBlock()}`;
+            }
             document.getElementById('previewDoc').innerHTML = html;
             setLogoOnPreview(clinica);
         }
